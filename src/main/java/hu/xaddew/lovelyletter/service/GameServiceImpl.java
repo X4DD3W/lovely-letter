@@ -53,7 +53,7 @@ public class GameServiceImpl implements GameService {
       Player player = new Player();
       player.setUuid(uuidDto.getUuid());
       player.setName(uuidDto.getName());
-      playerRepository.save(player);
+      player.setGame(game);
       players.add(player);
     });
 
@@ -64,6 +64,7 @@ public class GameServiceImpl implements GameService {
 
     addGameCreationLogs(game);
     gameRepository.save(game);
+    playerRepository.saveAll(players);
 
     responseDto.setGameUuid(game.getUuid());
     responseDto.setPlayerUuidDtos(playerUuidDtos);
@@ -94,7 +95,9 @@ public class GameServiceImpl implements GameService {
             player.getPlayedCards().stream().map(Card::getCardName).collect(Collectors.toList()));
         playedCardsByPlayers.add(dto);
       });
-      game.getPlayersOutOfGame().forEach(player -> {
+      game.getPlayersInGame().stream()
+          .filter(player -> !player.getIsInPlay())
+          .forEach(player -> {
         PlayerAndPlayedCardsDto dto = new PlayerAndPlayedCardsDto();
         dto.setPlayerName(player.getName());
         dto.setPlayedCards(
@@ -134,7 +137,7 @@ public class GameServiceImpl implements GameService {
   private void initDeckAndPutAsideCards(Game game) {
     List<Card> originalDeck = cardService.findAll();
     game.setDrawDeck(originalDeck);
-    game.setPutAsideCards(putAsideCards(game));
+    putAsideCards(game);
   }
 
   private List<Card> putAsideCards(Game game) {
@@ -145,12 +148,12 @@ public class GameServiceImpl implements GameService {
     } else {
       drawACardToPutAside(game);
     }
-    return game.getPutAsideCards();
+    return game.getDrawDeck();
   }
 
   private void drawACardToPutAside(Game game) {
     randomIndex = random.nextInt(game.getDrawDeck().size());
-    game.getPutAsideCards().add(game.getDrawDeck().get(randomIndex));
+    game.getDrawDeck().get(randomIndex).setIsPutAside(true);
     game.getDrawDeck().remove(game.getDrawDeck().get(randomIndex));
   }
 
@@ -159,7 +162,6 @@ public class GameServiceImpl implements GameService {
       randomIndex = random.nextInt(game.getDrawDeck().size());
       player.getCardsInHand().add(game.getDrawDeck().get(randomIndex));
       game.getDrawDeck().remove(game.getDrawDeck().get(randomIndex));
-      playerRepository.saveAndFlush(player);
     });
   }
 
@@ -207,7 +209,7 @@ public class GameServiceImpl implements GameService {
       actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
       actualPlayer.getPlayedCards().add(cardWantToPlayOut);
       game.getPlayersInGame().remove(actualPlayer);
-      game.getPlayersOutOfGame().add(actualPlayer);
+      actualPlayer.setIsInPlay(false);
       addLogWhenAPlayerMustDiscardPrincess(actualPlayer, game);
       checkPlayerNumbersIfSomeoneIsOutOfTheGame(game);
       // TODO saveAndFlush player és game? vagy elég az utóbbi?
@@ -258,7 +260,7 @@ public class GameServiceImpl implements GameService {
       if (targetPlayer != null) {
         if (targetPlayer.getCardsInHand().get(0).getCardName().equals(info.getNamedCard())) {
           game.getPlayersInGame().remove(targetPlayer);
-          game.getPlayersOutOfGame().add(targetPlayer);
+          targetPlayer.setIsInPlay(false);
           addLogWhenAPlayerUseGuardSuccessfully(requestDto, targetPlayer, game);
           checkPlayerNumbersIfSomeoneIsOutOfTheGame(game);
         } else {

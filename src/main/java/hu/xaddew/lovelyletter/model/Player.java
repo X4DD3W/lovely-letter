@@ -1,16 +1,14 @@
 package hu.xaddew.lovelyletter.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.CascadeType;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -34,19 +32,18 @@ public class Player {
 
   private String name;
 
-  @ElementCollection()
+  @ManyToOne(cascade = CascadeType.ALL)
+  private Game game;
+
+  @ManyToMany
   private List<Card> cardsInHand;
 
-  @ElementCollection
+  @ManyToMany
   private List<Card> playedCards;
 
   private Integer numberOfLetters;
 
   private Boolean isInPlay;
-
-  @JsonIgnore
-  @ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
-  private Game game;
 
   public Player() {
     this.id = null;
