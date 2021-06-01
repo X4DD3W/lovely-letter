@@ -8,6 +8,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,17 +30,11 @@ public class Game {
 
   private String uuid;
 
-  @ElementCollection()
+  @ManyToMany
   private List<Card> drawDeck;
 
-  @ElementCollection()
-  private List<Card> putAsideCards;
-
-  @ElementCollection()
+  @OneToMany(mappedBy = "game")
   private List<Player> playersInGame;
-
-  @ElementCollection()
-  private List<Player> playersOutOfGame;
 
   private String actualPlayer;
 
@@ -49,9 +45,7 @@ public class Game {
     this.id = null;
     this.uuid = null;
     this.drawDeck = new LinkedList<>();
-    this.putAsideCards = new LinkedList<>();
     this.playersInGame = new ArrayList<>();
-    this.playersOutOfGame = new ArrayList<>();
     this.actualPlayer = null;
     this.log = new LinkedList<>();
   }
