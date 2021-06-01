@@ -182,42 +182,65 @@ public class GameServiceImpl implements GameService {
   }
 
   private void processAdditionalInfo(Player actualPlayer, Game game, PlayCardRequestDto requestDto) {
-    Card cardWantToPlay = cardService.findCardByCardName(requestDto.getCardName());
-    String cardNameWantToPlay = cardWantToPlay.getCardName();
+    Card cardWantToPlayOut = cardService.findCardByCardName(requestDto.getCardName());
+    String cardNameWantToPlayOut = cardWantToPlayOut.getCardName();
+
+
+
     // TODO valamit minden esetben vissza kell adni. Azt majd itt hozzuk létre.
+    // TODO komoly validáció kell ide!
+    //  (határértékek csekkolása, pl. ha mást nem választhatok Herceggel, csak magamat stb...)
 
 
-    if (cardNameWantToPlay.equals("Hercegnő")) {
+
+    if (cardNameWantToPlayOut.equals("Hercegnő")) {
+      actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
+      actualPlayer.getPlayedCards().add(cardWantToPlayOut);
       game.getPlayersInGame().remove(actualPlayer);
       game.getPlayersOutOfGame().add(actualPlayer);
       addLogWhenAPlayerMustDiscardPrincess(actualPlayer, game);
       checkPlayerNumbersIfSomeoneIsOutOfTheGame(game);
-    }
-    if (cardNameWantToPlay.matches("Grófnő|Szobalány|Kém")) {
-      actualPlayer.getPlayedCards().add(cardWantToPlay);
-      actualPlayer.getCardsInHand().remove(cardWantToPlay);
-      // addLog
       // TODO saveAndFlush player és game? vagy elég az utóbbi?
       gameRepository.saveAndFlush(game);
     }
-    if (cardNameWantToPlay.equals("Király")) {
-      // kit választott
-      // játékosok kézben lévő lapjai cserélődnek
+    if (cardNameWantToPlayOut.matches("Grófnő|Szobalány|Kém")) {
+      actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
+      actualPlayer.getPlayedCards().add(cardWantToPlayOut);
+      addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game);
+      gameRepository.saveAndFlush(game);
     }
-    if (cardNameWantToPlay.equals("Kancellár")) {
+    if (cardNameWantToPlayOut.equals("Király")) {
+      AdditionalInfoDto info = requestDto.getAdditionalInfo();
+      // TODO nullCheck itt és Őrnél is, ha a targetPlayer üres, errorResponse
+      Player targetPlayer = game.getPlayersInGame().stream()
+          .filter(p -> p.getName().equals(info.getTargetPlayer()))
+          .findFirst().orElse(null);
+      if (targetPlayer != null) {
+        actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
+        actualPlayer.getPlayedCards().add(cardWantToPlayOut);
+        Card actualPlayersCardInHand = actualPlayer.getCardsInHand().get(0);
+        Card targetPlayersCardInHand = targetPlayer.getCardsInHand().get(0);
+        actualPlayer.getCardsInHand().remove(actualPlayersCardInHand);
+        actualPlayer.getCardsInHand().add(targetPlayersCardInHand);
+        targetPlayer.getCardsInHand().remove(targetPlayersCardInHand);
+        targetPlayer.getCardsInHand().add(actualPlayersCardInHand);
+        addLogWhenAPlayerUseKing(actualPlayer, targetPlayer, game);
+      } else throw new GameException("Targeted player is not exists or out of the game.");
+    }
+    if (cardNameWantToPlayOut.equals("Kancellár")) {
       // izgi lesz...
     }
-    if (cardNameWantToPlay.equals("Herceg")) {
+    if (cardNameWantToPlayOut.equals("Herceg")) {
       // kit választott
       // a választott lapja eldobódik és kap egy másikat
     }
-    if (cardNameWantToPlay.equals("Báró")) {
+    if (cardNameWantToPlayOut.equals("Báró")) {
       // kit választott
     }
-    if (cardNameWantToPlay.equals("Pap")) {
+    if (cardNameWantToPlayOut.equals("Pap")) {
       // kit választott
     }
-    if (cardNameWantToPlay.equals("Őr")) {
+    if (cardNameWantToPlayOut.equals("Őr")) {
       AdditionalInfoDto info = requestDto.getAdditionalInfo();
       Player targetPlayer = game.getPlayersInGame().stream()
           .filter(p -> p.getName().equals(info.getTargetPlayer()))
@@ -241,18 +264,28 @@ public class GameServiceImpl implements GameService {
     gameRepository.saveAndFlush(game);
   }
 
+  private void addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(Player actualPlayer, String cardNameWantToPlayOut, Game game) {
+    game.addLog(actualPlayer.getName() + " kijátszott egy " + cardNameWantToPlayOut + "t.");
+    gameRepository.saveAndFlush(game);
+  }
+
+  private void addLogWhenAPlayerUseKing(Player actualPlayer, Player targetPlayer, Game game) {
+    game.addLog(actualPlayer.getName() + " Királyt használva kártyát cserélt " + targetPlayer.getName() + " játékossal.");
+    gameRepository.saveAndFlush(game);
+  }
+
   private void addLogWhenAPlayerUseGuardSuccessfully(PlayCardRequestDto requestDto, Player targetPlayer, Game game) {
     Player actualPlayer = playerService.findByUuid(requestDto.getPlayerUuid());
     String namedCard = requestDto.getAdditionalInfo().getNamedCard();
-    game.addLog(actualPlayer + " Őrrel " + namedCard + " tippelt " + targetPlayer.getName() + " és eltalálta! "
-        + targetPlayer.getName() + " kiesett.");
+    game.addLog(actualPlayer + " Őrt játszott ki. Szerinte " + targetPlayer.getName() + " kezében " + namedCard + " van. Így igaz. "
+        + targetPlayer.getName() + " kiesett a játékból.");
     gameRepository.saveAndFlush(game);
   }
 
   private void addLogWhenAPlayerUseGuardUnSuccessfully(PlayCardRequestDto requestDto, Player targetPlayer, Game game) {
     Player actualPlayer = playerService.findByUuid(requestDto.getPlayerUuid());
     String namedCard = requestDto.getAdditionalInfo().getNamedCard();
-    game.addLog(actualPlayer + " Őrrel " + namedCard + " tippelt " + targetPlayer.getName() + ", de nem talált.");
+    game.addLog(actualPlayer + " Őrt játszott ki. Szerinte " + targetPlayer.getName() + " kezében " + namedCard + " van. Nem talált.");
     gameRepository.saveAndFlush(game);
   }
 
