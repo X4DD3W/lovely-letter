@@ -31,6 +31,8 @@ public class MainController {
     return cardService.getAllCards();
   }
 
+  // FIXME perzisztálás nem jó, nem lehet két játékot létrehozni, mert ütköznek az elemek...
+
   // TODO normális validáció (pl. nem lehet két ugyanolyan nevű játékos egy játékon belül!)
   @PostMapping("/game/create")
   public CreatedGameResponseDto createGame(@RequestBody CreateGameDto createGameDto) {
@@ -52,19 +54,12 @@ public class MainController {
     return playerService.getAllCardsByPlayerUuid(playerUuid);
   }
 
+  // Kártyakijátszáskor a játékosnak küldenie kell a saját uuid-ját, a kiválasztott lapja nevét
+  // és további információkat, amennyiben szükséges valamelyik kártya hatásának vonzataként
   @PostMapping("/play-card")
   public String playCard(@RequestBody PlayCardRequestDto requestDto) {
     return gameService.playCard(requestDto);
   }
-
-
-
-  // TODO futó játék:
-  // mindig küldöm
-  // a game uuid-t (kell ez?)
-  // a saját azonosítómat (player uuid) és
-  // a kiválasztott lapom nevét?
-  // a választott lapnak akciójának megfelelő plusz fieldet
 
   // TODO draw: húz egy lapot, ha én jövök
 
