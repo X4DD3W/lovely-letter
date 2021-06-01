@@ -118,6 +118,7 @@ public class GameServiceImpl implements GameService {
            if (hasPlayerTheCardSheOrHeWantToPlay(actualPlayer, requestDto.getCardName())) {
              // TODO bővíteni ezt a logikát
              processAdditionalInfo(actualPlayer, game, requestDto);
+             // TODO következő játékos jön
            } else throw new GameException("You doesn't have the card you want to play.");
          } else throw new GameException("It's not your turn, " + actualPlayer.getName() + ".");
        } else throw new GameException("Game not found.");
@@ -162,9 +163,18 @@ public class GameServiceImpl implements GameService {
     });
   }
 
-  private void determineStartPlayer(Game newGame) {
-    randomIndex = random.nextInt(newGame.getPlayersInGame().size());
-    newGame.setActualPlayer(newGame.getPlayersInGame().get(randomIndex).getName());
+  private void determineStartPlayer(Game game) {
+    randomIndex = random.nextInt(game.getPlayersInGame().size());
+    Player actualPlayer = game.getPlayersInGame().get(randomIndex);
+    drawACard(actualPlayer, game);
+    game.setActualPlayer(actualPlayer.getName());
+  }
+
+  private void drawACard(Player actualPlayer, Game game) {
+    randomIndex = random.nextInt(game.getDrawDeck().size());
+    Card drawnCard = game.getDrawDeck().get(randomIndex);
+    game.getDrawDeck().remove(drawnCard);
+    actualPlayer.getCardsInHand().add(drawnCard);
   }
 
   private void addGameCreationLogs(Game game) {

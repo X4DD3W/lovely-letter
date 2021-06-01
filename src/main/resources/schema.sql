@@ -1,13 +1,13 @@
-DROP TABLE IF exists games;
 DROP TABLE IF exists game_log;
 DROP TABLE IF exists games_draw_deck;
 DROP TABLE IF exists games_players_in_game;
 DROP TABLE IF exists games_players_out_of_game;
 DROP TABLE IF exists games_put_aside_cards;
-DROP TABLE IF exists cards;
-DROP TABLE IF exists players;
 DROP TABLE IF exists players_cards_in_hand;
 DROP TABLE IF exists players_played_cards;
+DROP TABLE IF exists games;
+DROP TABLE IF exists cards;
+DROP TABLE IF exists players;
 
 CREATE TABLE cards
 (
