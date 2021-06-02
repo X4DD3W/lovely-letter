@@ -5,6 +5,7 @@ import hu.xaddew.lovelyletter.dto.CreateGameDto;
 import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
+import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerAllCardsDto;
 import hu.xaddew.lovelyletter.model.Game;
 import hu.xaddew.lovelyletter.service.GameService;
@@ -26,6 +27,10 @@ public class MainController {
   private final GameService gameService;
   private final PlayerService playerService;
 
+  // TODO ----------------------------------------------------------------------------
+  // FIXME drawDeck, log, playedCards mind LinkedList, de Hibernate azt elm nem tudja!
+  // TODO ----------------------------------------------------------------------------
+
   @GetMapping("/cards")
   public List<CardResponseDto> getCards() {
     return originalCardService.getAllCards();
@@ -42,6 +47,8 @@ public class MainController {
     return gameService.findAll();
   }
 
+  // TODO ITT TARTOK!
+  // FIXME a kiesett játékost kétszer adja vissza! És mintha a drawDeck mérete sem stimmelne (16?)
   @GetMapping("/get-status/{gameUuid}")
   public GameStatusDto getGameStatus(@PathVariable String gameUuid) {
     return gameService.getGameStatus(gameUuid);
@@ -55,7 +62,7 @@ public class MainController {
   // Kártyakijátszáskor a játékosnak küldenie kell a saját uuid-ját, a kiválasztott lapja nevét
   // és további információkat, amennyiben szükséges valamelyik kártya hatásának vonzataként
   @PostMapping("/play-card")
-  public String playCard(@RequestBody PlayCardRequestDto requestDto) {
+  public PlayCardResponseDto playCard(@RequestBody PlayCardRequestDto requestDto) {
     return gameService.playCard(requestDto);
   }
 

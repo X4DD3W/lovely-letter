@@ -49,7 +49,9 @@ public class Game {
     this.log = new LinkedList<>();
   }
 
-  public void addLog(String message) {
-    this.log.add((this.log.size() + 1) + ". " + message);
+  public String addLog(String message) {
+    String newLog = (this.log.size() + 1) + ". " + message;
+    this.log.add(newLog);
+    return newLog;
   }
 }

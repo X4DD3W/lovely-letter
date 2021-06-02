@@ -12,9 +12,7 @@ public interface GameRepository extends JpaRepository<Game, Long> {
   Game findByUuid(String uuid);
 
   @Query(value = "SELECT * FROM games g "
-      + "LEFT JOIN games_players_in_game gp ON g.id = gp.game_id "
-      + "LEFT JOIN games_players_out_of_game go ON g.id = go.game_id "
-      + "LEFT JOIN players p ON p.id = gp.players_in_game_id "
+      + "LEFT JOIN players p ON p.game_id = g.id "
       + "WHERE p.uuid = :playerUuid", nativeQuery = true)
   Game findGameByPlayerUuid(@Param("playerUuid") String playerUuid);
 
