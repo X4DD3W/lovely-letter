@@ -10,10 +10,12 @@ import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.Game;
+import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
 import hu.xaddew.lovelyletter.repository.PlayerRepository;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -29,6 +31,7 @@ public class GameServiceImpl implements GameService {
 
   private final Random random;
   private final CardService cardService;
+  private final OriginalCardService originalCardService;
   private final PlayerService playerService;
   private final GameRepository gameRepository;
   private final PlayerRepository playerRepository;
@@ -135,9 +138,27 @@ public class GameServiceImpl implements GameService {
   }
 
   private void initDeckAndPutAsideCards(Game game) {
-    List<Card> originalDeck = cardService.findAll();
-    game.setDrawDeck(originalDeck);
+    List<OriginalCard> originalCards = originalCardService.findAll();
+    List<Card> newDeckFromOriginal = createNewDrawDeck(originalCards);
+    game.setDrawDeck(newDeckFromOriginal);
+    newDeckFromOriginal.forEach(card -> card.setGame(game));
     putAsideCards(game);
+  }
+
+  private List<Card> createNewDrawDeck(List<OriginalCard> originalCards) {
+    List<Card> newDeck = new LinkedList<>();
+    for (OriginalCard originalCard : originalCards) {
+      Card card = Card.builder()
+          .cardName(originalCard.getCardName())
+          .cardValue(originalCard.getCardValue())
+          .quantity(originalCard.getQuantity())
+          .description(originalCard.getDescription())
+          .isPutAside(originalCard.getIsPutAside())
+          .build();
+      cardService.save(card);
+      newDeck.add(card);
+    }
+    return newDeck;
   }
 
   private List<Card> putAsideCards(Game game) {

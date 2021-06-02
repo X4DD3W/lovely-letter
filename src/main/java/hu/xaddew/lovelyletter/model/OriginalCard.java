@@ -1,14 +1,10 @@
 package hu.xaddew.lovelyletter.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.List;
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,33 +18,19 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "cards")
-public class Card {
+@Table(name = "original_cards")
+public class OriginalCard {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @JsonIgnore
   private Long id;
 
-  @JsonIgnore
-  @ManyToOne(cascade = CascadeType.ALL)
-  private Game game;
-
-  @JsonIgnore
-  @ManyToMany(cascade = CascadeType.ALL)
-  private List<Player> inPlayersHand;
-
-  @JsonIgnore
-  @ManyToMany(cascade = CascadeType.ALL)
-  private List<Player> inPlayedArea;
-
   private String cardName;
   private Integer cardValue;
   private Integer quantity;
   private String description;
 
-  // TODO ebbű még baj lehet!
-  // TODO félrerakás sorrendje!!!
   @JsonIgnore
   private Boolean isPutAside;
 }

@@ -7,8 +7,8 @@ import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayerAllCardsDto;
 import hu.xaddew.lovelyletter.model.Game;
-import hu.xaddew.lovelyletter.service.CardService;
 import hu.xaddew.lovelyletter.service.GameService;
+import hu.xaddew.lovelyletter.service.OriginalCardService;
 import hu.xaddew.lovelyletter.service.PlayerService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,18 +22,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MainController {
 
-  private final CardService cardService;
+  private final OriginalCardService originalCardService;
   private final GameService gameService;
   private final PlayerService playerService;
 
   @GetMapping("/cards")
   public List<CardResponseDto> getCards() {
-    return cardService.getAllCards();
+    return originalCardService.getAllCards();
   }
-
-  // TODO ----------------------------------------------------------
-  // TODO FIXME kártyák létrehozása játékonként!?
-  // TODO ----------------------------------------------------------
 
   // TODO normális validáció (pl. nem lehet két ugyanolyan nevű játékos egy játékon belül!)
   @PostMapping("/game/create")

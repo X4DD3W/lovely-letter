@@ -1,4 +1,4 @@
-INSERT INTO cards (card_name, card_value, quantity, description, is_put_aside)
+INSERT INTO original_cards (card_name, card_value, quantity, description, is_put_aside)
 VALUES ('Hercegnő', 9, 1, 'Ha bármilyen okból kijátszod vagy eldobod ezt a kártyát, kiesel a körből.', false),
        ('Grófnő', 8, 1, 'Ha ez a kártya a Királlyal vagy Herceggel egyszerre van a kezedben, el kell dobnod ezt a lapot.', false),
        ('Király', 7, 1, 'Cserélj kártyát egy általad választott játékossal!', false),

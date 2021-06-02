@@ -30,7 +30,7 @@ public class Game {
 
   private String uuid;
 
-  @ManyToMany
+  @OneToMany(mappedBy = "game")
   private List<Card> drawDeck;
 
   @OneToMany(mappedBy = "game")

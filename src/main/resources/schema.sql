@@ -9,8 +9,19 @@ DROP TABLE IF EXISTS cards_in_played_area;
 DROP TABLE IF EXISTS cards_in_players_hand;
 
 DROP TABLE IF EXISTS cards;
+DROP TABLE IF EXISTS original_cards;
 DROP TABLE IF EXISTS players;
 DROP TABLE IF EXISTS games;
+
+CREATE TABLE original_cards
+(
+    id          bigint auto_increment primary key,
+    card_name   varchar(255) null,
+    card_value  int null,
+    quantity    int null,
+    description varchar(255) null,
+    is_put_aside bit(1)
+);
 
 CREATE TABLE cards
 (
