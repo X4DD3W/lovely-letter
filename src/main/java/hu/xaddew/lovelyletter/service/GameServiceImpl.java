@@ -61,6 +61,7 @@ public class GameServiceImpl implements GameService {
       players.add(player);
     });
 
+    // TODO játékossorrend?
     game.setPlayersInGame(players);
     initDeckAndPutAsideCards(game);
     dealOneCardToAllPlayers(game);

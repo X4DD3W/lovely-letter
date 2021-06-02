@@ -47,8 +47,6 @@ public class MainController {
     return gameService.findAll();
   }
 
-  // TODO ITT TARTOK!
-  // FIXME a kiesett játékost kétszer adja vissza! És mintha a drawDeck mérete sem stimmelne (16?)
   @GetMapping("/get-status/{gameUuid}")
   public GameStatusDto getGameStatus(@PathVariable String gameUuid) {
     return gameService.getGameStatus(gameUuid);
@@ -66,7 +64,9 @@ public class MainController {
     return gameService.playCard(requestDto);
   }
 
-  // TODO draw: húz egy lapot, ha én jövök
+  // TODO draw: húz egy lapot, ha én jövök (ez lehet automatikus)
+
+  // TODO /rules
 
   // TODO egyéb:
   // •	2-4 játékos (Player) (a játékhoz kapott uuid-t minden kéréssel küldeni kell)
