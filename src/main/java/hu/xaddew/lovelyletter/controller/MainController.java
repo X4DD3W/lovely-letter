@@ -31,7 +31,9 @@ public class MainController {
     return cardService.getAllCards();
   }
 
-  // FIXME perzisztálás nem jó, nem lehet két játékot létrehozni, mert ütköznek az elemek...
+  // TODO ----------------------------------------------------------
+  // TODO FIXME kártyák létrehozása játékonként!?
+  // TODO ----------------------------------------------------------
 
   // TODO normális validáció (pl. nem lehet két ugyanolyan nevű játékos egy játékon belül!)
   @PostMapping("/game/create")

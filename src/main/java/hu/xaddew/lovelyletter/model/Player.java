@@ -1,5 +1,6 @@
 package hu.xaddew.lovelyletter.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +33,7 @@ public class Player {
 
   private String name;
 
+  @JsonIgnore
   @ManyToOne(cascade = CascadeType.ALL)
   private Game game;
 
@@ -43,6 +45,7 @@ public class Player {
 
   private Integer numberOfLetters;
 
+  @JsonIgnore
   private Boolean isInPlay;
 
   public Player() {
