@@ -11,7 +11,8 @@ import lombok.Setter;
 public class GameStatusDto {
 
   private String actualPlayer;
-  private List<PlayerAndPlayedCardsDto> playedCardsByPlayers;
+  private List<PlayerAndPlayedCardsDto> playedCardsByPlayersInGame;
+  private List<PlayerAndPlayedCardsDto> playedCardsByPlayersOutOfGame;
   private Integer numberOfCardsInDrawDeck;
   private List<String> log;
 }

@@ -87,18 +87,24 @@ public class GameServiceImpl implements GameService {
 
     if (game != null) {
       statusDto.setActualPlayer(game.getActualPlayer());
-      statusDto.setNumberOfCardsInDrawDeck(game.getDrawDeck().size());
+      statusDto.setNumberOfCardsInDrawDeck((int) game.getDrawDeck().stream()
+          .filter(card -> !card.getIsPutAside())
+          .count());
       statusDto.setLog(game.getLog());
 
-      List<PlayerAndPlayedCardsDto> playedCardsByPlayers = new ArrayList<>();
-
-      game.getPlayersInGame().forEach(player -> {
+      List<PlayerAndPlayedCardsDto> playedCardsByPlayersInGame = new ArrayList<>();
+      game.getPlayersInGame().stream()
+          .filter(Player::getIsInPlay)
+          .forEach(player -> {
         PlayerAndPlayedCardsDto dto = new PlayerAndPlayedCardsDto();
         dto.setPlayerName(player.getName());
         dto.setPlayedCards(
             player.getPlayedCards().stream().map(Card::getCardName).collect(Collectors.toList()));
-        playedCardsByPlayers.add(dto);
+        playedCardsByPlayersInGame.add(dto);
       });
+      statusDto.setPlayedCardsByPlayersInGame(playedCardsByPlayersInGame);
+
+      List<PlayerAndPlayedCardsDto> playedCardsByPlayersOutOfGame = new ArrayList<>();
       game.getPlayersInGame().stream()
           .filter(player -> !player.getIsInPlay())
           .forEach(player -> {
@@ -106,9 +112,9 @@ public class GameServiceImpl implements GameService {
         dto.setPlayerName(player.getName());
         dto.setPlayedCards(
             player.getPlayedCards().stream().map(Card::getCardName).collect(Collectors.toList()));
-        playedCardsByPlayers.add(dto);
+        playedCardsByPlayersOutOfGame.add(dto);
       });
-      statusDto.setPlayedCardsByPlayers(playedCardsByPlayers);
+      statusDto.setPlayedCardsByPlayersOutOfGame(playedCardsByPlayersOutOfGame);
     }
 
     return statusDto;
