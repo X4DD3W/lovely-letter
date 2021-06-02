@@ -5,6 +5,7 @@ import hu.xaddew.lovelyletter.dto.CreateGameDto;
 import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
+import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerAndPlayedCardsDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.exception.GameException;
@@ -214,13 +215,14 @@ public class GameServiceImpl implements GameService {
         .contains(cardName);
   }
 
-  private void processAdditionalInfo(Player actualPlayer, Game game, PlayCardRequestDto requestDto) {
+  private PlayCardResponseDto processAdditionalInfo(Player actualPlayer, Game game, PlayCardRequestDto requestDto) {
     Card cardWantToPlayOut = cardService.findCardByCardName(requestDto.getCardName());
     String cardNameWantToPlayOut = cardWantToPlayOut.getCardName();
 
 
-
     // TODO valamit minden esetben vissza kell adni. Azt majd itt hozzuk létre.
+    PlayCardResponseDto responseDto = new PlayCardResponseDto();
+
     // TODO komoly validáció kell ide!
     //  (határértékek csekkolása, pl. ha mást nem választhatok Herceggel, csak magamat stb...)
 
@@ -271,7 +273,13 @@ public class GameServiceImpl implements GameService {
       // kit választott
     }
     if (cardNameWantToPlayOut.equals("Pap")) {
-      // kit választott
+      AdditionalInfoDto info = requestDto.getAdditionalInfo();
+      Player targetPlayer = game.getPlayersInGame().stream()
+          .filter(p -> p.getName().equals(info.getTargetPlayer()))
+          .findFirst().orElse(null);
+      if (targetPlayer != null) {
+        responseDto.setMessage(targetPlayer + " kezében egy " + targetPlayer.getCardsInHand().get(0).getCardName() + " van.");
+      }
     }
     if (cardNameWantToPlayOut.equals("Őr")) {
       AdditionalInfoDto info = requestDto.getAdditionalInfo();
@@ -289,6 +297,7 @@ public class GameServiceImpl implements GameService {
         }
       } else throw new GameException("Targeted player is not exists or out of the game.");
     }
+    return responseDto;
   }
 
   // TODO kideríteni, mikor és mit kell menteni? Player is pl?
