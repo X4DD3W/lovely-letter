@@ -453,9 +453,41 @@ public class GameServiceImpl implements GameService {
         .collect(Collectors.toList());
 
     if (activePlayers.size() == 1) {
-      game.addLog(activePlayers.get(0) + " wins the round!");
-      // TODO resetelni a játékot (visszaállítani mindent game/create utáni állapotba,
-      //    KIVÉVE játékosok szerelmesleveleit!
+      Player winner = activePlayers.get(0);
+      game.addLog(winner + " wins the round!");
+      winner.setNumberOfLetters(winner.getNumberOfLetters() + 1);
+      // TODO plusz szerelmes levelek (pl. Kém miatt) chekkolása
+      // TODO ha valaki elérte a létszámhoz előírt szerelmes levelet, az megnyerte a játékot!
+      resetPlayers(game.getPlayersInGame());
+      // TODO log szövege?
+      resetGame(game);
+      // TODO log szövege?
+      gameRepository.save(game);
     }
+  }
+
+
+  private void resetPlayers(List<Player> playersInGame) {
+    List<Integer> orderNumbers = new ArrayList<>();
+    for (int i = 1; i <= playersInGame.size(); i++) {
+      orderNumbers.add(i);
+    }
+
+    playersInGame.forEach(player -> {
+      player.getCardsInHand().clear();
+      player.getPlayedCards().clear();
+      player.setIsInPlay(true);
+
+      randomIndex = random.nextInt(orderNumbers.size());
+      player.setOrderNumber(orderNumbers.get(randomIndex));
+      orderNumbers.remove(randomIndex);
+    });
+  }
+
+  private void resetGame(Game game) {
+    game.getDrawDeck().clear();
+    initDeckAndPutAsideCards(game);
+    dealOneCardToAllPlayers(game);
+    determineStartPlayer(game);
   }
 }
