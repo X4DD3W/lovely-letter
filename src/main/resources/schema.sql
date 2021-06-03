@@ -39,7 +39,8 @@ CREATE TABLE players
     uuid    varchar(255) null,
     name    varchar(255) null,
     number_of_letters int null,
-    is_in_play bit(1)
+    is_in_play bit(1),
+    order_number int null
 );
 
 CREATE TABLE games

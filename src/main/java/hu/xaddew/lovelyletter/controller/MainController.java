@@ -29,6 +29,7 @@ public class MainController {
 
   // TODO ----------------------------------------------------------------------------
   // FIXME drawDeck, log, playedCards mind LinkedList, de Hibernate azt elm nem tudja!
+  //  "Kancellár" és "Kém" egyelőre nincs benne a játékban.
   // TODO ----------------------------------------------------------------------------
 
   @GetMapping("/cards")

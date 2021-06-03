@@ -48,6 +48,9 @@ public class Player {
   @JsonIgnore
   private Boolean isInPlay;
 
+  @JsonIgnore
+  private Integer orderNumber;
+
   public Player() {
     this.id = null;
     this.uuid = null;
@@ -56,5 +59,6 @@ public class Player {
     this.playedCards = new LinkedList<>();
     this.numberOfLetters = 0;
     this.isInPlay = true;
+    this.orderNumber = null;
   }
 }
