@@ -137,7 +137,6 @@ public class GameServiceImpl implements GameService {
     return statusDto;
   }
 
-  // TODO komoly validáció kell ide :)
   @Override
   public PlayCardResponseDto playCard(PlayCardRequestDto requestDto) {
     PlayCardResponseDto responseDto = new PlayCardResponseDto();
@@ -147,17 +146,26 @@ public class GameServiceImpl implements GameService {
        if (game != null) {
          if (actualPlayer.getName().equals(game.getActualPlayer())) {
            if (hasPlayerTheCardSheOrHeWantToPlay(actualPlayer, requestDto.getCardName())) {
-             if (requestDto.getAdditionalInfo() != null) {
-               Player targetPlayer = game.getPlayersInGame().stream()
-                   .filter(p -> p.getName().equals(requestDto.getAdditionalInfo().getTargetPlayer()))
-                   .findFirst().orElse(null);
-               if (targetPlayer != null) {
-                 if (!isTargetPlayersLastCardHandmaid(targetPlayer)) {
-                   responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
-                   setNextPlayerInOrder(actualPlayer, game);
-                   gameRepository.saveAndFlush(game);
-                 } else throw new GameException("Targeted player is protected by a Handmaid.");
-               } else throw new GameException("Targeted player is not exists.");
+
+             // TODO additionalInfo-t csak ezeknél kell csekkolni: Király|Herceg|Báró|Pap|Őr
+             //   akár ketté is lehetne bontani azt a methodot...
+             if (requestDto.getCardName().matches("Király|Herceg|Báró|Pap|Őr")) {
+               if (requestDto.getAdditionalInfo() != null) {
+                 Player targetPlayer = game.getPlayersInGame().stream()
+                     .filter(p -> p.getName().equals(requestDto.getAdditionalInfo().getTargetPlayer()))
+                     .findFirst().orElse(null);
+                 if (targetPlayer != null) {
+                   if (!isTargetPlayersLastCardHandmaid(targetPlayer)) {
+                     responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
+                     setNextPlayerInOrder(actualPlayer, game);
+                     gameRepository.saveAndFlush(game);
+                   } else throw new GameException("Targeted player is protected by a Handmaid.");
+                 } else throw new GameException("Targeted player is not exists.");
+               }
+             } else {
+               responseDto = processAdditionalInfo(actualPlayer, null, game, requestDto);
+               setNextPlayerInOrder(actualPlayer, game);
+               gameRepository.saveAndFlush(game);
              }
            } else throw new GameException("You doesn't have the card you want to play.");
          } else throw new GameException("It's not your turn, " + actualPlayer.getName() + ".");
@@ -189,6 +197,7 @@ public class GameServiceImpl implements GameService {
       if (nextActualPlayer != null) {
         game.setActualPlayer(nextActualPlayer.getName());
         game.addLog("Actual player is " + game.getActualPlayer());
+        drawACard(nextActualPlayer, game);
       }
     }
   }
@@ -294,6 +303,8 @@ public class GameServiceImpl implements GameService {
 
     // TODO komoly validáció kell ide!
     //  (határértékek csekkolása, pl. ha mást nem választhatok Herceggel, csak magamat stb...)
+    //  Herceg vagy Király mellé Grófnő --> Grófnőt kell eldobni AUTO
+    //
 
     if (cardNameWantToPlayOut.equals("Hercegnő")) {
       actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
@@ -369,7 +380,7 @@ public class GameServiceImpl implements GameService {
     if (cardNameWantToPlayOut.equals("Pap")) {
       actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
       actualPlayer.getPlayedCards().add(cardWantToPlayOut);
-      responseDto.setMessage(targetPlayer + " kezében egy " + targetPlayer.getCardsInHand().get(0).getCardName() + " van.");
+      responseDto.setMessage(targetPlayer.getName() + " kezében egy " + targetPlayer.getCardsInHand().get(0).getCardName() + " van.");
       responseDto.setLastLog(addLogWhenAPlayerUsePriest(actualPlayer, targetPlayer, game));
     }
     if (cardNameWantToPlayOut.equals("Őr")) {
@@ -443,7 +454,7 @@ public class GameServiceImpl implements GameService {
   }
 
   private String addLogWhenAPlayerUsePriest(Player actualPlayer, Player targetPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + " megnézte, mi van " + targetPlayer.getGame() + " kezében.");
+    return game.addLog(actualPlayer.getName() + " megnézte, mi van " + targetPlayer.getName() + " kezében.");
   }
 
   private String addLogWhenAPlayerUseGuardSuccessfully(PlayCardRequestDto requestDto, Player actualPlayer, Player targetPlayer, Game game) {

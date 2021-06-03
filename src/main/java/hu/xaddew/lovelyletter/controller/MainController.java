@@ -27,6 +27,8 @@ public class MainController {
   private final GameService gameService;
   private final PlayerService playerService;
 
+  // FIXME "Vivi" Őr után nem dobta el az Őrt? Vagy folyton húz egy lapot?!
+
   // TODO ----------------------------------------------------------------------------
   // FIXME drawDeck, log, playedCards mind LinkedList, de Hibernate azt elm nem tudja!
   //  "Kancellár" és "Kém" egyelőre nincs benne a játékban.
@@ -43,6 +45,7 @@ public class MainController {
     return gameService.createGame(createGameDto);
   }
 
+  // TODO az összes kártyát visszaadja, ami a Game-hez van rendelve :/
   @GetMapping("/god-mode")
   public List<Game> getAllGames() {
     return gameService.findAll();
