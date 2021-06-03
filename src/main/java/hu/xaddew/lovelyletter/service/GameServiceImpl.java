@@ -16,15 +16,21 @@ import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
 import hu.xaddew.lovelyletter.repository.PlayerRepository;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GameServiceImpl implements GameService {
@@ -161,25 +167,29 @@ public class GameServiceImpl implements GameService {
   }
 
   private void setNextPlayerInOrder(Player actualPlayer, Game game) {
-    checkPlayerNumber(game);
-
-    List<Player> activePlayers = game.getPlayersInGame().stream()
-        .filter(Player::getIsInPlay)
-        .collect(Collectors.toList());
-
-    Player nextActualPlayer;
-    if (actualPlayer.getOrderNumber() == game.getPlayersInGame().size()) {
-      nextActualPlayer = activePlayers.stream()
-          .min(Comparator.comparing(Player::getOrderNumber)).orElse(null);
+    if (isRoundOverBecauseThereIsOnlyOneActivePlayer(game)) {
+      log.info("Round is over, because only one player left in round.");
+    } else if (checkIfDrawDeckIsEmptyButThereAreAtLeastTwoActivePlayer(game)) {
+      log.info("Round is over, because draw deck is empty.");
     } else {
-      nextActualPlayer = activePlayers.stream()
-          .filter(player -> player.getOrderNumber() > actualPlayer.getOrderNumber())
-          .findFirst().orElse(null);
-    }
+      List<Player> activePlayers = game.getPlayersInGame().stream()
+          .filter(Player::getIsInPlay)
+          .collect(Collectors.toList());
 
-    if (nextActualPlayer != null) {
-      game.setActualPlayer(nextActualPlayer.getName());
-      game.addLog("Actual player is " + game.getActualPlayer());
+      Player nextActualPlayer;
+      if (actualPlayer.getOrderNumber() == game.getPlayersInGame().size()) {
+        nextActualPlayer = activePlayers.stream()
+            .min(Comparator.comparing(Player::getOrderNumber)).orElse(null);
+      } else {
+        nextActualPlayer = activePlayers.stream()
+            .filter(player -> player.getOrderNumber() > actualPlayer.getOrderNumber())
+            .findFirst().orElse(null);
+      }
+
+      if (nextActualPlayer != null) {
+        game.setActualPlayer(nextActualPlayer.getName());
+        game.addLog("Actual player is " + game.getActualPlayer());
+      }
     }
   }
 
@@ -447,7 +457,8 @@ public class GameServiceImpl implements GameService {
     return game.addLog(actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName() + " kezében " + namedCard + " van. Nem talált.");
   }
 
-  private void checkPlayerNumber(Game game) {
+  private boolean isRoundOverBecauseThereIsOnlyOneActivePlayer(Game game) {
+    boolean isRoundOver = false;
     List<Player> activePlayers = game.getPlayersInGame().stream()
         .filter(Player::getIsInPlay)
         .collect(Collectors.toList());
@@ -457,15 +468,56 @@ public class GameServiceImpl implements GameService {
       game.addLog(winner + " wins the round!");
       winner.setNumberOfLetters(winner.getNumberOfLetters() + 1);
       // TODO plusz szerelmes levelek (pl. Kém miatt) chekkolása
-      // TODO ha valaki elérte a létszámhoz előírt szerelmes levelet, az megnyerte a játékot!
-      resetPlayers(game.getPlayersInGame());
-      // TODO log szövege?
-      resetGame(game);
-      // TODO log szövege?
+      isRoundOver = true;
+      if (isSomeoneHasEnoughLetterToWinTheGame(game)) {
+        log.info("Game is over, because someone has enough letter to win the game.");
+      } else {
+        resetPlayers(game.getPlayersInGame());
+        resetGame(game);
+        game.addLog("Game is set up to the new round. Actual player is " + game.getActualPlayer());
+      }
       gameRepository.save(game);
     }
+    return isRoundOver;
   }
 
+  private boolean checkIfDrawDeckIsEmptyButThereAreAtLeastTwoActivePlayer(Game game) {
+    boolean isRoundOver = false;
+    if (game.getDrawDeck().isEmpty()) {
+      List<Player> activePlayers = game.getPlayersInGame().stream()
+          .filter(Player::getIsInPlay)
+          .collect(Collectors.toList());
+
+      Map<Player, Integer> playersAndCardValuesInHand = new HashMap<>();
+      for (Player player : activePlayers) {
+        playersAndCardValuesInHand.put(player, player.getCardsInHand().get(0).getCardValue());
+      }
+
+      List<Player> winners = playersAndCardValuesInHand.entrySet().stream()
+          .filter(entry -> entry.getValue() == Collections.max(playersAndCardValuesInHand.values()))
+          .map(Entry::getKey)
+          .collect(Collectors.toList());
+
+      game.addLog(winners.stream()
+          .map(Player::getName)
+          .collect(Collectors.joining(" and ")) + "." + " wins the round!");
+
+      winners.forEach(winner -> winner.setNumberOfLetters(winner.getNumberOfLetters() + 1));
+
+      // TODO plusz szerelmes levelek (pl. Kém miatt) chekkolása
+      isRoundOver = true;
+      if (isSomeoneHasEnoughLetterToWinTheGame(game)) {
+        log.info("Game is over, because someone has enough letter to win the game.");
+      } else {
+        resetPlayers(game.getPlayersInGame());
+        resetGame(game);
+        game.addLog("Game is set up to the new round. Actual player is " + game.getActualPlayer());
+      }
+      gameRepository.save(game);
+    }
+
+    return isRoundOver;
+  }
 
   private void resetPlayers(List<Player> playersInGame) {
     List<Integer> orderNumbers = new ArrayList<>();
@@ -489,5 +541,32 @@ public class GameServiceImpl implements GameService {
     initDeckAndPutAsideCards(game);
     dealOneCardToAllPlayers(game);
     determineStartPlayer(game);
+  }
+
+  private boolean isSomeoneHasEnoughLetterToWinTheGame(Game game) {
+    boolean isGameOver = false;
+    int requiredLetters;
+    if (game.getPlayersInGame().size() == 2) {
+      requiredLetters = 7;
+    } else if (game.getPlayersInGame().size() == 3) {
+      requiredLetters = 5;
+    } else {
+      requiredLetters = 4;
+    }
+
+    List<Player> winners = new ArrayList<>();
+    for (Player player : game.getPlayersInGame()) {
+      if (player.getNumberOfLetters() >= requiredLetters) {
+        winners.add(player);
+      }
+    }
+
+    if (!winners.isEmpty()) {
+      game.addLog("Game is over, congratulate " + winners.stream()
+          .map(Player::getName)
+          .collect(Collectors.joining(" and ")) + ".");
+      isGameOver = true;
+    }
+    return isGameOver;
   }
 }
