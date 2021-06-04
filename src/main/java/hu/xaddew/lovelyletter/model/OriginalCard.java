@@ -1,6 +1,7 @@
 package hu.xaddew.lovelyletter.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -33,4 +34,8 @@ public class OriginalCard {
 
   @JsonIgnore
   private Boolean isPutAside;
+
+  @JsonIgnore
+  @Column(name = "is_at_a_player")
+  private Boolean isAtAPlayer;
 }

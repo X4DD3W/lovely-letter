@@ -3,6 +3,7 @@ package hu.xaddew.lovelyletter.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -47,8 +48,11 @@ public class Card {
   private Integer quantity;
   private String description;
 
-  // TODO ebbű még baj lehet!
-  // TODO félrerakás sorrendje!!!
+  // TODO félrerakás sorrendje (putAsideOrder?)
   @JsonIgnore
   private Boolean isPutAside;
+
+  @JsonIgnore
+  @Column(name = "is_at_a_player")
+  private Boolean isAtAPlayer;
 }

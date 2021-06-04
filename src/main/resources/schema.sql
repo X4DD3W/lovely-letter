@@ -20,7 +20,8 @@ CREATE TABLE original_cards
     card_value  int null,
     quantity    int null,
     description varchar(255) null,
-    is_put_aside bit(1)
+    is_put_aside bit(1),
+    is_at_a_player bit(1)
 );
 
 CREATE TABLE cards
@@ -30,7 +31,8 @@ CREATE TABLE cards
     card_value  int null,
     quantity    int null,
     description varchar(255) null,
-    is_put_aside bit(1)
+    is_put_aside bit(1),
+    is_at_a_player bit(1)
 );
 
 CREATE TABLE players

@@ -4,10 +4,10 @@ import hu.xaddew.lovelyletter.dto.CardResponseDto;
 import hu.xaddew.lovelyletter.dto.CreateGameDto;
 import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
+import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerAllCardsDto;
-import hu.xaddew.lovelyletter.model.Game;
 import hu.xaddew.lovelyletter.service.GameService;
 import hu.xaddew.lovelyletter.service.OriginalCardService;
 import hu.xaddew.lovelyletter.service.PlayerService;
@@ -27,12 +27,7 @@ public class MainController {
   private final GameService gameService;
   private final PlayerService playerService;
 
-  // FIXME "Vivi" Őr után nem dobta el az Őrt? Vagy folyton húz egy lapot?!
-
-  // TODO ----------------------------------------------------------------------------
-  // FIXME drawDeck, log, playedCards mind LinkedList, de Hibernate azt elm nem tudja!
-  //  "Kancellár" és "Kém" egyelőre nincs benne a játékban.
-  // TODO ----------------------------------------------------------------------------
+  // FIXME drawDeck, log, playedCards mind LinkedList, de Hibernate azt elm nem tudja! "Kancellár" és "Kém" egyelőre nincs benne a játékban.
 
   @GetMapping("/cards")
   public List<CardResponseDto> getCards() {
@@ -45,10 +40,9 @@ public class MainController {
     return gameService.createGame(createGameDto);
   }
 
-  // TODO az összes kártyát visszaadja, ami a Game-hez van rendelve :/
   @GetMapping("/god-mode")
-  public List<Game> getAllGames() {
-    return gameService.findAll();
+  public List<GodModeDto> getAllGames() {
+    return gameService.getAllGamesWithSecretInfos();
   }
 
   @GetMapping("/get-status/{gameUuid}")
@@ -61,21 +55,11 @@ public class MainController {
     return playerService.getAllCardsByPlayerUuid(playerUuid);
   }
 
-  // Kártyakijátszáskor a játékosnak küldenie kell a saját uuid-ját, a kiválasztott lapja nevét
-  // és további információkat, amennyiben szükséges valamelyik kártya hatásának vonzataként
   @PostMapping("/play-card")
   public PlayCardResponseDto playCard(@RequestBody PlayCardRequestDto requestDto) {
     return gameService.playCard(requestDto);
   }
 
-  // TODO draw: húz egy lapot, ha én jövök (ez lehet automatikus)
-
   // TODO /rules
 
-  // TODO egyéb:
-  // •	2-4 játékos (Player) (a játékhoz kapott uuid-t minden kéréssel küldeni kell)
-  //•	21 előre definiált kártya minden játék során
-      //o	2 játékosnál 3, egyébként 1 lap „félrerakott” listába kerül
-  //•	A játékos szerelmesleveleket gyűjt.
-  //•	Van minden játékosnak kézben lévő lapja (lista) és maga elé eldobott lapjai (lista)
 }
