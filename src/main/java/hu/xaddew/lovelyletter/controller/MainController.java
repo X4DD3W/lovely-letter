@@ -10,7 +10,6 @@ import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.service.GameService;
 import hu.xaddew.lovelyletter.service.OriginalCardService;
-import hu.xaddew.lovelyletter.service.PlayerService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,13 +24,12 @@ public class MainController {
 
   private final OriginalCardService originalCardService;
   private final GameService gameService;
-  private final PlayerService playerService;
 
   // FIXME ismert hibák, hiányosságok:
+  //   - Báróhoz hiddenLog a game-be
   //   - drawDeck, log, playedCards mind LinkedList, de Hibernate azt elm nem tudja!
   //   - Kancellár és Kém egyelőre nincs benne a játékban.
   //   - /rules végpont
-  //   -
 
   @GetMapping("/cards")
   public List<CardResponseDto> getCards() {
@@ -55,7 +53,7 @@ public class MainController {
 
   @GetMapping("/my-known-infos/{playerUuid}")
   public PlayerKnownInfosDto getCardsByPlayerUuid(@PathVariable String playerUuid) {
-    return playerService.getAllCardsByPlayerUuid(playerUuid);
+    return gameService.getAllCardsByPlayerUuid(playerUuid);
   }
 
   @PostMapping("/play-card")

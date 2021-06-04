@@ -41,6 +41,9 @@ public class Game {
   @ElementCollection()
   private List<String> log;
 
+  @ElementCollection()
+  private List<String> hiddenLog;
+
   private Boolean isGameOver;
 
   public Game() {
@@ -50,6 +53,7 @@ public class Game {
     this.playersInGame = new ArrayList<>();
     this.actualPlayer = null;
     this.log = new LinkedList<>();
+    this.hiddenLog = new LinkedList<>();
     this.isGameOver = false;
   }
 
@@ -57,6 +61,11 @@ public class Game {
     String newLog = (this.log.size() + 1) + ". " + message;
     this.log.add(newLog);
     return newLog;
+  }
+
+  public void addHiddenLog(String message) {
+    String newLog = (this.hiddenLog.size() + 1) + ". " + message;
+    this.hiddenLog.add(newLog);
   }
 
   public Card getPutAsideCard() {

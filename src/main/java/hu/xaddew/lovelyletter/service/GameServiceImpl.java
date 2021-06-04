@@ -8,6 +8,7 @@ import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerAndPlayedCardsDto;
+import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Card;
@@ -118,6 +119,7 @@ public class GameServiceImpl implements GameService {
           .playersInGame(game.getPlayersInGame())
           .actualPlayer(game.getActualPlayer())
           .log(game.getLog())
+          .hiddenLog(game.getHiddenLog())
           .isGameOver(game.getIsGameOver())
           .build();
       godModeDtoList.add(godModeDto);
@@ -203,6 +205,20 @@ public class GameServiceImpl implements GameService {
   }
 
   @Override
+  public PlayerKnownInfosDto getAllCardsByPlayerUuid(String playerUuid) {
+    Player player = playerRepository.findByUuid(playerUuid);
+    PlayerKnownInfosDto knownInfosDto = new PlayerKnownInfosDto();
+    if (player != null) {
+      knownInfosDto.setNumberOfLetters(player.getNumberOfLetters());
+      knownInfosDto.setCardsInHand(player.getCardsInHand());
+      knownInfosDto.setPlayedCards(player.getPlayedCards());
+      knownInfosDto.setGameLogsAboutMe(findGameLogsByPlayerUuidAndName(playerUuid, player.getName()));
+      knownInfosDto.setGameHiddenLogsAboutMe(findGameHiddenLogsByPlayerUuidAndName(playerUuid, player.getName()));
+    }
+    return knownInfosDto;
+  }
+
+  @Override
   public Game findGameByPlayerUuid(String playerUuid) {
     return gameRepository.findGameByPlayerUuid(playerUuid);
   }
@@ -211,6 +227,12 @@ public class GameServiceImpl implements GameService {
   public List<String> findGameLogsByPlayerUuidAndName(String uuid, String name) {
     Game game = findGameByPlayerUuid(uuid);
     return game.getLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<String> findGameHiddenLogsByPlayerUuidAndName(String uuid, String name) {
+    Game game = findGameByPlayerUuid(uuid);
+    return game.getHiddenLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
   }
 
   private void setNextPlayerInOrder(Player actualPlayer, Game game) {
@@ -413,6 +435,9 @@ public class GameServiceImpl implements GameService {
       } else {
         responseDto.setLastLog(addLogWhenAPlayerUseBaronAndItsDraw(targetPlayer, actualPlayer, game));
       }
+      game.addHiddenLog(actualPlayer.getName() + actualPlayer.getCardsInHand().get(0)
+          + " és " + targetPlayer.getName() + targetPlayer.getCardsInHand().get(0) +
+          " összehasonlították a lapjaikat.");
     }
     if (cardNameWantToPlayOut.equals("Pap")) {
       actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
@@ -474,6 +499,7 @@ public class GameServiceImpl implements GameService {
   private String addLogWhenAPlayerUseBaronSuccessful(Player targetPlayer, Player actualPlayer, Game game) {
     return game.addLog(actualPlayer.getName() + " Báróval összehasonlította a kézben lévő lapját " + targetPlayer.getGame()
         + " kézben lévő lapjával. " + targetPlayer.getGame() + " kiesett a játékból, kézben lévő lapját ("
+        // TODO korábban kitöröltem, itt get(0) index out of bound #ittTartok?
         + targetPlayer.getCardsInHand().get(0) + ") pedig eldobta.");
   }
 

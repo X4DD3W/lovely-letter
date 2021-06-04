@@ -22,5 +22,6 @@ public class GodModeDto {
   private List<Player> playersInGame;
   private String actualPlayer;
   private List<String> log;
+  private List<String> hiddenLog;
   private Boolean isGameOver;
 }

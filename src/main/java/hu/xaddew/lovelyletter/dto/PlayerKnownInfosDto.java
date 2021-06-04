@@ -15,4 +15,5 @@ public class PlayerKnownInfosDto {
   private List<Card> cardsInHand;
   private List<Card> playedCards;
   private List<String> gameLogsAboutMe;
+  private List<String> gameHiddenLogsAboutMe;
 }
