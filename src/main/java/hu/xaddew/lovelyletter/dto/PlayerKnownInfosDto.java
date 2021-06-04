@@ -9,8 +9,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class PlayerAllCardsDto {
+public class PlayerKnownInfosDto {
 
+  private Integer numberOfLetters;
   private List<Card> cardsInHand;
   private List<Card> playedCards;
+  private List<String> gameLogsAboutMe;
 }

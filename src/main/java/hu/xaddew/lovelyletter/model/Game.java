@@ -3,6 +3,7 @@ package hu.xaddew.lovelyletter.model;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -40,6 +41,8 @@ public class Game {
   @ElementCollection()
   private List<String> log;
 
+  private Boolean isGameOver;
+
   public Game() {
     this.id = null;
     this.uuid = null;
@@ -47,11 +50,20 @@ public class Game {
     this.playersInGame = new ArrayList<>();
     this.actualPlayer = null;
     this.log = new LinkedList<>();
+    this.isGameOver = false;
   }
 
   public String addLog(String message) {
     String newLog = (this.log.size() + 1) + ". " + message;
     this.log.add(newLog);
     return newLog;
+  }
+
+  public Card getPutAsideCard() {
+    return this.drawDeck.stream().filter(Card::getIsPutAside).findFirst().orElse(null);
+  }
+
+  public List<Card> getPublicCards() {
+    return this.drawDeck.stream().filter(Card::getIs2PlayerPublic).collect(Collectors.toList());
   }
 }

@@ -22,4 +22,6 @@ public interface GameService {
   PlayCardResponseDto playCard(PlayCardRequestDto requestDto);
 
   Game findGameByPlayerUuid(String playerUuid);
+
+  List<String> findGameLogsByPlayerUuidAndName(String uuid, String name);
 }

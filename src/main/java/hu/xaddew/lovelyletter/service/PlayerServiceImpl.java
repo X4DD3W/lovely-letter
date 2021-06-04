@@ -1,6 +1,6 @@
 package hu.xaddew.lovelyletter.service;
 
-import hu.xaddew.lovelyletter.dto.PlayerAllCardsDto;
+import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PlayerServiceImpl implements PlayerService {
 
+  private final GameService gameService;
   private final PlayerRepository playerRepository;
 
   public Player findByUuid(String uuid) {
@@ -17,14 +18,17 @@ public class PlayerServiceImpl implements PlayerService {
   }
 
   @Override
-  public PlayerAllCardsDto getAllCardsByPlayerUuid(String playerUuid) {
+  public PlayerKnownInfosDto getAllCardsByPlayerUuid(String playerUuid) {
     Player player = playerRepository.findByUuid(playerUuid);
-    PlayerAllCardsDto allCardsDto = new PlayerAllCardsDto();
+    PlayerKnownInfosDto knownInfosDto = new PlayerKnownInfosDto();
     if (player != null) {
-      allCardsDto.setCardsInHand(player.getCardsInHand());
-      allCardsDto.setPlayedCards(player.getPlayedCards());
+      knownInfosDto.setNumberOfLetters(player.getNumberOfLetters());
+      knownInfosDto.setCardsInHand(player.getCardsInHand());
+      knownInfosDto.setPlayedCards(player.getPlayedCards());
+      knownInfosDto.setGameLogsAboutMe(
+          gameService.findGameLogsByPlayerUuidAndName(playerUuid, player.getName()));
     }
-    return allCardsDto;
+    return knownInfosDto;
   }
 
 }

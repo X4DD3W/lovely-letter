@@ -16,8 +16,11 @@ public class GodModeDto {
 
   private Long id;
   private String uuid;
+  private Card putAsideCard;
+  private List<Card> publicCards;
   private List<Card> drawDeck;
   private List<Player> playersInGame;
   private String actualPlayer;
   private List<String> log;
+  private Boolean isGameOver;
 }

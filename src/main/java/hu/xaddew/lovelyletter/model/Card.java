@@ -48,9 +48,12 @@ public class Card {
   private Integer quantity;
   private String description;
 
-  // TODO félrerakás sorrendje (putAsideOrder?)
   @JsonIgnore
   private Boolean isPutAside;
+
+  @JsonIgnore
+  @Column(name = "is_2p_public")
+  private Boolean is2PlayerPublic;
 
   @JsonIgnore
   @Column(name = "is_at_a_player")

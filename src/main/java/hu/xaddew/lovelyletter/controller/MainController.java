@@ -7,7 +7,7 @@ import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
-import hu.xaddew.lovelyletter.dto.PlayerAllCardsDto;
+import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.service.GameService;
 import hu.xaddew.lovelyletter.service.OriginalCardService;
 import hu.xaddew.lovelyletter.service.PlayerService;
@@ -27,14 +27,17 @@ public class MainController {
   private final GameService gameService;
   private final PlayerService playerService;
 
-  // FIXME drawDeck, log, playedCards mind LinkedList, de Hibernate azt elm nem tudja! "Kancellár" és "Kém" egyelőre nincs benne a játékban.
+  // FIXME ismert hibák, hiányosságok:
+  //   - drawDeck, log, playedCards mind LinkedList, de Hibernate azt elm nem tudja!
+  //   - Kancellár és Kém egyelőre nincs benne a játékban.
+  //   - /rules végpont
+  //   -
 
   @GetMapping("/cards")
   public List<CardResponseDto> getCards() {
     return originalCardService.getAllCards();
   }
 
-  // TODO normális validáció (pl. nem lehet két ugyanolyan nevű játékos egy játékon belül!)
   @PostMapping("/game/create")
   public CreatedGameResponseDto createGame(@RequestBody CreateGameDto createGameDto) {
     return gameService.createGame(createGameDto);
@@ -50,8 +53,8 @@ public class MainController {
     return gameService.getGameStatus(gameUuid);
   }
 
-  @GetMapping("/my-cards/{playerUuid}")
-  public PlayerAllCardsDto getCardsByPlayerUuid(@PathVariable String playerUuid) {
+  @GetMapping("/my-known-infos/{playerUuid}")
+  public PlayerKnownInfosDto getCardsByPlayerUuid(@PathVariable String playerUuid) {
     return playerService.getAllCardsByPlayerUuid(playerUuid);
   }
 
@@ -59,7 +62,5 @@ public class MainController {
   public PlayCardResponseDto playCard(@RequestBody PlayCardRequestDto requestDto) {
     return gameService.playCard(requestDto);
   }
-
-  // TODO /rules
 
 }

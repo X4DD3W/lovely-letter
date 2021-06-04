@@ -21,6 +21,7 @@ CREATE TABLE original_cards
     quantity    int null,
     description varchar(255) null,
     is_put_aside bit(1),
+    is_2p_public bit(1),
     is_at_a_player bit(1)
 );
 
@@ -32,6 +33,7 @@ CREATE TABLE cards
     quantity    int null,
     description varchar(255) null,
     is_put_aside bit(1),
+    is_2p_public bit(1),
     is_at_a_player bit(1)
 );
 

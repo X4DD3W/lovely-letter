@@ -36,6 +36,10 @@ public class OriginalCard {
   private Boolean isPutAside;
 
   @JsonIgnore
+  @Column(name = "is_2p_public")
+  private Boolean is2PlayerPublic;
+
+  @JsonIgnore
   @Column(name = "is_at_a_player")
   private Boolean isAtAPlayer;
 }
