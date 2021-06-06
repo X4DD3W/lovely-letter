@@ -48,6 +48,10 @@ public class GameServiceImpl implements GameService {
 
   @Override
   public CreatedGameResponseDto createGame(CreateGameDto createGameDto) {
+    if (isGivenNumberOfPlayersOutOfAllowedRange(createGameDto)) {
+      throw new GameException("A játékosok száma 2, 3 vagy 4 lehet.");
+    }
+
     if (isThereAreDuplicatedNamesInGivenPlayerNames(createGameDto)) {
       throw new GameException("Nem szerepelhet két játékos ugyanazzal a névvel!");
     }
@@ -67,7 +71,7 @@ public class GameServiceImpl implements GameService {
     });
 
     List<Integer> orderNumbers = new ArrayList<>();
-    for (int i = 1; i <= createGameDto.getNumberOfPlayers(); i++) {
+    for (int i = 1; i <= createGameDto.getNameOfPlayers().size(); i++) {
       orderNumbers.add(i);
     }
 
@@ -98,6 +102,11 @@ public class GameServiceImpl implements GameService {
     return responseDto;
   }
 
+  private boolean isGivenNumberOfPlayersOutOfAllowedRange(CreateGameDto createGameDto) {
+    int number = createGameDto.getNameOfPlayers().size();
+    return number != 2 && number != 3 && number != 4;
+  }
+
   private boolean isThereAreDuplicatedNamesInGivenPlayerNames(CreateGameDto createGameDto) {
     return createGameDto.getNameOfPlayers().stream().distinct().count() != createGameDto
         .getNameOfPlayers().size();
@@ -108,12 +117,12 @@ public class GameServiceImpl implements GameService {
     List<Game> games = findAll();
     List<GodModeDto> godModeDtoList = new ArrayList<>();
     games.forEach(game -> {
-      List<Card> onlyCardsInDrawDeck = getAvailableCards(game);
+      List<Card> cardsInDrawDeck = getAvailableCards(game);
 
       GodModeDto godModeDto = GodModeDto.builder()
           .id(game.getId())
           .uuid(game.getUuid())
-          .drawDeck(onlyCardsInDrawDeck)
+          .drawDeck(cardsInDrawDeck)
           .putAsideCard(game.getPutAsideCard())
           .publicCards(game.getPublicCards())
           .playersInGame(game.getPlayersInGame())
@@ -179,29 +188,64 @@ public class GameServiceImpl implements GameService {
        if (game != null) {
          if (actualPlayer.getName().equals(game.getActualPlayer())) {
            if (hasPlayerTheCardSheOrHeWantToPlay(actualPlayer, requestDto.getCardName())) {
+
              if (requestDto.getCardName().matches("Király|Herceg|Báró|Pap|Őr")) {
-               if (requestDto.getAdditionalInfo() != null) {
-                 Player targetPlayer = game.getPlayersInGame().stream()
-                     .filter(p -> p.getName().equals(requestDto.getAdditionalInfo().getTargetPlayer()))
-                     .findFirst().orElse(null);
-                 if (targetPlayer != null) {
-                   if (!isTargetPlayersLastCardHandmaid(targetPlayer)) {
-                     responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
-                     setNextPlayerInOrder(actualPlayer, game);
-                     gameRepository.saveAndFlush(game);
-                   } else throw new GameException("Az általad választott játékost Szobalány védi.");
-                 } else throw new GameException("Nem találtam az általad választott játékost.");
+               if (isEveryOtherActivePlayersLastCardHandMaid(actualPlayer, game)) {
+                 Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
+                 if (requestDto.getCardName().equals("Király|Báró|Pap|Őr")) {
+                   // TODO ittTartok, discard() refactor.p
+                   actualPlayer.discard(cardWantToPlayOut);
+                   responseDto.setLastLog(addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(actualPlayer, cardWantToPlayOut, game));
+                 }
+                 if (requestDto.getCardName().equals("Herceg")) {
+                   // TODO kiszervezni a kártyákat methodokba, és meghívni itt a Hercegét
+                   actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
+                   actualPlayer.getPlayedCards().add(cardWantToPlayOut);
+                   Card cardToDiscard = actualPlayer.getCardsInHand().get(0);
+                   actualPlayer.getCardsInHand().remove(cardToDiscard);
+                   actualPlayer.getPlayedCards().add(cardToDiscard);
+                   if (cardToDiscard.getCardName().equals("Hercegnő")) {
+                     actualPlayer.setIsInPlay(false);
+                     responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(actualPlayer, game));
+                   } else {
+                     drawCard(actualPlayer, game);
+                     responseDto.setLastLog(addLogWhenAPlayerUsePrinceToDiscardHerOrHisOwnCard(actualPlayer, cardToDiscard, game));
+                   }
+                 }
+
+               } else {
+                 if (requestDto.getAdditionalInfo() != null) {
+                   Player targetPlayer = game.getPlayersInGame().stream()
+                       .filter(p -> p.getName().equals(requestDto.getAdditionalInfo().getTargetPlayer()))
+                       .findFirst().orElse(null);
+                   if (targetPlayer != null) {
+                     if (!isTargetPlayersLastCardHandmaid(targetPlayer)) {
+                       responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
+                       setNextPlayerInOrder(actualPlayer, game);
+                       gameRepository.saveAndFlush(game);
+                     } else throw new GameException("Az általad választott játékost Szobalány védi.");
+                   } else throw new GameException("Nem találtam az általad választott játékost.");
+                 } else throw new GameException("Nem választottál másik játékost a kártya hatásához.");
                }
              } else {
                responseDto = processAdditionalInfo(actualPlayer, null, game, requestDto);
                setNextPlayerInOrder(actualPlayer, game);
                gameRepository.saveAndFlush(game);
              }
+
            } else throw new GameException("Nincsen nálad a kártya, amit ki szeretnél játszani.");
          } else throw new GameException("Nem a te köröd van, " + actualPlayer.getName() + ".");
        } else throw new GameException("Nem találtam játékot ezzel a játékossal.");
      } else throw new GameException("Nem találtam játékost ezzel az uuid-val: " + requestDto.getPlayerUuid());
     return responseDto;
+  }
+
+  private boolean isEveryOtherActivePlayersLastCardHandMaid(Player actualPlayer, Game game) {
+    List<Player> playersWhoLastPlayedAHandmaid = getActivePlayers(game).stream()
+        .filter(player -> !player.getLastPlayedCard().getCardName().equals("Szobalány"))
+        .collect(Collectors.toList());
+    playersWhoLastPlayedAHandmaid.remove(actualPlayer);
+    return playersWhoLastPlayedAHandmaid.isEmpty();
   }
 
   @Override
@@ -348,8 +392,7 @@ public class GameServiceImpl implements GameService {
     if (targetPlayer.getPlayedCards().isEmpty()) {
       return false;
     } else {
-      int lastIndex = targetPlayer.getPlayedCards().size() - 1;
-      return targetPlayer.getPlayedCards().get(lastIndex).getCardName().equals("Szobalány");
+      return targetPlayer.getLastPlayedCard().getCardName().equals("Szobalány");
     }
   }
 
@@ -363,6 +406,7 @@ public class GameServiceImpl implements GameService {
     // TODO komoly validáció kell ide!
     //  (határértékek csekkolása, pl. ha mást nem választhatok Herceggel, csak magamat stb...)
     //  Herceg vagy Király mellé Grófnő --> Grófnőt kell eldobni AUTO
+    //  ha valakit Szobalány véd, és Királyt/Őrt játszok kis stb...
 
     if (cardNameWantToPlayOut.equals("Hercegnő")) {
       actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
@@ -376,9 +420,6 @@ public class GameServiceImpl implements GameService {
       responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaid(actualPlayer, cardNameWantToPlayOut, game));
     }
     if (cardNameWantToPlayOut.equals("Király")) {
-      if (info.getTargetPlayer() == null || info.getTargetPlayer().isEmpty()) {
-        throw new GameException("Nem választottál másik játékost a kártya hatásához.");
-      }
       actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
       actualPlayer.getPlayedCards().add(cardWantToPlayOut);
       Card actualPlayersCardInHand = actualPlayer.getCardsInHand().get(0);
@@ -389,6 +430,7 @@ public class GameServiceImpl implements GameService {
       targetPlayer.getCardsInHand().add(actualPlayersCardInHand);
       responseDto.setLastLog(addLogWhenAPlayerUseKing(actualPlayer, targetPlayer, game));
     }
+    // TODO Herceg - ha üres a pakli, a félrerakott lapot kapja meg a játékos
     if (cardNameWantToPlayOut.equals("Herceg")) {
       actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
       actualPlayer.getPlayedCards().add(cardWantToPlayOut);
@@ -416,7 +458,7 @@ public class GameServiceImpl implements GameService {
         }
       }
     }
-    // TODO összehasonlításkor a játékosoknak meg kell tudniuk, mi van a másiknál!
+    // TODO összehasonlításkor a játékosoknak meg kell tudniuk, mi van a másiknál! WIP
     if (cardNameWantToPlayOut.equals("Báró")) {
       actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
       actualPlayer.getPlayedCards().add(cardWantToPlayOut);
@@ -425,13 +467,13 @@ public class GameServiceImpl implements GameService {
         targetPlayer.getCardsInHand().remove(cardToDiscard);
         targetPlayer.getPlayedCards().add(cardToDiscard);
         targetPlayer.setIsInPlay(false);
-        responseDto.setLastLog(addLogWhenAPlayerUseBaronSuccessful(targetPlayer, actualPlayer, game));
+        responseDto.setLastLog(addLogWhenAPlayerUseBaronSuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
       } else if (cardValueInHandOf(targetPlayer) > cardValueInHandOf(actualPlayer)) {
         Card cardToDiscard = actualPlayer.getCardsInHand().get(0);
         actualPlayer.getCardsInHand().remove(cardToDiscard);
         actualPlayer.getPlayedCards().add(cardToDiscard);
         actualPlayer.setIsInPlay(false);
-        responseDto.setLastLog(addLogWhenAPlayerUseBaronUnsuccessful(targetPlayer, actualPlayer, game));
+        responseDto.setLastLog(addLogWhenAPlayerUseBaronUnsuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
       } else {
         responseDto.setLastLog(addLogWhenAPlayerUseBaronAndItsDraw(targetPlayer, actualPlayer, game));
       }
@@ -446,9 +488,6 @@ public class GameServiceImpl implements GameService {
       responseDto.setLastLog(addLogWhenAPlayerUsePriest(actualPlayer, targetPlayer, game));
     }
     if (cardNameWantToPlayOut.equals("Őr")) {
-      if (info.getTargetPlayer() == null || info.getTargetPlayer().isEmpty()) {
-        throw new GameException("Nem választottál másik játékost a kártya hatásához.");
-      }
       actualPlayer.getCardsInHand().remove(cardWantToPlayOut);
       actualPlayer.getPlayedCards().add(cardWantToPlayOut);
         if (targetPlayer.getCardsInHand().get(0).getCardName().equals(info.getNamedCard())) {
@@ -466,6 +505,10 @@ public class GameServiceImpl implements GameService {
 
   private Integer cardValueInHandOf(Player targetPlayer) {
     return targetPlayer.getCardsInHand().get(0).getCardValue();
+  }
+
+  private String addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(Player actualPlayer, Card cardWantToPlayOut, Game game) {
+    return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardWantToPlayOut.getCardName() + "t, de mivel nem volt megcélozható játékos, nem történt semmi.");
   }
 
   private String addLogWhenAPlayerMustDiscardPrincess(Player actualPlayer, Game game) {
@@ -496,17 +539,18 @@ public class GameServiceImpl implements GameService {
     return game.addLog(actualPlayer.getName() + " Herceggel eldobatta " + targetPlayer.getName() + " lapját, ami egy " + cardToDiscard.getCardName() + " volt.");
   }
 
-  private String addLogWhenAPlayerUseBaronSuccessful(Player targetPlayer, Player actualPlayer, Game game) {
+  private String addLogWhenAPlayerUseBaronSuccessful(Player targetPlayer,
+      Card cardToDiscard, Player actualPlayer, Game game) {
     return game.addLog(actualPlayer.getName() + " Báróval összehasonlította a kézben lévő lapját " + targetPlayer.getGame()
         + " kézben lévő lapjával. " + targetPlayer.getGame() + " kiesett a játékból, kézben lévő lapját ("
-        // TODO korábban kitöröltem, itt get(0) index out of bound #ittTartok?
-        + targetPlayer.getCardsInHand().get(0) + ") pedig eldobta.");
+        + cardToDiscard.getCardName() + ") pedig eldobta.");
   }
 
-  private String addLogWhenAPlayerUseBaronUnsuccessful(Player targetPlayer, Player actualPlayer, Game game) {
+  private String addLogWhenAPlayerUseBaronUnsuccessful(Player targetPlayer,
+      Card cardToDiscard, Player actualPlayer, Game game) {
     return game.addLog(actualPlayer.getName() + " Báróval összehasonlította a kézben lévő lapját " + targetPlayer.getGame()
         + " kézben lévő lapjával. " + actualPlayer.getGame() + " kiesett a játékból, kézben lévő lapját ("
-        + actualPlayer.getCardsInHand().get(0) + ") pedig eldobta.");
+        + cardToDiscard.getCardName() + ") pedig eldobta.");
   }
 
   private String addLogWhenAPlayerUseBaronAndItsDraw(Player targetPlayer, Player actualPlayer, Game game) {
@@ -644,7 +688,7 @@ public class GameServiceImpl implements GameService {
     }
 
     if (!winners.isEmpty()) {
-      game.addLog("A játék véget ért! Gratuláunk, " + winners.stream()
+      game.addLog("A játék véget ért! Gratulálunk, " + winners.stream()
           .map(Player::getName)
           .collect(Collectors.joining(" és ")) + "!");
       isGameOver = true;

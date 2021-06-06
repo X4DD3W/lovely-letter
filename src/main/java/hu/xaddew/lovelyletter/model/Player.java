@@ -61,4 +61,13 @@ public class Player {
     this.isInPlay = true;
     this.orderNumber = null;
   }
+
+  public Card getLastPlayedCard() {
+    return this.playedCards.get(this.playedCards.size() - 1);
+  }
+
+  public void discard(Card card) {
+    this.cardsInHand.remove(card);
+    this.playedCards.add(card);
+  }
 }

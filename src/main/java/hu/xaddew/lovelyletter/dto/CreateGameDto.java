@@ -10,6 +10,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CreateGameDto {
 
-  private Integer numberOfPlayers;
   private List<String> nameOfPlayers;
 }

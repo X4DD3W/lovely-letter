@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS game_log;
+DROP TABLE IF EXISTS game_hidden_log;
 DROP TABLE IF EXISTS games_draw_deck;
 
 DROP TABLE IF EXISTS players_cards_in_hand;
