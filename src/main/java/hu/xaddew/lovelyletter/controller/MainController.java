@@ -26,18 +26,17 @@ public class MainController {
   private final GameService gameService;
 
   // FIXME ismert hibák, hiányosságok, bővíthetőségek:
-  //   - Báróhoz hiddenLog a game-be WIP
   //   - "playedCards" LinkedList kell, hogy legyen valahogy (Hibernate nem tudja)
   //   - Herceg: ha üres a pakli, a félrerakott lapot kapja meg a játékos
-  //   - kártyakijátszáskor komoly validáció az egyedi esetekre
   //   - /rules végpont
+  //   - kártyakijátszáskor komoly validáció az egyedi esetekre
   //   - játék létrehozáskor állítható be az extra tartalom (2019-es verzió és extra karakterek)
   //   - 2019-es verzió:
-  //      - új kártyák: 6 - Kancellár (2) és 0 - Kém (2)
+  //      - új kártyák: 6 - Kancellár (2),  0 - Kém (2) ÉS plusz egy Őr (összesen így 6)!
   //      - változik a győzelemhez szükséges levelek száma
   //      - 6 fővel is játszható a játék
   //      - Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen
-  //   - Extra karakterek (és logikájuk ( pl. Kili))
+  //   - Extra karakterek (és logikájuk (pl. Kili))
 
   @GetMapping("/cards")
   public List<CardResponseDto> getCards() {
@@ -59,6 +58,9 @@ public class MainController {
     return gameService.getGameStatus(gameUuid);
   }
 
+  // TODO
+  //   - nevem
+  //   - gameLogsAboutMe lehetne összes gameLog, KIEMELVE az ÉN nevemet
   @GetMapping("/my-known-infos/{playerUuid}")
   public PlayerKnownInfosDto getCardsByPlayerUuid(@PathVariable String playerUuid) {
     return gameService.getAllCardsByPlayerUuid(playerUuid);
