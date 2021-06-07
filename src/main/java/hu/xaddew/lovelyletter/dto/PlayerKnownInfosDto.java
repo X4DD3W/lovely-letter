@@ -11,9 +11,11 @@ import lombok.Setter;
 @NoArgsConstructor
 public class PlayerKnownInfosDto {
 
+  private String myName;
   private Integer numberOfLetters;
   private List<Card> cardsInHand;
   private List<Card> playedCards;
   private List<String> gameLogsAboutMe;
   private List<String> gameHiddenLogsAboutMe;
+  private List<String> allGameLogs;
 }

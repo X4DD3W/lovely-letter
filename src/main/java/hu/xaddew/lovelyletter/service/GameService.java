@@ -22,11 +22,11 @@ public interface GameService {
 
   PlayCardResponseDto playCard(PlayCardRequestDto requestDto);
 
-  PlayerKnownInfosDto getAllCardsByPlayerUuid(String playerUuid);
+  PlayerKnownInfosDto getAllInfosByPlayerUuid(String playerUuid);
 
   Game findGameByPlayerUuid(String playerUuid);
 
-  List<String> findGameLogsByPlayerUuidAndName(String uuid, String name);
+  List<String> findGameLogsContainsPlayerNameByPlayerUuidAndName(String uuid, String name);
 
-  List<String> findGameHiddenLogsByPlayerUuidAndName(String uuid, String name);
+  List<String> findGameHiddenLogsContainsPlayerNameByPlayerUuidAndName(String uuid, String name);
 }
