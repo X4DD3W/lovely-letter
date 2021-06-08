@@ -13,6 +13,7 @@ import hu.xaddew.lovelyletter.service.OriginalCardService;
 import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,17 +26,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MainController {
 
+  @Value("${lovely-letter-rules-url}")
+  private String rulesUrl;
+
   private final OriginalCardService originalCardService;
   private final GameService gameService;
-
-  // FIXME ismert hibák, hiányosságok, bővíthetőségek:
-  //   - refactor: kiszervezni a kártyalogikákat methodokba
-  //   - "playedCards" LinkedList kell, hogy legyen valahogy (Hibernate nem tudja)
 
   // TODO
   //   - játék létrehozáskor állítható be az extra tartalom (2019-es verzió és extra karakterek)
   //   - 2019-es verzió:
-  //      - új kártyák: 6 - Kancellár (2),  0 - Kém (2) ÉS plusz egy Őr (összesen így 6)!
+  //      - új kártyák: 6 - Kancellár (2),  0 - Kém (2) ÉS plusz egy Őr (összesen így 6 Őr)!
   //      - változik a győzelemhez szükséges levelek száma
   //      - 6 fővel is játszható a játék
   //      - Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen
@@ -73,9 +73,6 @@ public class MainController {
 
   @GetMapping("/rules")
   public ResponseEntity<Object> getRules() {
-    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(
-        "https://tarsasjatekok.com/files/common/2/2e/2e5/2e5de231fca31ad30447dccbc4b675b0/ll-rules-hungarian.pdf"))
-        .build();
+    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(rulesUrl)).build();
   }
-
 }

@@ -14,5 +14,4 @@ public class PlayerServiceImpl implements PlayerService {
   public Player findByUuid(String uuid) {
     return playerRepository.findByUuid(uuid);
   }
-
 }

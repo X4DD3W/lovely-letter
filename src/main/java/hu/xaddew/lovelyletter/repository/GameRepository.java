@@ -15,5 +15,4 @@ public interface GameRepository extends JpaRepository<Game, Long> {
       + "LEFT JOIN players p ON p.game_id = g.id "
       + "WHERE p.uuid = :playerUuid", nativeQuery = true)
   Game findGameByPlayerUuid(@Param("playerUuid") String playerUuid);
-
 }

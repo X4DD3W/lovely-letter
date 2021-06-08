@@ -63,6 +63,9 @@ public class GameServiceImpl implements GameService {
   private static final String BARON = "Báró";
   private static final String PRIEST = "Pap";
   private static final String GUARD = "Őr";
+  private static final String COMPARE_CARD_IN_HAND_WITH = " Báróval összehasonlította a kézben lévő lapját ";
+  private static final String KING_OR_PRINCE_OR_BARON_OR_PRIEST_OR_GUARD_REGEX = "Király|Herceg|Báró|Pap|Őr";
+  private static final String KING_OR_BARON_OR_PRIEST_OR_GUARD_REGEX = "Király|Báró|Pap|Őr";
 
   private int randomIndex;
 
@@ -215,28 +218,14 @@ public class GameServiceImpl implements GameService {
        if (game != null) {
          if (actualPlayer.getName().equals(game.getActualPlayer())) {
            if (hasPlayerTheCardSheOrHeWantToPlay(actualPlayer, requestDto.getCardName())) {
-             if (requestDto.getCardName().matches("Király|Herceg|Báró|Pap|Őr")) {
+             if (requestDto.getCardName().matches(KING_OR_PRINCE_OR_BARON_OR_PRIEST_OR_GUARD_REGEX)) {
                if (!isThereAnyTargetablePlayer(actualPlayer, game)) {
                  Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
-                 if (requestDto.getCardName().matches("Király|Báró|Pap|Őr")) {
+                 if (requestDto.getCardName().matches(KING_OR_BARON_OR_PRIEST_OR_GUARD_REGEX)) {
                    actualPlayer.discard(cardWantToPlayOut);
                    responseDto.setLastLog(addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(actualPlayer, cardWantToPlayOut, game));
-                 }
-                 if (requestDto.getCardName().equals(PRINCE)) {
-                   actualPlayer.discard(cardWantToPlayOut);
-                   Card cardToDiscard = actualPlayer.cardInHand();
-                   actualPlayer.discard(cardToDiscard);
-                   if (cardToDiscard.getCardName().equals(PRINCESS)) {
-                     actualPlayer.setIsInPlay(false);
-                     responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(actualPlayer, game));
-                   } else {
-                     if (getAvailableCards(game).isEmpty()) {
-                       drawThePutAsideCard(actualPlayer, game);
-                     } else {
-                       drawCard(actualPlayer, game);
-                     }
-                     responseDto.setLastLog(addLogWhenAPlayerUsePrinceToDiscardHerOrHisOwnCard(actualPlayer, cardToDiscard, game));
-                   }
+                 } else {
+                   discardPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
                  }
                } else {
                  if (requestDto.getAdditionalInfo() != null) {
@@ -257,12 +246,29 @@ public class GameServiceImpl implements GameService {
                setNextPlayerInOrder(actualPlayer, game);
                gameRepository.saveAndFlush(game);
              }
-
            } else throw new GameException(HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE);
          } else throw new GameException(NOT_YOUR_TURN + actualPlayer.getName() + ".");
        } else throw new GameException(NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE);
      } else throw new GameException(NO_PLAYER_FOUND_WITH_GIVEN_UUID + requestDto.getPlayerUuid());
     return responseDto;
+  }
+
+  private void discardPrince(Player player, Card cardWantToPlayOut,
+      PlayCardResponseDto responseDto, Game game) {
+    player.discard(cardWantToPlayOut);
+    Card cardToDiscard = player.cardInHand();
+    player.discard(cardToDiscard);
+    if (cardToDiscard.getCardName().equals(PRINCESS)) {
+      player.setIsInPlay(false);
+      responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(player, game));
+    } else {
+      if (getAvailableCards(game).isEmpty()) {
+        drawThePutAsideCard(player, game);
+      } else {
+        drawCard(player, game);
+      }
+      responseDto.setLastLog(addLogWhenAPlayerUsePrinceToDiscardHerOrHisOwnCard(player, cardToDiscard, game));
+    }
   }
 
   private boolean isThereAnyTargetablePlayer(Player actualPlayer, Game game) {
@@ -461,81 +467,72 @@ public class GameServiceImpl implements GameService {
     String cardNameWantToPlayOut = cardWantToPlayOut.getCardName();
     AdditionalInfoDto info = requestDto.getAdditionalInfo();
 
-    if (cardNameWantToPlayOut.equals(PRINCESS)) {
-      actualPlayer.discard(cardWantToPlayOut);
-      actualPlayer.setIsInPlay(false);
-      responseDto.setLastLog(addLogWhenAPlayerMustDiscardPrincess(actualPlayer, game));
-    }
-    if (cardNameWantToPlayOut.matches(COUNTESS + "|" + HANDMAID)) {
-      actualPlayer.discard(cardWantToPlayOut);
-      responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaid(actualPlayer, cardNameWantToPlayOut, game));
-    }
-    if (cardNameWantToPlayOut.equals(KING)) {
-      actualPlayer.discard(cardWantToPlayOut);
-      Card actualPlayersCardInHand = actualPlayer.cardInHand();
-      Card targetPlayersCardInHand = targetPlayer.cardInHand();
-      actualPlayer.getCardsInHand().remove(actualPlayersCardInHand);
-      actualPlayer.getCardsInHand().add(targetPlayersCardInHand);
-      targetPlayer.getCardsInHand().remove(targetPlayersCardInHand);
-      targetPlayer.getCardsInHand().add(actualPlayersCardInHand);
-      responseDto.setLastLog(addLogWhenAPlayerUseKing(actualPlayer, targetPlayer, game));
-    }
-    if (cardNameWantToPlayOut.equals(PRINCE)) {
-      actualPlayer.discard(cardWantToPlayOut);
-      if (targetPlayer.getName().equals(actualPlayer.getName())) {
-        Card cardToDiscard = actualPlayer.cardInHand();
-        actualPlayer.discard(cardToDiscard);
-        if (cardToDiscard.getCardName().equals(PRINCESS)) {
-          actualPlayer.setIsInPlay(false);
-          responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(actualPlayer, game));
-        } else {
-          if (getAvailableCards(game).isEmpty()) {
-            drawThePutAsideCard(actualPlayer, game);
-          } else {
-            drawCard(actualPlayer, game);
-          }
-          responseDto.setLastLog(addLogWhenAPlayerUsePrinceToDiscardHerOrHisOwnCard(actualPlayer, cardToDiscard, game));
-        }
-      } else {
-        Card cardToDiscard = targetPlayer.cardInHand();
-        targetPlayer.discard(cardToDiscard);
-        if (cardToDiscard.getCardName().equals(PRINCESS)) {
-          targetPlayer.setIsInPlay(false);
-          responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, game));
-        } else {
-          drawCard(targetPlayer, game);
-          responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, cardToDiscard, game));
-        }
-      }
-    }
-    if (cardNameWantToPlayOut.equals(BARON)) {
-      String cardNameOfActualPlayerToHiddenLog = cardNameInHandOf(actualPlayer);
-      String cardNameOfTargetPlayerToHiddenLog = cardNameInHandOf(targetPlayer);
-      actualPlayer.discard(cardWantToPlayOut);
-      if (cardValueInHandOf(targetPlayer) < cardValueInHandOf(actualPlayer)) {
-        Card cardToDiscard = targetPlayer.cardInHand();
-        targetPlayer.discard(cardToDiscard);
-        targetPlayer.setIsInPlay(false);
-        responseDto.setLastLog(addLogWhenAPlayerUseBaronSuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
-      } else if (cardValueInHandOf(targetPlayer) > cardValueInHandOf(actualPlayer)) {
-        Card cardToDiscard = actualPlayer.cardInHand();
-        actualPlayer.discard(cardToDiscard);
+    switch (cardNameWantToPlayOut) {
+      case PRINCESS:
+        actualPlayer.discard(cardWantToPlayOut);
         actualPlayer.setIsInPlay(false);
-        responseDto.setLastLog(addLogWhenAPlayerUseBaronUnsuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
-      } else {
-        responseDto.setLastLog(addLogWhenAPlayerUseBaronAndItsDraw(targetPlayer, actualPlayer, game));
-      }
-      game.addHiddenLog(actualPlayer.getName() + " (" + cardNameOfActualPlayerToHiddenLog + ")"
-          + " és " + targetPlayer.getName() + " (" + cardNameOfTargetPlayerToHiddenLog + ")" +
-          " összehasonlították a lapjaikat.");
-    }
-    if (cardNameWantToPlayOut.equals(PRIEST)) {
-      actualPlayer.discard(cardWantToPlayOut);
-      responseDto.setMessage(targetPlayer.getName() + " kezében egy " + cardNameInHandOf(targetPlayer) + " van.");
-      responseDto.setLastLog(addLogWhenAPlayerUsePriest(actualPlayer, targetPlayer, game));
-    }
-    if (cardNameWantToPlayOut.equals(GUARD)) {
-      actualPlayer.discard(cardWantToPlayOut);
+        responseDto.setLastLog(addLogWhenAPlayerMustDiscardPrincess(actualPlayer, game));
+        break;
+      case COUNTESS:
+      case HANDMAID:
+        actualPlayer.discard(cardWantToPlayOut);
+        responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaid(actualPlayer, cardNameWantToPlayOut, game));
+        break;
+      case KING:
+        actualPlayer.discard(cardWantToPlayOut);
+        Card actualPlayersCardInHand = actualPlayer.cardInHand();
+        Card targetPlayersCardInHand = targetPlayer.cardInHand();
+        actualPlayer.getCardsInHand().remove(actualPlayersCardInHand);
+        actualPlayer.getCardsInHand().add(targetPlayersCardInHand);
+        targetPlayer.getCardsInHand().remove(targetPlayersCardInHand);
+        targetPlayer.getCardsInHand().add(actualPlayersCardInHand);
+        responseDto.setLastLog(addLogWhenAPlayerUseKing(actualPlayer, targetPlayer, game));
+        break;
+      case PRINCE:
+        actualPlayer.discard(cardWantToPlayOut);
+        if (targetPlayer.getName().equals(actualPlayer.getName())) {
+          discardPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
+          break;
+        } else {
+          Card cardToDiscard = targetPlayer.cardInHand();
+          targetPlayer.discard(cardToDiscard);
+          if (cardToDiscard.getCardName().equals(PRINCESS)) {
+            targetPlayer.setIsInPlay(false);
+            responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, game));
+          } else {
+            drawCard(targetPlayer, game);
+            responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, cardToDiscard, game));
+          }
+        }
+        break;
+      case BARON:
+        String cardNameOfActualPlayerToHiddenLog = cardNameInHandOf(actualPlayer);
+        String cardNameOfTargetPlayerToHiddenLog = cardNameInHandOf(targetPlayer);
+        actualPlayer.discard(cardWantToPlayOut);
+        if (cardValueInHandOf(targetPlayer) < cardValueInHandOf(actualPlayer)) {
+          Card cardToDiscard = targetPlayer.cardInHand();
+          targetPlayer.discard(cardToDiscard);
+          targetPlayer.setIsInPlay(false);
+          responseDto.setLastLog(addLogWhenAPlayerUseBaronSuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
+        } else if (cardValueInHandOf(targetPlayer) > cardValueInHandOf(actualPlayer)) {
+          Card cardToDiscard = actualPlayer.cardInHand();
+          actualPlayer.discard(cardToDiscard);
+          actualPlayer.setIsInPlay(false);
+          responseDto.setLastLog(addLogWhenAPlayerUseBaronUnsuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
+        } else {
+          responseDto.setLastLog(addLogWhenAPlayerUseBaronAndItsDraw(targetPlayer, actualPlayer, game));
+        }
+        game.addHiddenLog(actualPlayer.getName() + " (" + cardNameOfActualPlayerToHiddenLog + ")"
+            + " és " + targetPlayer.getName() + " (" + cardNameOfTargetPlayerToHiddenLog + ")" +
+            " összehasonlították a lapjaikat.");
+        break;
+      case PRIEST:
+        actualPlayer.discard(cardWantToPlayOut);
+        responseDto.setMessage(targetPlayer.getName() + " kezében egy " + cardNameInHandOf(targetPlayer) + " van.");
+        responseDto.setLastLog(addLogWhenAPlayerUsePriest(actualPlayer, targetPlayer, game));
+        break;
+      case GUARD:
+        actualPlayer.discard(cardWantToPlayOut);
         if (cardNameInHandOf(targetPlayer).equals(info.getNamedCard())) {
           Card cardToDiscard = targetPlayer.cardInHand();
           targetPlayer.discard(cardToDiscard);
@@ -544,7 +541,11 @@ public class GameServiceImpl implements GameService {
         } else {
           responseDto.setLastLog(addLogWhenAPlayerUseGuardUnSuccessfully(requestDto, actualPlayer, targetPlayer, game));
         }
+        break;
+      default:
+        throw new GameException("Played card is none of the predefined ones.");
     }
+
     return responseDto;
   }
 
@@ -556,70 +557,99 @@ public class GameServiceImpl implements GameService {
     return player.cardInHand().getCardName();
   }
 
-  private String addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(Player actualPlayer, Card cardWantToPlayOut, Game game) {
-    return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardWantToPlayOut.getCardName() + "t, de mivel nem volt megcélozható játékos, nem történt semmi.");
+  private String addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(Player actualPlayer,
+      Card cardWantToPlayOut, Game game) {
+    return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardWantToPlayOut.getCardName()
+        + "t, de mivel nem volt megcélozható játékos, nem történt semmi.");
   }
 
   private String addLogWhenAPlayerMustDiscardPrincess(Player actualPlayer, Game game) {
     return game.addLog(actualPlayer.getName() + " eldobta a Hercegnőt, így kiesett a játékból.");
   }
 
-  private String addLogWhenAPlayerPlaysOutCountessOrHandmaid(Player actualPlayer, String cardNameWantToPlayOut, Game game) {
+  private String addLogWhenAPlayerPlaysOutCountessOrHandmaid(Player actualPlayer,
+      String cardNameWantToPlayOut, Game game) {
     return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardNameWantToPlayOut + "t.");
   }
 
   private String addLogWhenAPlayerUseKing(Player actualPlayer, Player targetPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + " Királyt használva kártyát cserélt " + targetPlayer.getName() + " játékossal.");
+    return game.addLog(
+        actualPlayer.getName() + " Királyt használva kártyát cserélt " + targetPlayer.getName()
+            + " játékossal.");
   }
 
-  private String addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(Player actualPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + " Herceggel eldobta a Hercegnőt, így kiesett a játékból.");
+  private String addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(Player actualPlayer,
+      Game game) {
+    return game
+        .addLog(actualPlayer.getName() + " Herceggel eldobta a Hercegnőt, így kiesett a játékból.");
   }
 
-  private String addLogWhenAPlayerUsePrinceToDiscardHerOrHisOwnCard(Player actualPlayer, Card cardToDiscard, Game game) {
-    return game.addLog(actualPlayer.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy " + cardToDiscard.getCardName() + " volt.");
+  private String addLogWhenAPlayerUsePrinceToDiscardHerOrHisOwnCard(Player actualPlayer,
+      Card cardToDiscard, Game game) {
+    return game.addLog(
+        actualPlayer.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
+            + cardToDiscard.getCardName() + " volt.");
   }
 
-  private String addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(Player actualPlayer, Player targetPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + " Herceggel eldobatta " + targetPlayer.getName() + " lapját, ami egy Hercegnő volt, így " + targetPlayer.getName() + " kiesett a játékból.");
+  private String addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(
+      Player actualPlayer, Player targetPlayer, Game game) {
+    return game.addLog(actualPlayer.getName() + " Herceggel eldobatta " + targetPlayer.getName()
+        + " lapját, ami egy Hercegnő volt, így " + targetPlayer.getName() + " kiesett a játékból.");
   }
 
-  private String addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(Player actualPlayer, Player targetPlayer, Card cardToDiscard, Game game) {
-    return game.addLog(actualPlayer.getName() + " Herceggel eldobatta " + targetPlayer.getName() + " lapját, ami egy " + cardToDiscard.getCardName() + " volt.");
+  private String addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(
+      Player actualPlayer, Player targetPlayer, Card cardToDiscard, Game game) {
+    return game.addLog(actualPlayer.getName() + " Herceggel eldobatta " + targetPlayer.getName()
+        + " lapját, ami egy " + cardToDiscard.getCardName() + " volt.");
   }
 
   private String addLogWhenAPlayerUseBaronSuccessful(Player targetPlayer,
       Card cardToDiscard, Player actualPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + " Báróval összehasonlította a kézben lévő lapját " + targetPlayer.getName()
-        + " kézben lévő lapjával. " + targetPlayer.getName() + " kiesett a játékból, kézben lévő lapját ("
-        + cardToDiscard.getCardName() + ") pedig eldobta.");
+    return game.addLog(
+        actualPlayer.getName() + COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
+            + " kézben lévő lapjával. " + targetPlayer.getName()
+            + " kiesett a játékból, kézben lévő lapját ("
+            + cardToDiscard.getCardName() + ") pedig eldobta.");
   }
 
   private String addLogWhenAPlayerUseBaronUnsuccessful(Player targetPlayer,
       Card cardToDiscard, Player actualPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + " Báróval összehasonlította a kézben lévő lapját " + targetPlayer.getName()
-        + " kézben lévő lapjával. " + actualPlayer.getName() + " kiesett a játékból, kézben lévő lapját ("
-        + cardToDiscard.getCardName() + ") pedig eldobta.");
+    return game.addLog(
+        actualPlayer.getName() + COMPARE_CARD_IN_HAND_WITH + targetPlayer
+            .getName()
+            + " kézben lévő lapjával. " + actualPlayer.getName()
+            + " kiesett a játékból, kézben lévő lapját ("
+            + cardToDiscard.getCardName() + ") pedig eldobta.");
   }
 
-  private String addLogWhenAPlayerUseBaronAndItsDraw(Player targetPlayer, Player actualPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + " Báróval összehasonlította a kézben lévő lapját " + targetPlayer.getName()
-        + " kézben lévő lapjával. A lapok értéke azonos volt, így senki sem esett ki a játékból.");
+  private String addLogWhenAPlayerUseBaronAndItsDraw(Player targetPlayer, Player actualPlayer,
+      Game game) {
+    return game.addLog(
+        actualPlayer.getName() + COMPARE_CARD_IN_HAND_WITH + targetPlayer
+            .getName()
+            + " kézben lévő lapjával. A lapok értéke azonos volt, így senki sem esett ki a játékból.");
   }
 
   private String addLogWhenAPlayerUsePriest(Player actualPlayer, Player targetPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + " megnézte, mi van " + targetPlayer.getName() + " kezében.");
+    return game.addLog(
+        actualPlayer.getName() + " megnézte, mi van " + targetPlayer.getName() + " kezében.");
   }
 
-  private String addLogWhenAPlayerUseGuardSuccessfully(PlayCardRequestDto requestDto, Player actualPlayer, Player targetPlayer, Game game) {
+  private String addLogWhenAPlayerUseGuardSuccessfully(PlayCardRequestDto requestDto,
+      Player actualPlayer, Player targetPlayer, Game game) {
     String namedCard = requestDto.getAdditionalInfo().getNamedCard();
-    return game.addLog(actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName() + " kezében " + namedCard + " van. Így igaz. "
-        + targetPlayer.getName() + " kiesett a játékból.");
+    return game.addLog(
+        actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
+            + " kezében " + namedCard + " van. Így igaz. "
+            + targetPlayer.getName() + " kiesett a játékból.");
   }
 
-  private String addLogWhenAPlayerUseGuardUnSuccessfully(PlayCardRequestDto requestDto, Player actualPlayer, Player targetPlayer, Game game) {
+  private String addLogWhenAPlayerUseGuardUnSuccessfully(PlayCardRequestDto requestDto,
+      Player actualPlayer, Player targetPlayer, Game game) {
     String namedCard = requestDto.getAdditionalInfo().getNamedCard();
-    return game.addLog(actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName() + " kezében " + namedCard + " van. Nem talált.");
+    return game.addLog(
+        actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
+            + " kezében " + namedCard + " van. Nem talált.");
   }
 
   private boolean isRoundOverBecauseThereIsOnlyOneActivePlayer(Game game) {
@@ -656,7 +686,7 @@ public class GameServiceImpl implements GameService {
       }
 
       List<Player> winners = playersAndCardValuesInHand.entrySet().stream()
-          .filter(entry -> entry.getValue() == Collections.max(playersAndCardValuesInHand.values()))
+          .filter(entry -> entry.getValue().equals(Collections.max(playersAndCardValuesInHand.values())))
           .map(Entry::getKey)
           .collect(Collectors.toList());
 

@@ -11,5 +11,4 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
 
   @Query(value = "SELECT * FROM players p WHERE p.uuid = :uuid", nativeQuery = true)
   Player findByUuid(@Param("uuid") String uuid);
-
 }
