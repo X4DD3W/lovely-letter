@@ -7,6 +7,7 @@ import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
+import hu.xaddew.lovelyletter.dto.PlayerAndNumberOfLettersDto;
 import hu.xaddew.lovelyletter.dto.PlayerAndPlayedCardsDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
@@ -41,9 +42,11 @@ public class GameServiceImpl implements GameService {
   private static final String PLAYER_NUMBER_ERROR_MESSAGE = "A játékosok száma 2, 3 vagy 4 lehet.";
   private static final String PLAYER_NAME_ERROR_MESSAGE = "Nem szerepelhet két játékos ugyanazzal a névvel!";
   private static final String PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE = "Az általad választott játékost Szobalány védi.";
+  private static final String PLAYER_SELF_TARGETING_ERROR_MESSAGE = "Király, Báró, Pap és Őr kijátszásakor nem választhatod saját magadat.";
   private static final String PLAYER_NOT_FOUND_ERROR_MESSAGE = "Nem találtam az általad választott játékost.";
   private static final String PLAYER_NOT_SELECTED_ERROR_MESSAGE = "Nem választottál másik játékost a kártya hatásához.";
   private static final String HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE = "Nincsen nálad a kártya, amit ki szeretnél játszani.";
+  private static final String COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE = "Ha a Grófnő a Királlyal vagy a Herceggel egyszerre van a kezedben, a Grófnőt kell eldobnod.";
   private static final String NOT_YOUR_TURN = "Nem a te köröd van, ";
   private static final String NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE = "Nem találtam játékot ezzel a játékossal.";
   private static final String NO_PLAYER_FOUND_WITH_GIVEN_UUID = "Nem találtam játékost ezzel az uuid-val: ";
@@ -55,7 +58,7 @@ public class GameServiceImpl implements GameService {
   private static final String WON_THE_ROUND = " nyerte a fordulót!";
   private static final String GAME_IS_OVER_STATUS_MESSAGE = "A játék véget ért, mivel valaki elég szerelmes levelet gyűjtött össze!";
   private static final String NEW_ROUND_BEGINS_STATUS_MESSAGE = "Új forduló kezdődik. ";
-  private static final String CONGRATULATE = "A játék véget ért! Gratulálunk, ";
+  private static final String CONGRATULATE = "Gratulálunk, ";
   private static final String PRINCESS = "Hercegnő";
   private static final String COUNTESS = "Grófnő";
   private static final String KING = "Király";
@@ -240,11 +243,13 @@ public class GameServiceImpl implements GameService {
                        .filter(p -> p.getName().equals(requestDto.getAdditionalInfo().getTargetPlayer()))
                        .findFirst().orElse(null);
                    if (targetPlayer != null) {
-                     if (!isTargetPlayersLastCardHandmaid(targetPlayer)) {
-                       responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
-                       setNextPlayerInOrder(actualPlayer, game);
-                       gameRepository.saveAndFlush(game);
-                     } else throw new GameException(PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE);
+                     if (!targetPlayer.getName().equals(actualPlayer.getName())) {
+                       if (!isTargetPlayersLastCardHandmaid(targetPlayer)) {
+                         responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
+                         setNextPlayerInOrder(actualPlayer, game);
+                         gameRepository.saveAndFlush(game);
+                       } else throw new GameException(PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE);
+                     } else throw new GameException(PLAYER_SELF_TARGETING_ERROR_MESSAGE);
                    } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE);
                  } else throw new GameException(PLAYER_NOT_SELECTED_ERROR_MESSAGE);
                }
@@ -304,8 +309,24 @@ public class GameServiceImpl implements GameService {
       knownInfosDto.setGameLogsAboutMe(findGameLogsContainsPlayerNameByPlayerUuidAndName(playerUuid, player.getName()));
       knownInfosDto.setGameHiddenLogsAboutMe(findGameHiddenLogsContainsPlayerNameByPlayerUuidAndName(playerUuid, player.getName()));
       knownInfosDto.setAllGameLogs(findGameByPlayerUuid(playerUuid).getLog());
+      knownInfosDto.setOtherPlayers(getOtherPlayersAndNumberOfLettersByPlayerUuid(playerUuid));
     } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE);
     return knownInfosDto;
+  }
+
+  private List<PlayerAndNumberOfLettersDto> getOtherPlayersAndNumberOfLettersByPlayerUuid(String uuid) {
+    List<PlayerAndNumberOfLettersDto> dtoList = new ArrayList<>();
+
+    findGameByPlayerUuid(uuid).getPlayersInGame().stream()
+        .filter(player -> !player.getUuid().equals(uuid))
+        .forEach(player -> {
+          PlayerAndNumberOfLettersDto dto = new PlayerAndNumberOfLettersDto();
+          dto.setPlayerName(player.getName());
+          dto.setNumberOfLetters(player.getNumberOfLetters());
+          dtoList.add(dto);
+        });
+
+    return dtoList;
   }
 
   @Override
@@ -353,23 +374,8 @@ public class GameServiceImpl implements GameService {
         game.setActualPlayer(nextActualPlayer.getName());
         game.addLog(ACTUAL_PLAYER_IS + game.getActualPlayer());
         drawCard(nextActualPlayer, game);
-        checkCountessWithKingOrPrince(nextActualPlayer);
       } else throw new GameException("A játékossorrend rosszul került beállításra.");
     }
-  }
-
-  private void checkCountessWithKingOrPrince(Player player) {
-    String nameOfCards = player.getCardsInHand().stream().map(Card::getCardName).collect(Collectors.joining(" "));
-    if (nameOfCards.contains(COUNTESS) && (nameOfCards.contains(PRINCE) || nameOfCards.contains(KING))) {
-      playerMustPlayOutCountess(player);
-    }
-  }
-
-  private void playerMustPlayOutCountess(Player player) {
-    PlayCardRequestDto requestDto = new PlayCardRequestDto();
-    requestDto.setPlayerUuid(player.getUuid());
-    requestDto.setCardName(COUNTESS);
-    playCard(requestDto);
   }
 
   private void initDeckAndPutAsideCards(Game game) {
@@ -481,6 +487,13 @@ public class GameServiceImpl implements GameService {
         responseDto.setLastLog(addLogWhenAPlayerMustDiscardPrincess(actualPlayer, game));
         break;
       case COUNTESS:
+        if (isCountessWithKingOrPrince(actualPlayer)) {
+          throw new GameException(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE);
+        } else {
+          actualPlayer.discard(cardWantToPlayOut);
+          responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaid(actualPlayer, cardNameWantToPlayOut, game));
+          break;
+        }
       case HANDMAID:
         actualPlayer.discard(cardWantToPlayOut);
         responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaid(actualPlayer, cardNameWantToPlayOut, game));
@@ -554,6 +567,12 @@ public class GameServiceImpl implements GameService {
     }
 
     return responseDto;
+  }
+
+  private boolean isCountessWithKingOrPrince(Player player) {
+    String nameOfCards = player.getCardsInHand().stream().map(Card::getCardName).collect(Collectors.joining(" "));
+    String otherCardName = nameOfCards.replace(COUNTESS, "");
+    return otherCardName.equals(PRINCE) || otherCardName.equals(KING);
   }
 
   private Integer cardValueInHandOf(Player player) {
@@ -675,7 +694,7 @@ public class GameServiceImpl implements GameService {
       game.addLog(winner.getName() + WON_THE_ROUND);
       winner.setNumberOfLetters(winner.getNumberOfLetters() + 1);
 
-      giveAdditionalLoveLettersIfOneSpyIsActive(game);
+      giveAdditionalLoveLettersIfOnlyOneSpyIsActive(game);
 
       isRoundOver = true;
       checkLoveLettersAtRoundEnd(game);
@@ -704,11 +723,11 @@ public class GameServiceImpl implements GameService {
       game.addLog(ROUND_IS_OVER_DRAW_DECK_IS_EMPTY);
       game.addLog(winners.stream()
           .map(Player::getName)
-          .collect(Collectors.joining(" és ")) + "." + WON_THE_ROUND);
+          .collect(Collectors.joining(" és ")) + WON_THE_ROUND);
 
       winners.forEach(winner -> winner.setNumberOfLetters(winner.getNumberOfLetters() + 1));
 
-      giveAdditionalLoveLettersIfOneSpyIsActive(game);
+      giveAdditionalLoveLettersIfOnlyOneSpyIsActive(game);
 
       isRoundOver = true;
       checkLoveLettersAtRoundEnd(game);
@@ -717,13 +736,12 @@ public class GameServiceImpl implements GameService {
     return isRoundOver;
   }
 
-  private void giveAdditionalLoveLettersIfOneSpyIsActive(Game game) {
+  private void giveAdditionalLoveLettersIfOnlyOneSpyIsActive(Game game) {
     // TODO logika
   }
 
   private void checkLoveLettersAtRoundEnd(Game game) {
     if (isSomeoneHasEnoughLoveLettersToWinTheGame(game)) {
-     game.addLog(GAME_IS_OVER_STATUS_MESSAGE);
      game.setIsGameOver(true);
     } else {
       resetPlayers(game.getPlayersInGame());
@@ -780,7 +798,7 @@ public class GameServiceImpl implements GameService {
     }
 
     if (!winners.isEmpty()) {
-      game.addLog(CONGRATULATE + winners.stream()
+      game.addLog(GAME_IS_OVER_STATUS_MESSAGE + " " + CONGRATULATE + winners.stream()
           .map(Player::getName)
           .collect(Collectors.joining(" és ")) + "!");
       isGameOver = true;

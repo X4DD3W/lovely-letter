@@ -18,4 +18,5 @@ public class PlayerKnownInfosDto {
   private List<String> gameLogsAboutMe;
   private List<String> gameHiddenLogsAboutMe;
   private List<String> allGameLogs;
+  private List<PlayerAndNumberOfLettersDto> otherPlayers;
 }

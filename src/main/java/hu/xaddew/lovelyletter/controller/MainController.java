@@ -39,7 +39,7 @@ public class MainController {
   //      - új kártyák (5db): 6 - Kancellár (2),  0 - Kém (2) ÉS plusz egy Őr (összesen így 6 Őr)!
   //      - változik a győzelemhez szükséges levelek száma
   //      - 6 fővel is játszható a játék
-  //      - Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen
+  //      - Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate nem tudja)
   //   - Extra karakterek (és logikájuk (pl. Kili))
 
   @GetMapping("/cards")
