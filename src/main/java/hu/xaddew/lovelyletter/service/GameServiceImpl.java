@@ -140,16 +140,6 @@ public class GameServiceImpl implements GameService {
     return responseDto;
   }
 
-  private boolean isGivenNumberOfPlayersOutOfAllowedRange(CreateGameDto createGameDto) {
-    int number = createGameDto.getNameOfPlayers().size();
-    return number != 2 && number != 3 && number != 4;
-  }
-
-  private boolean isThereAreDuplicatedNamesInGivenPlayerNames(CreateGameDto createGameDto) {
-    return createGameDto.getNameOfPlayers().stream().distinct().count() != createGameDto
-        .getNameOfPlayers().size();
-  }
-
   @Override
   public List<GodModeDto> getAllGamesWithSecretInfos() {
     List<Game> games = findAll();
@@ -207,16 +197,6 @@ public class GameServiceImpl implements GameService {
     return statusDto;
   }
 
-  private void addPlayedCardsToDtoList(Player player, List<PlayerAndPlayedCardsDto> dtoList) {
-    PlayerAndPlayedCardsDto dto = new PlayerAndPlayedCardsDto();
-    dto.setPlayerName(player.getName());
-    dto.setPlayedCards(
-        player.getPlayedCards().stream()
-            .map(card -> card.getCardValue() + " - " + card.getCardName() + " (" + card.getQuantity() + ")")
-            .collect(Collectors.toList()));
-    dtoList.add(dto);
-  }
-
   @Override
   public PlayCardResponseDto playCard(PlayCardRequestDto requestDto) {
     PlayCardResponseDto responseDto = new PlayCardResponseDto();
@@ -265,6 +245,60 @@ public class GameServiceImpl implements GameService {
     return responseDto;
   }
 
+  @Override
+  public PlayerKnownInfosDto getAllInfosByPlayerUuid(String playerUuid) {
+    Player player = playerRepository.findByUuid(playerUuid);
+    PlayerKnownInfosDto knownInfosDto = new PlayerKnownInfosDto();
+    if (player != null) {
+      knownInfosDto.setMyName(player.getName());
+      knownInfosDto.setNumberOfLetters(player.getNumberOfLetters());
+      knownInfosDto.setCardsInHand(player.getCardsInHand());
+      knownInfosDto.setPlayedCards(player.getPlayedCards());
+      knownInfosDto.setGameLogsAboutMe(findGameLogsContainsPlayerNameByPlayerUuidAndName(playerUuid, player.getName()));
+      knownInfosDto.setGameHiddenLogsAboutMe(findGameHiddenLogsContainsPlayerNameByPlayerUuidAndName(playerUuid, player.getName()));
+      knownInfosDto.setAllGameLogs(findGameByPlayerUuid(playerUuid).getLog());
+      knownInfosDto.setOtherPlayers(getOtherPlayersAndNumberOfLettersByPlayerUuid(playerUuid));
+    } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE);
+    return knownInfosDto;
+  }
+
+  @Override
+  public Game findGameByPlayerUuid(String playerUuid) {
+    return gameRepository.findGameByPlayerUuid(playerUuid);
+  }
+
+  @Override
+  public List<String> findGameLogsContainsPlayerNameByPlayerUuidAndName(String uuid, String name) {
+    Game game = findGameByPlayerUuid(uuid);
+    return game.getLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<String> findGameHiddenLogsContainsPlayerNameByPlayerUuidAndName(String uuid, String name) {
+    Game game = findGameByPlayerUuid(uuid);
+    return game.getHiddenLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
+  }
+
+  private boolean isGivenNumberOfPlayersOutOfAllowedRange(CreateGameDto createGameDto) {
+    int number = createGameDto.getNameOfPlayers().size();
+    return number != 2 && number != 3 && number != 4;
+  }
+
+  private boolean isThereAreDuplicatedNamesInGivenPlayerNames(CreateGameDto createGameDto) {
+    return createGameDto.getNameOfPlayers().stream().distinct().count() != createGameDto
+        .getNameOfPlayers().size();
+  }
+
+  private void addPlayedCardsToDtoList(Player player, List<PlayerAndPlayedCardsDto> dtoList) {
+    PlayerAndPlayedCardsDto dto = new PlayerAndPlayedCardsDto();
+    dto.setPlayerName(player.getName());
+    dto.setPlayedCards(
+        player.getPlayedCards().stream()
+            .map(card -> card.getCardValue() + " - " + card.getCardName() + " (" + card.getQuantity() + ")")
+            .collect(Collectors.toList()));
+    dtoList.add(dto);
+  }
+
   private void playOutPrince(Player player, Card cardWantToPlayOut,
       PlayCardResponseDto responseDto, Game game) {
     player.discard(cardWantToPlayOut);
@@ -297,23 +331,6 @@ public class GameServiceImpl implements GameService {
     return !targetablePlayers.isEmpty();
   }
 
-  @Override
-  public PlayerKnownInfosDto getAllInfosByPlayerUuid(String playerUuid) {
-    Player player = playerRepository.findByUuid(playerUuid);
-    PlayerKnownInfosDto knownInfosDto = new PlayerKnownInfosDto();
-    if (player != null) {
-      knownInfosDto.setMyName(player.getName());
-      knownInfosDto.setNumberOfLetters(player.getNumberOfLetters());
-      knownInfosDto.setCardsInHand(player.getCardsInHand());
-      knownInfosDto.setPlayedCards(player.getPlayedCards());
-      knownInfosDto.setGameLogsAboutMe(findGameLogsContainsPlayerNameByPlayerUuidAndName(playerUuid, player.getName()));
-      knownInfosDto.setGameHiddenLogsAboutMe(findGameHiddenLogsContainsPlayerNameByPlayerUuidAndName(playerUuid, player.getName()));
-      knownInfosDto.setAllGameLogs(findGameByPlayerUuid(playerUuid).getLog());
-      knownInfosDto.setOtherPlayers(getOtherPlayersAndNumberOfLettersByPlayerUuid(playerUuid));
-    } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE);
-    return knownInfosDto;
-  }
-
   private List<PlayerAndNumberOfLettersDto> getOtherPlayersAndNumberOfLettersByPlayerUuid(String uuid) {
     List<PlayerAndNumberOfLettersDto> dtoList = new ArrayList<>();
 
@@ -327,23 +344,6 @@ public class GameServiceImpl implements GameService {
         });
 
     return dtoList;
-  }
-
-  @Override
-  public Game findGameByPlayerUuid(String playerUuid) {
-    return gameRepository.findGameByPlayerUuid(playerUuid);
-  }
-
-  @Override
-  public List<String> findGameLogsContainsPlayerNameByPlayerUuidAndName(String uuid, String name) {
-    Game game = findGameByPlayerUuid(uuid);
-    return game.getLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
-  }
-
-  @Override
-  public List<String> findGameHiddenLogsContainsPlayerNameByPlayerUuidAndName(String uuid, String name) {
-    Game game = findGameByPlayerUuid(uuid);
-    return game.getHiddenLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
   }
 
   private void setNextPlayerInOrder(Player actualPlayer, Game game) {
