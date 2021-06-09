@@ -37,6 +37,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class GameServiceImpl implements GameService {
 
+  private static final String MISSING_REQUEST_DTO_ERROR_MESSAGE = "Játékosok nevének megadása szükséges.";
   private static final String PLAYER_NUMBER_ERROR_MESSAGE = "A játékosok száma 2, 3 vagy 4 lehet.";
   private static final String PLAYER_NAME_ERROR_MESSAGE = "Nem szerepelhet két játékos ugyanazzal a névvel!";
   private static final String PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE = "Az általad választott játékost Szobalány védi.";
@@ -78,6 +79,10 @@ public class GameServiceImpl implements GameService {
 
   @Override
   public CreatedGameResponseDto createGame(CreateGameDto createGameDto) {
+    if (createGameDto == null) {
+      throw new GameException(MISSING_REQUEST_DTO_ERROR_MESSAGE);
+    }
+
     if (isGivenNumberOfPlayersOutOfAllowedRange(createGameDto)) {
       throw new GameException(PLAYER_NUMBER_ERROR_MESSAGE);
     }
@@ -225,8 +230,10 @@ public class GameServiceImpl implements GameService {
                    actualPlayer.discard(cardWantToPlayOut);
                    responseDto.setLastLog(addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(actualPlayer, cardWantToPlayOut, game));
                  } else {
-                   discardPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
+                   playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
                  }
+                 setNextPlayerInOrder(actualPlayer, game);
+                 gameRepository.saveAndFlush(game);
                } else {
                  if (requestDto.getAdditionalInfo() != null) {
                    Player targetPlayer = game.getPlayersInGame().stream()
@@ -253,7 +260,7 @@ public class GameServiceImpl implements GameService {
     return responseDto;
   }
 
-  private void discardPrince(Player player, Card cardWantToPlayOut,
+  private void playOutPrince(Player player, Card cardWantToPlayOut,
       PlayCardResponseDto responseDto, Game game) {
     player.discard(cardWantToPlayOut);
     Card cardToDiscard = player.cardInHand();
@@ -297,7 +304,7 @@ public class GameServiceImpl implements GameService {
       knownInfosDto.setGameLogsAboutMe(findGameLogsContainsPlayerNameByPlayerUuidAndName(playerUuid, player.getName()));
       knownInfosDto.setGameHiddenLogsAboutMe(findGameHiddenLogsContainsPlayerNameByPlayerUuidAndName(playerUuid, player.getName()));
       knownInfosDto.setAllGameLogs(findGameByPlayerUuid(playerUuid).getLog());
-    }
+    } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE);
     return knownInfosDto;
   }
 
@@ -489,11 +496,11 @@ public class GameServiceImpl implements GameService {
         responseDto.setLastLog(addLogWhenAPlayerUseKing(actualPlayer, targetPlayer, game));
         break;
       case PRINCE:
-        actualPlayer.discard(cardWantToPlayOut);
         if (targetPlayer.getName().equals(actualPlayer.getName())) {
-          discardPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
+          playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
           break;
         } else {
+          actualPlayer.discard(cardWantToPlayOut);
           Card cardToDiscard = targetPlayer.cardInHand();
           targetPlayer.discard(cardToDiscard);
           if (cardToDiscard.getCardName().equals(PRINCESS)) {
@@ -559,7 +566,11 @@ public class GameServiceImpl implements GameService {
 
   private String addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(Player actualPlayer,
       Card cardWantToPlayOut, Game game) {
-    return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardWantToPlayOut.getCardName()
+    String cardName = cardWantToPlayOut.getCardName();
+    if (cardName.equals("Pap")) {
+      cardName = "Papo";
+    }
+    return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardName
         + "t, de mivel nem volt megcélozható játékos, nem történt semmi.");
   }
 
