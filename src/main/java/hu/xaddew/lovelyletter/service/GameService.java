@@ -26,7 +26,7 @@ public interface GameService {
 
   Game findGameByPlayerUuid(String playerUuid);
 
-  List<String> findGameLogsContainsPlayerNameByPlayerUuidAndName(String uuid, String name);
+  List<String> findGameLogsByPlayerUuidAndName(String uuid, String name);
 
-  List<String> findGameHiddenLogsContainsPlayerNameByPlayerUuidAndName(String uuid, String name);
+  List<String> findGameHiddenLogsByPlayerUuidAndName(String uuid, String name);
 }
