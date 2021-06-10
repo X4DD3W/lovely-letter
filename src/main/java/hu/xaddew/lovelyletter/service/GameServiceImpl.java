@@ -47,7 +47,8 @@ public class GameServiceImpl implements GameService {
   private static final String PLAYER_NOT_SELECTED_ERROR_MESSAGE = "Nem választottál másik játékost a kártya hatásához.";
   private static final String HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE = "Nincsen nálad a kártya, amit ki szeretnél játszani.";
   private static final String COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE = "Ha a Grófnő a Királlyal vagy a Herceggel egyszerre van a kezedben, a Grófnőt kell eldobnod.";
-  private static final String NOT_YOUR_TURN = "Nem a te köröd van, ";
+  private static final String NOT_YOUR_TURN_ERROR_MESSAGE = "Nem a te köröd van, ";
+  private static final String NO_GAME_FOUND_WITH_GIVEN_UUID_ERROR_MESSAGE = "Nem találtam játékot ezzel az uuid-val: ";
   private static final String NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE = "Nem találtam játékot ezzel a játékossal.";
   private static final String NO_PLAYER_FOUND_WITH_GIVEN_UUID = "Nem találtam játékost ezzel az uuid-val: ";
   private static final String ACTUAL_PLAYER_IS = "Soron lévő játékos: ";
@@ -192,7 +193,7 @@ public class GameServiceImpl implements GameService {
           .filter(player -> !player.getIsInPlay())
           .forEach(player -> addPlayedCardsToDtoList(player, playedCardsByPlayersOutOfGame));
       statusDto.setPlayedCardsByPlayersOutOfGame(playedCardsByPlayersOutOfGame);
-    }
+    } else throw new GameException(NO_GAME_FOUND_WITH_GIVEN_UUID_ERROR_MESSAGE + gameUuid);
 
     return statusDto;
   }
@@ -239,7 +240,7 @@ public class GameServiceImpl implements GameService {
               gameRepository.saveAndFlush(game);
             }
           } else throw new GameException(HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE);
-        } else throw new GameException(NOT_YOUR_TURN + actualPlayer.getName() + ".");
+        } else throw new GameException(NOT_YOUR_TURN_ERROR_MESSAGE + actualPlayer.getName() + ".");
       } else throw new GameException(NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE);
     } else throw new GameException(NO_PLAYER_FOUND_WITH_GIVEN_UUID + requestDto.getPlayerUuid());
     return responseDto;
