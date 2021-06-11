@@ -23,7 +23,7 @@ import org.modelmapper.ModelMapper;
 import util.LLTestUtils;
 
 @ExtendWith(MockitoExtension.class)
-class OriginalCardServiceImplTest {
+class OriginalCardServiceImplUnitTest {
 
   @Spy
   private ModelMapper modelMapper;

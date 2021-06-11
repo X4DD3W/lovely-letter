@@ -1,6 +1,5 @@
 package util;
 
-import hu.xaddew.lovelyletter.dto.CardResponseDto;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import java.util.ArrayList;
 import java.util.List;
