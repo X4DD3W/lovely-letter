@@ -1,6 +1,8 @@
 package hu.xaddew.lovelyletter.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.Player;
@@ -39,4 +41,23 @@ class CardServiceImplUnitTest {
     assertEquals(card, result);
   }
 
+  @Test
+  void getCardAtPlayerByCardNameIfActualPlayerIsNull() {
+    assertThrows(NullPointerException.class,
+        () -> cardService.getCardAtPlayerByCardName(null, LLTestUtils.CARD_NAME));
+  }
+
+  @Test
+  void getCardAtPlayerByCardNameIfCardNameIsNull() {
+    Card result = cardService.getCardAtPlayerByCardName(player, null);
+
+    assertNull(result);
+  }
+
+  @Test
+  void getCardAtPlayerByCardNameIfCardNameIsNotFound() {
+    Card result = cardService.getCardAtPlayerByCardName(player, "SomethingNotExists");
+
+    assertNull(result);
+  }
 }
