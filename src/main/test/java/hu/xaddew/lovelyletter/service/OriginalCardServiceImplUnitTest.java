@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static util.LLTestUtils.initOriginalCards;
+import static util.LLTestUtils.numberOfPreGeneratedCards;
 
 import hu.xaddew.lovelyletter.dto.CardResponseDto;
 import hu.xaddew.lovelyletter.model.OriginalCard;
@@ -20,7 +22,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import util.LLTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class OriginalCardServiceImplUnitTest {
@@ -34,13 +35,12 @@ class OriginalCardServiceImplUnitTest {
   @InjectMocks
   private OriginalCardServiceImpl originalCardService;
 
-  private static final int numberOfPreGeneratedCards = 10;
   private static List<OriginalCard> cards;
   private static List<CardResponseDto> resultCards;
 
   @BeforeAll
   static void init() {
-    cards = LLTestUtils.initOriginalCards(numberOfPreGeneratedCards);
+    cards = initOriginalCards(numberOfPreGeneratedCards);
   }
 
   @Test

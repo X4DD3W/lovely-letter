@@ -1,6 +1,7 @@
 package util;
 
 import hu.xaddew.lovelyletter.model.Card;
+import hu.xaddew.lovelyletter.model.Game;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class LLTestUtils {
 
+  public static final int numberOfPreGeneratedCards = 10;
+  public static final int numberOfPreGeneratedGames = 5;
   public static final String CARD_NAME = "cardName";
   public static final Integer CARD_VALUE = 100;
   public static final Integer CARD_QUANTITY = 1;
@@ -37,5 +40,13 @@ public class LLTestUtils {
         .quantity(CARD_QUANTITY)
         .description(CARD_DESCRIPTION)
         .build();
+  }
+
+  public static List<Game> initGames(int numberOfGames) {
+    List<Game> games = new ArrayList<>();
+
+    // TODO ittTartok
+
+    return null;
   }
 }
