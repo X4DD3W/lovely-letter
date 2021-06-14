@@ -6,8 +6,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static util.LLTestUtils.CARD_DESCRIPTION;
+import static util.LLTestUtils.CARD_NAME;
 import static util.LLTestUtils.initOriginalCards;
-import static util.LLTestUtils.numberOfPreGeneratedCards;
+import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS;
 
 import hu.xaddew.lovelyletter.dto.CardResponseDto;
 import hu.xaddew.lovelyletter.model.OriginalCard;
@@ -40,24 +42,25 @@ class OriginalCardServiceImplUnitTest {
 
   @BeforeAll
   static void init() {
-    cards = initOriginalCards(numberOfPreGeneratedCards);
+    cards = initOriginalCards(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS);
   }
 
   @Test
   void testInitialization() {
-    assertEquals(numberOfPreGeneratedCards, cards.size());
+    assertEquals(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS, cards.size());
   }
 
   @Test
-  void getAllCardsWith10Cards() {
+  void getAllCards() {
     when(originalCardRepository.findAll()).thenReturn(cards);
 
     resultCards = originalCardService.getAllCards();
 
     verify(originalCardRepository).findAll();
-    verify(modelMapper, times(numberOfPreGeneratedCards)).map(any(), eq(CardResponseDto.class));
+    verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS)).map(any(), eq(CardResponseDto.class));
 
-    assertEquals(numberOfPreGeneratedCards, resultCards.size());
+    assertEquals(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS, resultCards.size());
+    assertGeneratedValuesAreEquals(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS, resultCards);
   }
 
   @Test
@@ -70,5 +73,16 @@ class OriginalCardServiceImplUnitTest {
     verify(modelMapper, times(0)).map(any(), eq(CardResponseDto.class));
 
     assertEquals(0, resultCards.size());
+  }
+
+
+  private void assertGeneratedValuesAreEquals(int numberOfCards, List<CardResponseDto> resultCards) {
+    for (int i = 1; i <= numberOfCards ; i++) {
+      CardResponseDto actualCard = resultCards.get(i - 1);
+      assertEquals(CARD_NAME + i, actualCard.getCardName());
+      assertEquals(numberOfCards - i, actualCard.getCardValue());
+      assertEquals(i, actualCard.getQuantity());
+      assertEquals(CARD_DESCRIPTION + i, actualCard.getDescription());
+    }
   }
 }

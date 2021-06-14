@@ -143,26 +143,20 @@ public class GameServiceImpl implements GameService {
 
   @Override
   public List<GodModeDto> getAllGamesWithSecretInfos() {
-    List<Game> games = findAll();
+    List<Game> games = gameRepository.findAll();
     List<GodModeDto> godModeDtoList = new ArrayList<>();
-    games.forEach(game -> {
-      List<Card> cardsInDrawDeck = getAvailableCards(game);
-
-      GodModeDto godModeDto = GodModeDto.builder()
-          .id(game.getId())
-          .uuid(game.getUuid())
-          .drawDeck(cardsInDrawDeck)
-          .putAsideCard(game.getPutAsideCard())
-          .publicCards(game.getPublicCards())
-          .playersInGame(game.getPlayersInGame())
-          .actualPlayer(game.getActualPlayer())
-          .log(game.getLog())
-          .hiddenLog(game.getHiddenLog())
-          .isGameOver(game.getIsGameOver())
-          .build();
-      godModeDtoList.add(godModeDto);
-    });
-
+    games.forEach(game -> godModeDtoList.add(GodModeDto.builder()
+        .id(game.getId())
+        .uuid(game.getUuid())
+        .drawDeck(getAvailableCards(game))
+        .putAsideCard(game.getPutAsideCard())
+        .publicCards(game.getPublicCards())
+        .playersInGame(game.getPlayersInGame())
+        .actualPlayer(game.getActualPlayer())
+        .log(game.getLog())
+        .hiddenLog(game.getHiddenLog())
+        .isGameOver(game.getIsGameOver())
+        .build()));
     return godModeDtoList;
   }
 

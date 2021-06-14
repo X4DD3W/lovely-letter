@@ -33,10 +33,7 @@ public class OriginalCardServiceImpl implements OriginalCardService {
         .collect(Collectors.toList());
 
     List<CardResponseDto> dtos = new ArrayList<>();
-    distinctCards.forEach(card -> {
-      CardResponseDto dto = modelMapper.map(card, CardResponseDto.class);
-      dtos.add(dto);
-    });
+    distinctCards.forEach(card -> dtos.add(modelMapper.map(card, CardResponseDto.class)));
 
     return dtos;
   }

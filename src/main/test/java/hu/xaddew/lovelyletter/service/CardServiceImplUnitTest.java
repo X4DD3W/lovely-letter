@@ -3,7 +3,7 @@ package hu.xaddew.lovelyletter.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static util.LLTestUtils.CARD_NAME;
-import static util.LLTestUtils.initCard;
+import static util.LLTestUtils.initCards;
 
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.Player;
@@ -25,13 +25,18 @@ class CardServiceImplUnitTest {
   @BeforeAll
   static void init() {
     player = new Player();
-    card = initCard();
+    card = initCards(1).get(0);
     player.getCardsInHand().add(card);
   }
 
   @Test
+  void testInitialization() {
+    assertEquals(1L, card.getId());
+  }
+
+  @Test
   void getCardAtPlayerByCardName() {
-    Card result = cardService.getCardAtPlayerByCardName(player, CARD_NAME);
+    Card result = cardService.getCardAtPlayerByCardName(player, CARD_NAME + 1);
     assertEquals(card, result);
   }
 
