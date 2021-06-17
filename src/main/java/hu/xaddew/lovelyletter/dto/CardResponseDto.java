@@ -10,6 +10,7 @@ import lombok.Setter;
 public class CardResponseDto {
 
   private String cardName;
+  private String cardNameEnglish;
   private Integer cardValue;
   private Integer quantity;
   private String description;
