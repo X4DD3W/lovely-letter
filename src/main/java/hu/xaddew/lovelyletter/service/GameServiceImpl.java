@@ -386,6 +386,7 @@ public class GameServiceImpl implements GameService {
     for (OriginalCard originalCard : originalCards) {
       Card card = Card.builder()
           .cardName(originalCard.getCardName())
+          .cardNameEnglish(originalCard.getCardNameEnglish())
           .cardValue(originalCard.getCardValue())
           .quantity(originalCard.getQuantity())
           .description(originalCard.getDescription())

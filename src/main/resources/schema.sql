@@ -18,6 +18,7 @@ CREATE TABLE original_cards
 (
     id          bigint auto_increment primary key,
     card_name   varchar(255) null,
+    card_name_english   varchar(255) null,
     card_value  int null,
     quantity    int null,
     description varchar(255) null,
@@ -30,6 +31,7 @@ CREATE TABLE cards
 (
     id          bigint auto_increment primary key,
     card_name   varchar(255) null,
+    card_name_english   varchar(255) null,
     card_value  int null,
     quantity    int null,
     description varchar(255) null,

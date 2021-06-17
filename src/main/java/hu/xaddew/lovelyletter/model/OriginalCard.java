@@ -28,6 +28,7 @@ public class OriginalCard {
   private Long id;
 
   private String cardName;
+  private String cardNameEnglish;
   private Integer cardValue;
   private Integer quantity;
   private String description;
