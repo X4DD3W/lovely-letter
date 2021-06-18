@@ -8,6 +8,7 @@ import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
+import hu.xaddew.lovelyletter.service.CustomCardService;
 import hu.xaddew.lovelyletter.service.GameService;
 import hu.xaddew.lovelyletter.service.NewReleaseCardService;
 import hu.xaddew.lovelyletter.service.OriginalCardService;
@@ -34,6 +35,7 @@ public class MainController {
 
   private final OriginalCardService originalCardService;
   private final NewReleaseCardService newReleaseCardService;
+  private final CustomCardService customCardService;
   private final GameService gameService;
 
   // TODO
@@ -56,8 +58,10 @@ public class MainController {
     return newReleaseCardService.getAllCards();
   }
 
-  // TODO /cards/customCards
-
+  @GetMapping("/cards/custom")
+  public List<CardResponseDto> getCustomCards() {
+    return customCardService.getAllCards();
+  }
 
   @PostMapping("/game/create")
   public CreatedGameResponseDto createGame(@RequestBody CreateGameDto createGameDto) {

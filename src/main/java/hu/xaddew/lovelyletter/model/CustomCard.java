@@ -19,8 +19,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "new_release_cards")
-public class NewReleaseCard {
+@Table(name = "custom_cards")
+public class CustomCard {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

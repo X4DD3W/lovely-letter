@@ -54,6 +54,19 @@ CREATE TABLE new_release_cards
     is_at_a_player bit(1)
 );
 
+CREATE TABLE custom_cards
+(
+    id          bigint auto_increment primary key,
+    card_name   varchar(255) null,
+    card_name_english   varchar(255) null,
+    card_value  int null,
+    quantity    int null,
+    description varchar(255) null,
+    is_put_aside bit(1),
+    is_2p_public bit(1),
+    is_at_a_player bit(1)
+);
+
 CREATE TABLE players
 (
     id      bigint auto_increment primary key,
