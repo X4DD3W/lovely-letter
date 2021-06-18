@@ -9,6 +9,7 @@ import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.service.GameService;
+import hu.xaddew.lovelyletter.service.NewReleaseCardService;
 import hu.xaddew.lovelyletter.service.OriginalCardService;
 import java.net.URI;
 import java.util.List;
@@ -32,6 +33,7 @@ public class MainController {
   private String rulesUrl;
 
   private final OriginalCardService originalCardService;
+  private final NewReleaseCardService newReleaseCardService;
   private final GameService gameService;
 
   // TODO
@@ -44,10 +46,18 @@ public class MainController {
   //      - Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate nem tudja)
   //   - Extra karakterek (és logikájuk (pl. Kili))
 
-  @GetMapping("/cards")
-  public List<CardResponseDto> getCards() {
+  @GetMapping("/cards/original")
+  public List<CardResponseDto> getOriginalCards() {
     return originalCardService.getAllCards();
   }
+
+  @GetMapping("/cards/2019")
+  public List<CardResponseDto> getNewReleaseCards() {
+    return newReleaseCardService.getAllCards();
+  }
+
+  // TODO /cards/customCards
+
 
   @PostMapping("/game/create")
   public CreatedGameResponseDto createGame(@RequestBody CreateGameDto createGameDto) {
