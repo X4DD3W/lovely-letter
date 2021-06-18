@@ -35,10 +35,10 @@ public class MainController {
   private final GameService gameService;
 
   // TODO
-  //   - játék létrehozáskor állítható be az extra tartalom (2019-es verzió és extra karakterek)
-  //   - 2019-es verzió:
+  //   - játék létrehozáskor állítható be az extra tartalom (klasszikus helyett 2019-es verzió és opcionális extra karakterek)
+  //   - 2019-es verzió (teljesen új adatbázisból? OriginalCards helyett 2019VersionCards?)
   //      - új értékek (Hercegnő, Grófnő és Király eggyel magasabb Kancellár miatt)
-  //      - új kártyák (5db): 6 - Kancellár (2),  0 - Kém (2) ÉS plusz egy Őr (összesen így 6 Őr)!
+  //      - új kártyák (5db): 6 - Kancellár (2),  0 - Kém (2) ÉS plusz egy Őr (összesen így 6 Őr)
   //      - változik a győzelemhez szükséges levelek száma
   //      - 6 fővel is játszható a játék
   //      - Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate nem tudja)
