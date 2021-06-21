@@ -78,4 +78,8 @@ public class Player {
   public Card cardInHand() {
     return this.getCardsInHand().get(0);
   }
+
+  public void addOneLetter() {
+    this.numberOfLetters++;
+  }
 }

@@ -760,9 +760,9 @@ public class GameServiceImpl implements GameService {
       Player winner = activePlayers.get(0);
       game.addLog(ROUND_IS_OVER_ONLY_ONE_PLAYER_LEFT);
       game.addLog(winner.getName() + WON_THE_ROUND);
-      winner.setNumberOfLetters(winner.getNumberOfLetters() + 1);
+      winner.addOneLetter();
 
-      giveAdditionalLoveLettersIfOnlyOneSpyIsActive(game);
+      giveAdditionalLoveLetterIfOnlyOneSpyIsActive(game);
 
       isRoundOver = true;
       checkLoveLettersAtRoundEnd(game);
@@ -793,9 +793,9 @@ public class GameServiceImpl implements GameService {
           .map(Player::getName)
           .collect(Collectors.joining(" és ")) + WON_THE_ROUND);
 
-      winners.forEach(winner -> winner.setNumberOfLetters(winner.getNumberOfLetters() + 1));
+      winners.forEach(Player::addOneLetter);
 
-      giveAdditionalLoveLettersIfOnlyOneSpyIsActive(game);
+      giveAdditionalLoveLetterIfOnlyOneSpyIsActive(game);
 
       isRoundOver = true;
       checkLoveLettersAtRoundEnd(game);
@@ -804,8 +804,17 @@ public class GameServiceImpl implements GameService {
     return isRoundOver;
   }
 
-  private void giveAdditionalLoveLettersIfOnlyOneSpyIsActive(Game game) {
-    // TODO logika
+  private void giveAdditionalLoveLetterIfOnlyOneSpyIsActive(Game game) {
+    List<Player> playersWhoPlayedSpyAndAreInPlay = new ArrayList<>();
+
+    game.getPlayersInGame().stream()
+        .filter(Player::getIsInPlay)
+        .filter(player -> player.getPlayedCards().stream().map(Card::getCardName).toString().contains(SPY))
+        .forEach(playersWhoPlayedSpyAndAreInPlay::add);
+
+    if (playersWhoPlayedSpyAndAreInPlay.size() == 1) {
+      playersWhoPlayedSpyAndAreInPlay.get(0).addOneLetter();
+    }
   }
 
   private void checkLoveLettersAtRoundEnd(Game game) {
