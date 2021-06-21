@@ -13,7 +13,9 @@ import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Card;
+import hu.xaddew.lovelyletter.model.CustomCard;
 import hu.xaddew.lovelyletter.model.Game;
+import hu.xaddew.lovelyletter.model.NewReleaseCard;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
@@ -31,6 +33,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -39,8 +42,10 @@ import org.springframework.stereotype.Service;
 public class GameServiceImpl implements GameService {
 
   private static final String MISSING_REQUEST_DTO_ERROR_MESSAGE = "Játékosok nevének megadása szükséges.";
-  private static final String PLAYER_NUMBER_ERROR_MESSAGE = "A játékosok száma 2, 3 vagy 4 lehet.";
+  private static final String PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE = "A játékosok száma 2, 3 vagy 4 lehet.";
+  private static final String PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE = "A 2019-es kiadású játékban a játékosok száma 2-6 között lehet.";
   private static final String PLAYER_NAME_ERROR_MESSAGE = "Nem szerepelhet két játékos ugyanazzal a névvel!";
+  private static final String INVALID_CUSTOM_CARD_ERROR_MESSAGE = "Egy vagy több ismeretlen kártya szerepel a megadott egyedi kártyák listájában.";
   private static final String PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE = "Az általad választott játékost Szobalány védi.";
   private static final String PLAYER_SELF_TARGETING_ERROR_MESSAGE = "Király, Báró, Pap és Őr kijátszásakor nem választhatod saját magadat.";
   private static final String PLAYER_NOT_FOUND_ERROR_MESSAGE = "Nem találtam az általad választott játékost.";
@@ -63,11 +68,13 @@ public class GameServiceImpl implements GameService {
   private static final String PRINCESS = "Hercegnő";
   private static final String COUNTESS = "Grófnő";
   private static final String KING = "Király";
+  private static final String CHANCELLOR = "Kancellár";
   private static final String PRINCE = "Herceg";
   private static final String HANDMAID = "Szobalány";
   private static final String BARON = "Báró";
   private static final String PRIEST = "Pap";
   private static final String GUARD = "Őr";
+  private static final String SPY = "Kém";
   private static final String COMPARE_CARD_IN_HAND_WITH = " Báróval összehasonlította a kézben lévő lapját ";
   private static final String KING_OR_PRINCE_OR_BARON_OR_PRIEST_OR_GUARD_REGEX = "Király|Herceg|Báró|Pap|Őr";
   private static final String KING_OR_BARON_OR_PRIEST_OR_GUARD_REGEX = "Király|Báró|Pap|Őr";
@@ -75,8 +82,11 @@ public class GameServiceImpl implements GameService {
   private int randomIndex;
 
   private final Random random;
+  private final ModelMapper modelMapper;
   private final CardService cardService;
   private final OriginalCardService originalCardService;
+  private final NewReleaseCardService newReleaseCardService;
+  private final CustomCardService customCardService;
   private final PlayerService playerService;
   private final GameRepository gameRepository;
   private final PlayerRepository playerRepository;
@@ -87,12 +97,23 @@ public class GameServiceImpl implements GameService {
       throw new GameException(MISSING_REQUEST_DTO_ERROR_MESSAGE);
     }
 
-    if (isGivenNumberOfPlayersOutOfAllowedRange(createGameDto)) {
-      throw new GameException(PLAYER_NUMBER_ERROR_MESSAGE);
+    boolean isGame2019Version = createGameDto.getIs2019Version();
+    if (isGame2019Version) {
+      if (isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(createGameDto)) {
+        throw new GameException(PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE);
+      }
+    } else {
+      if (isGivenNumberOfPlayersOutOfAllowedRangeInClassicVersion(createGameDto)) {
+        throw new GameException(PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE);
+      }
     }
 
     if (isThereAreDuplicatedNamesInGivenPlayerNames(createGameDto)) {
       throw new GameException(PLAYER_NAME_ERROR_MESSAGE);
+    }
+
+    if (isThereInvalidCustomCardInTheList(createGameDto.getCustomCardNames())) {
+      throw new GameException(INVALID_CUSTOM_CARD_ERROR_MESSAGE);
     }
 
     CreatedGameResponseDto responseDto = new CreatedGameResponseDto();
@@ -102,7 +123,7 @@ public class GameServiceImpl implements GameService {
 
     game.setUuid(UUID.randomUUID().toString());
 
-    createGameDto.getNameOfPlayers().forEach(name -> {
+    createGameDto.getPlayerNames().forEach(name -> {
       PlayerUuidDto dto = new PlayerUuidDto();
       dto.setName(name);
       dto.setUuid(UUID.randomUUID().toString());
@@ -110,7 +131,7 @@ public class GameServiceImpl implements GameService {
     });
 
     List<Integer> orderNumbers = new ArrayList<>();
-    for (int i = 1; i <= createGameDto.getNameOfPlayers().size(); i++) {
+    for (int i = 1; i <= createGameDto.getPlayerNames().size(); i++) {
       orderNumbers.add(i);
     }
 
@@ -128,7 +149,7 @@ public class GameServiceImpl implements GameService {
     });
 
     game.setPlayersInGame(players);
-    initDeckAndPutAsideCards(game);
+    initDeckAndPutAsideCards(game, isGame2019Version, createGameDto.getCustomCardNames());
     dealOneCardToAllPlayers(game);
     determineStartPlayer(game);
 
@@ -156,6 +177,7 @@ public class GameServiceImpl implements GameService {
         .log(game.getLog())
         .hiddenLog(game.getHiddenLog())
         .isGameOver(game.getIsGameOver())
+        .is2019Version(game.getIs2019Version())
         .build()));
     return godModeDtoList;
   }
@@ -274,14 +296,24 @@ public class GameServiceImpl implements GameService {
     return game.getHiddenLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
   }
 
-  private boolean isGivenNumberOfPlayersOutOfAllowedRange(CreateGameDto createGameDto) {
-    int number = createGameDto.getNameOfPlayers().size();
+  private boolean isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(CreateGameDto createGameDto) {
+    int number = createGameDto.getPlayerNames().size();
+    return number != 2 && number != 3 && number != 4 && number != 5 && number != 6;
+  }
+
+  private boolean isGivenNumberOfPlayersOutOfAllowedRangeInClassicVersion(CreateGameDto createGameDto) {
+    int number = createGameDto.getPlayerNames().size();
     return number != 2 && number != 3 && number != 4;
   }
 
   private boolean isThereAreDuplicatedNamesInGivenPlayerNames(CreateGameDto createGameDto) {
-    return createGameDto.getNameOfPlayers().stream().distinct()
-        .count() != createGameDto.getNameOfPlayers().size();
+    return createGameDto.getPlayerNames().stream().distinct()
+        .count() != createGameDto.getPlayerNames().size();
+  }
+
+  private boolean isThereInvalidCustomCardInTheList(List<String> customCardNames) {
+    List<CustomCard> customCards = customCardService.findAll();
+    return !customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()).containsAll(customCardNames);
   }
 
   private void addPlayedCardsToDtoList(Player player, List<PlayerAndPlayedCardsDto> dtoList) {
@@ -373,16 +405,47 @@ public class GameServiceImpl implements GameService {
     }
   }
 
-  private void initDeckAndPutAsideCards(Game game) {
-    List<OriginalCard> originalCards = originalCardService.findAll();
-    List<Card> newDeckFromOriginal = createNewDrawDeck(originalCards);
-    game.setDrawDeck(newDeckFromOriginal);
-    newDeckFromOriginal.forEach(card -> card.setGame(game));
+  private void initDeckAndPutAsideCards(Game game, boolean is2019Version, List<String> customCardNames) {
+    List<Card> drawDeck;
+    List<CustomCard> customCardsInPlay = customCardService.findAll().stream()
+        .filter(customCard -> customCardNames.contains(customCard.getCardName()))
+        .collect(Collectors.toList());
+
+    if (is2019Version) {
+      List<NewReleaseCard> cardsFromDatabase = newReleaseCardService.findAll();
+      customCardsInPlay.forEach(card -> cardsFromDatabase.add(modelMapper.map(card, NewReleaseCard.class)));
+      drawDeck = createNewDrawDeckFromNewReleaseCards(cardsFromDatabase);
+    } else {
+      List<OriginalCard> cardsFromDatabase = originalCardService.findAll();
+      customCardsInPlay.forEach(card -> cardsFromDatabase.add(modelMapper.map(card, OriginalCard.class)));
+      drawDeck = createNewDrawDeckFromOriginalCards(cardsFromDatabase);
+    }
+    game.setDrawDeck(drawDeck);
+    drawDeck.forEach(card -> card.setGame(game));
     putAsideCards(game);
   }
 
-  private List<Card> createNewDrawDeck(List<OriginalCard> originalCards) {
-    List<Card> newDeck = new LinkedList<>();
+  private List<Card> createNewDrawDeckFromNewReleaseCards(List<NewReleaseCard> newReleaseCards) {
+    List<Card> deck = new LinkedList<>();
+    for (NewReleaseCard newReleaseCard : newReleaseCards) {
+      Card card = Card.builder()
+          .cardName(newReleaseCard.getCardName())
+          .cardNameEnglish(newReleaseCard.getCardNameEnglish())
+          .cardValue(newReleaseCard.getCardValue())
+          .quantity(newReleaseCard.getQuantity())
+          .description(newReleaseCard.getDescription())
+          .isPutAside(newReleaseCard.getIsPutAside())
+          .is2PlayerPublic(newReleaseCard.getIs2PlayerPublic())
+          .isAtAPlayer(newReleaseCard.getIsAtAPlayer())
+          .build();
+      cardService.save(card);
+      deck.add(card);
+    }
+    return deck;
+  }
+
+  private List<Card> createNewDrawDeckFromOriginalCards(List<OriginalCard> originalCards) {
+    List<Card> deck = new LinkedList<>();
     for (OriginalCard originalCard : originalCards) {
       Card card = Card.builder()
           .cardName(originalCard.getCardName())
@@ -395,9 +458,9 @@ public class GameServiceImpl implements GameService {
           .isAtAPlayer(originalCard.getIsAtAPlayer())
           .build();
       cardService.save(card);
-      newDeck.add(card);
+      deck.add(card);
     }
-    return newDeck;
+    return deck;
   }
 
   private void putAsideCards(Game game) {
@@ -488,13 +551,10 @@ public class GameServiceImpl implements GameService {
           throw new GameException(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE);
         } else {
           actualPlayer.discard(cardWantToPlayOut);
-          responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaid(actualPlayer, cardNameWantToPlayOut, game));
+          responseDto.setLastLog(
+              addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game));
           break;
         }
-      case HANDMAID:
-        actualPlayer.discard(cardWantToPlayOut);
-        responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaid(actualPlayer, cardNameWantToPlayOut, game));
-        break;
       case KING:
         actualPlayer.discard(cardWantToPlayOut);
         Card actualPlayersCardInHand = actualPlayer.cardInHand();
@@ -504,6 +564,9 @@ public class GameServiceImpl implements GameService {
         targetPlayer.getCardsInHand().remove(targetPlayersCardInHand);
         targetPlayer.getCardsInHand().add(actualPlayersCardInHand);
         responseDto.setLastLog(addLogWhenAPlayerUseKing(actualPlayer, targetPlayer, game));
+        break;
+      case CHANCELLOR:
+        // TODO Kancellár logika
         break;
       case PRINCE:
         if (targetPlayer.getName().equals(actualPlayer.getName())) {
@@ -521,6 +584,11 @@ public class GameServiceImpl implements GameService {
             responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, cardToDiscard, game));
           }
         }
+        break;
+      case HANDMAID:
+      case SPY:
+        actualPlayer.discard(cardWantToPlayOut);
+        responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game));
         break;
       case BARON:
         String cardNameOfActualPlayerToHiddenLog = cardNameInHandOf(actualPlayer);
@@ -594,11 +662,6 @@ public class GameServiceImpl implements GameService {
     return game.addLog(actualPlayer.getName() + " eldobta a Hercegnőt, így kiesett a játékból.");
   }
 
-  private String addLogWhenAPlayerPlaysOutCountessOrHandmaid(Player actualPlayer,
-      String cardNameWantToPlayOut, Game game) {
-    return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardNameWantToPlayOut + "t.");
-  }
-
   private String addLogWhenAPlayerUseKing(Player actualPlayer, Player targetPlayer, Game game) {
     return game.addLog(
         actualPlayer.getName() + " Királyt használva kártyát cserélt " + targetPlayer.getName()
@@ -628,6 +691,14 @@ public class GameServiceImpl implements GameService {
       Player actualPlayer, Player targetPlayer, Card cardToDiscard, Game game) {
     return game.addLog(actualPlayer.getName() + " Herceggel eldobatta " + targetPlayer.getName()
         + " lapját, ami egy " + cardToDiscard.getCardName() + " volt.");
+  }
+
+  private String addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(Player actualPlayer,
+      String cardNameWantToPlayOut, Game game) {
+    if (cardNameWantToPlayOut.equals("Kém")) {
+      cardNameWantToPlayOut = "Kéme";
+    }
+    return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardNameWantToPlayOut + "t.");
   }
 
   private String addLogWhenAPlayerUseBaronSuccessful(Player targetPlayer,
@@ -779,12 +850,15 @@ public class GameServiceImpl implements GameService {
   private boolean isSomeoneHasEnoughLoveLettersToWinTheGame(Game game) {
     boolean isGameOver = false;
     int requiredLetters;
+
     if (game.getPlayersInGame().size() == 2) {
-      requiredLetters = 7;
+      requiredLetters = game.getIs2019Version() ? 6 : 7;
     } else if (game.getPlayersInGame().size() == 3) {
       requiredLetters = 5;
-    } else {
+    } else if (game.getPlayersInGame().size() == 4) {
       requiredLetters = 4;
+    } else {
+      requiredLetters = 3;
     }
 
     List<Player> winners = new ArrayList<>();

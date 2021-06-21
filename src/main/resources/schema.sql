@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS cards_in_players_hand;
 DROP TABLE IF EXISTS cards;
 DROP TABLE IF EXISTS original_cards;
 DROP TABLE IF EXISTS new_release_cards;
+DROP TABLE IF EXISTS custom_cards;
 DROP TABLE IF EXISTS players;
 DROP TABLE IF EXISTS games;
 

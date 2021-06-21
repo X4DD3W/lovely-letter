@@ -46,6 +46,8 @@ public class Game {
 
   private Boolean isGameOver;
 
+  private Boolean is2019Version;
+
   public Game() {
     this.id = null;
     this.uuid = null;
@@ -55,6 +57,7 @@ public class Game {
     this.log = new LinkedList<>();
     this.hiddenLog = new LinkedList<>();
     this.isGameOver = false;
+    this.is2019Version = false;
   }
 
   public String addLog(String message) {

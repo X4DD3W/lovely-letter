@@ -24,4 +24,5 @@ public class GodModeDto {
   private List<String> log;
   private List<String> hiddenLog;
   private Boolean isGameOver;
+  private Boolean is2019Version;
 }
