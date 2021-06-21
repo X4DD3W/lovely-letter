@@ -169,7 +169,7 @@ public class GameServiceImpl implements GameService {
     games.forEach(game -> godModeDtoList.add(GodModeDto.builder()
         .id(game.getId())
         .uuid(game.getUuid())
-        .drawDeck(getAvailableCards(game))
+        .drawDeck(game.getAvailableCards())
         .putAsideCard(game.getPutAsideCard())
         .publicCards(game.getPublicCards())
         .playersInGame(game.getPlayersInGame())
@@ -195,7 +195,7 @@ public class GameServiceImpl implements GameService {
     if (game != null) {
       statusDto.setActualPlayer(game.getActualPlayer());
       statusDto.setPublicCards(game.getPublicCards());
-      statusDto.setNumberOfCardsInDrawDeck(getAvailableCards(game).size());
+      statusDto.setNumberOfCardsInDrawDeck(game.getAvailableCards().size());
       statusDto.setLog(game.getLog());
 
       List<PlayerAndPlayedCardsDto> playedCardsByPlayersInGame = new ArrayList<>();
@@ -326,8 +326,7 @@ public class GameServiceImpl implements GameService {
     dtoList.add(dto);
   }
 
-  private void playOutPrince(Player player, Card cardWantToPlayOut,
-      PlayCardResponseDto responseDto, Game game) {
+  private void playOutPrince(Player player, Card cardWantToPlayOut, PlayCardResponseDto responseDto, Game game) {
     player.discard(cardWantToPlayOut);
     Card cardToDiscard = player.cardInHand();
     player.discard(cardToDiscard);
@@ -335,7 +334,7 @@ public class GameServiceImpl implements GameService {
       player.setIsInPlay(false);
       responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(player, game));
     } else {
-      if (getAvailableCards(game).isEmpty()) {
+      if (game.getAvailableCards().isEmpty()) {
         drawThePutAsideCard(player, game);
       } else {
         drawCard(player, game);
@@ -345,7 +344,7 @@ public class GameServiceImpl implements GameService {
   }
 
   private boolean isThereAnyTargetablePlayer(Player actualPlayer, Game game) {
-    List<Player> targetablePlayers = getActivePlayers(game);
+    List<Player> targetablePlayers = game.getActivePlayers();
     targetablePlayers = targetablePlayers.stream()
         .filter(player -> {
           if (player.getPlayedCards().isEmpty()) {
@@ -379,7 +378,7 @@ public class GameServiceImpl implements GameService {
     } else if (isRoundOverBecauseDrawDeckIsEmptyAndThereAreAtLeastTwoActivePlayer(game)) {
       log.info("Round is over: the draw deck is empty.");
     } else {
-      List<Player> activePlayers = getActivePlayers(game);
+      List<Player> activePlayers = game.getActivePlayers();
 
       Player nextActualPlayer;
       if (actualPlayer.getOrderNumber() == game.getPlayersInGame().size()) {
@@ -391,7 +390,7 @@ public class GameServiceImpl implements GameService {
             .min(Comparator.comparingInt(Player::getOrderNumber)).orElse(null);
       }
 
-      if (nextActualPlayer == null && getActivePlayers(game).size() >= 2) {
+      if (nextActualPlayer == null && game.getActivePlayers().size() >= 2) {
         nextActualPlayer = activePlayers.stream()
             .filter(player -> player.getOrderNumber() > 0)
             .min(Comparator.comparingInt(Player::getOrderNumber)).orElse(null);
@@ -473,14 +472,14 @@ public class GameServiceImpl implements GameService {
   }
 
   private void drawACardToPutAside(Game game) {
-    randomIndex = random.nextInt(getAvailableCards(game).size());
-    Card cardToPutAside = getAvailableCards(game).get(randomIndex);
+    randomIndex = random.nextInt(game.getAvailableCards().size());
+    Card cardToPutAside = game.getAvailableCards().get(randomIndex);
     cardToPutAside.setIsPutAside(true);
   }
 
   private void drawACardToMakePublicInTwoPlayerMode(Game game) {
-    randomIndex = random.nextInt(getAvailableCards(game).size());
-    Card cardToMakePublic = getAvailableCards(game).get(randomIndex);
+    randomIndex = random.nextInt(game.getAvailableCards().size());
+    Card cardToMakePublic = game.getAvailableCards().get(randomIndex);
     cardToMakePublic.setIs2PlayerPublic(true);
   }
 
@@ -498,17 +497,18 @@ public class GameServiceImpl implements GameService {
     }
   }
 
-  private void drawCard(Player actualPlayer, Game game) {
-    List<Card> availableCards = getAvailableCards(game);
-
-    randomIndex = random.nextInt(availableCards.size());
-    Card drawnCard = availableCards.get(randomIndex);
-    actualPlayer.getCardsInHand().add(drawnCard);
-    drawnCard.setIsAtAPlayer(true);
+  private void drawCard(Player player, Game game) {
+    List<Card> availableCards = game.getAvailableCards();
+    if (!availableCards.isEmpty()) {
+      randomIndex = random.nextInt(availableCards.size());
+      Card drawnCard = availableCards.get(randomIndex);
+      player.getCardsInHand().add(drawnCard);
+      drawnCard.setIsAtAPlayer(true);
+    }
   }
 
-  private void drawThePutAsideCard(Player actualPlayer, Game game) {
-    actualPlayer.getCardsInHand().add(game.getPutAsideCard());
+  private void drawThePutAsideCard(Player player, Game game) {
+    player.getCardsInHand().add(game.getPutAsideCard());
   }
 
   private void addGameCreationLogs(Game game) {
@@ -551,8 +551,7 @@ public class GameServiceImpl implements GameService {
           throw new GameException(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE);
         } else {
           actualPlayer.discard(cardWantToPlayOut);
-          responseDto.setLastLog(
-              addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game));
+          responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game));
           break;
         }
       case KING:
@@ -567,6 +566,9 @@ public class GameServiceImpl implements GameService {
         break;
       case CHANCELLOR:
         // TODO Kancellár logika
+        actualPlayer.discard(cardWantToPlayOut);
+        int numberOfDrawnCards = drawCardsBecauseOfChancellor(actualPlayer, game);
+        // TODO oké, húzott 0, 1 v 2 lapot, most megint ő jön! 1-et tarthat meg, többi megy a pakli aljára!
         break;
       case PRINCE:
         if (targetPlayer.getName().equals(actualPlayer.getName())) {
@@ -580,7 +582,11 @@ public class GameServiceImpl implements GameService {
             targetPlayer.setIsInPlay(false);
             responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, game));
           } else {
-            drawCard(targetPlayer, game);
+            if (game.getAvailableCards().isEmpty()) {
+              drawThePutAsideCard(targetPlayer, game);
+            } else {
+              drawCard(targetPlayer, game);
+            }
             responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, cardToDiscard, game));
           }
         }
@@ -638,6 +644,21 @@ public class GameServiceImpl implements GameService {
     String nameOfCards = player.getCardsInHand().stream().map(Card::getCardName).collect(Collectors.joining(" "));
     String otherCardName = nameOfCards.replace(COUNTESS, "");
     return otherCardName.equals(PRINCE) || otherCardName.equals(KING);
+  }
+
+  private int drawCardsBecauseOfChancellor(Player player, Game game) {
+    List<Card> availableCards = game.getAvailableCards();
+    int numberOfDrawnCards = 0;
+    for (int i = 0; i <= 2; i++) {
+      if (!availableCards.isEmpty()) {
+        randomIndex = random.nextInt(availableCards.size());
+        Card drawnCard = availableCards.get(randomIndex);
+        player.getCardsInHand().add(drawnCard);
+        drawnCard.setIsAtAPlayer(true);
+        numberOfDrawnCards++;
+      }
+    }
+    return numberOfDrawnCards;
   }
 
   private Integer cardValueInHandOf(Player player) {
@@ -773,10 +794,10 @@ public class GameServiceImpl implements GameService {
 
   private boolean isRoundOverBecauseDrawDeckIsEmptyAndThereAreAtLeastTwoActivePlayer(Game game) {
     boolean isRoundOver = false;
-    List<Card> availableCards = getAvailableCards(game);
+    List<Card> availableCards = game.getAvailableCards();
 
     if (availableCards.isEmpty()) {
-      List<Player> activePlayers = getActivePlayers(game);
+      List<Player> activePlayers = game.getActivePlayers();
 
       Map<Player, Integer> playersAndCardValuesInHand = new HashMap<>();
       for (Player player : activePlayers) {
@@ -884,19 +905,5 @@ public class GameServiceImpl implements GameService {
       isGameOver = true;
     }
     return isGameOver;
-  }
-
-  private List<Player> getActivePlayers(Game game) {
-    return game.getPlayersInGame().stream()
-        .filter(Player::getIsInPlay)
-        .collect(Collectors.toList());
-  }
-
-  private List<Card> getAvailableCards(Game game) {
-    return game.getDrawDeck().stream()
-        .filter(card -> !card.getIsPutAside())
-        .filter(card -> !card.getIs2PlayerPublic())
-        .filter(card -> !card.getIsAtAPlayer())
-        .collect(Collectors.toList());
   }
 }

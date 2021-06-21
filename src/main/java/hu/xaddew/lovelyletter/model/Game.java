@@ -78,4 +78,18 @@ public class Game {
   public List<Card> getPublicCards() {
     return this.drawDeck.stream().filter(Card::getIs2PlayerPublic).collect(Collectors.toList());
   }
+
+  public List<Card> getAvailableCards() {
+    return this.getDrawDeck().stream()
+        .filter(card -> !card.getIsPutAside())
+        .filter(card -> !card.getIs2PlayerPublic())
+        .filter(card -> !card.getIsAtAPlayer())
+        .collect(Collectors.toList());
+  }
+
+  public List<Player> getActivePlayers() {
+    return this.getPlayersInGame().stream()
+        .filter(Player::getIsInPlay)
+        .collect(Collectors.toList());
+  }
 }
