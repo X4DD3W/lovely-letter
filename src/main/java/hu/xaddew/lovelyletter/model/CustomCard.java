@@ -43,4 +43,6 @@ public class CustomCard {
   @JsonIgnore
   @Column(name = "is_at_a_player")
   private Boolean isAtAPlayer;
+
+  // TODO CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.) - megjeleníteni FE-n is
 }

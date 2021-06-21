@@ -40,7 +40,7 @@ public class MainController {
 
   // TODO
   //   - játék létrehozáskor állítható be az extra tartalom (klasszikus helyett 2019-es verzió és opcionális extra karakterek)
-  //   - 2019-es verzió (teljesen új adatbázisból? OriginalCards helyett 2019VersionCards?)
+  //   - 2019-es verzió:
   //      - új értékek (Hercegnő, Grófnő és Király eggyel magasabb Kancellár miatt)
   //      - új kártyák (5db): 6 - Kancellár (2),  0 - Kém (2) ÉS plusz egy Őr (összesen így 6 Őr)
   //      - változik a győzelemhez szükséges levelek száma
