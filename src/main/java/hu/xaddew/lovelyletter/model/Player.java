@@ -82,4 +82,8 @@ public class Player {
   public void addOneLetter() {
     this.numberOfLetters++;
   }
+
+  public boolean hasOnlyOneCardInHand() {
+    return this.cardsInHand.size() == 1;
+  }
 }

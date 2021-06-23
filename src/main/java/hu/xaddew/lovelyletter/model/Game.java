@@ -1,5 +1,6 @@
 package hu.xaddew.lovelyletter.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,6 +49,9 @@ public class Game {
 
   private Boolean is2019Version;
 
+  @JsonIgnore
+  private Boolean isTurnOfChancellorActive;
+
   public Game() {
     this.id = null;
     this.uuid = null;
@@ -58,6 +62,7 @@ public class Game {
     this.hiddenLog = new LinkedList<>();
     this.isGameOver = false;
     this.is2019Version = false;
+    this.isTurnOfChancellorActive = false;
   }
 
   public String addLog(String message) {
@@ -91,5 +96,9 @@ public class Game {
     return this.getPlayersInGame().stream()
         .filter(Player::getIsInPlay)
         .collect(Collectors.toList());
+  }
+
+  public boolean isTurnOfChancellorActive() {
+    return this.isTurnOfChancellorActive;
   }
 }

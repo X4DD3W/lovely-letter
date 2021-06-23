@@ -8,6 +8,8 @@ import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
+import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
+import hu.xaddew.lovelyletter.dto.PutBackCardsResponseDto;
 import hu.xaddew.lovelyletter.service.CustomCardService;
 import hu.xaddew.lovelyletter.service.GameService;
 import hu.xaddew.lovelyletter.service.NewReleaseCardService;
@@ -45,7 +47,7 @@ public class MainController {
   //      + új kártyák (5db): 6 - Kancellár (2),  0 - Kém (2) ÉS plusz egy Őr (összesen így 6 Őr)
   //      + változik a győzelemhez szükséges levelek száma
   //      + 6 fővel is játszható a játék
-  //      ! új logikák: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate nem tudja)
+  //      ? új logikák: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate nem tudja)
   //   ! Extra karakterek (és logikájuk (pl. Kili))
 
   @GetMapping("/cards/original")
@@ -86,6 +88,11 @@ public class MainController {
   @PostMapping("/play-card")
   public PlayCardResponseDto playCard(@RequestBody PlayCardRequestDto requestDto) {
     return gameService.playCard(requestDto);
+  }
+
+  @PostMapping("/put-back-cards")
+  public PutBackCardsResponseDto putBackCardsWithChancellor(@RequestBody PutBackCardsRequestDto requestDto) {
+    return gameService.putBackCards(requestDto);
   }
 
   @GetMapping("/rules")
