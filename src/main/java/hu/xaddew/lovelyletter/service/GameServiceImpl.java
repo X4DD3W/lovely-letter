@@ -63,6 +63,7 @@ public class GameServiceImpl implements GameService {
   private static final String ACTUAL_PLAYER_IS = "Soron lévő játékos: ";
   private static final String GAME_IS_CREATED_UUID = "Játék létrehozva. Uuid: ";
   private static final String PLAYERS_ARE = "Játékosok: ";
+  private static final String COMPARE_CARD_IN_HAND_WITH = " Báróval összehasonlította a kézben lévő lapját ";
   private static final String ROUND_IS_OVER_ONLY_ONE_PLAYER_LEFT = "A forduló véget ért, mert csak egy játékos maradt bent.";
   private static final String ROUND_IS_OVER_DRAW_DECK_IS_EMPTY = "A forduló véget ért, mert elfogyott a húzópakli.";
   private static final String WON_THE_ROUND = " nyerte a fordulót!";
@@ -79,7 +80,6 @@ public class GameServiceImpl implements GameService {
   private static final String PRIEST = "Pap";
   private static final String GUARD = "Őr";
   private static final String SPY = "Kém";
-  private static final String COMPARE_CARD_IN_HAND_WITH = " Báróval összehasonlította a kézben lévő lapját ";
 
   private int randomIndex;
 
@@ -269,7 +269,8 @@ public class GameServiceImpl implements GameService {
                   } else throw new GameException(PLAYER_NOT_SELECTED_ERROR_MESSAGE);
               }
             } else {
-              responseDto = processAdditionalInfo(actualPlayer, null, game, requestDto);
+              Player targetPlayer = new Player();
+              responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
               setNextPlayerInOrder(actualPlayer, game);
               gameRepository.saveAndFlush(game);
             }
@@ -289,10 +290,15 @@ public class GameServiceImpl implements GameService {
       knownInfosDto.setNumberOfLetters(player.getNumberOfLetters());
       knownInfosDto.setCardsInHand(player.getCardsInHand());
       knownInfosDto.setPlayedCards(player.getPlayedCards());
-      knownInfosDto.setGameLogsAboutMe(findGameLogsByPlayerUuidAndName(playerUuid, player.getName()));
-      knownInfosDto.setGameHiddenLogsAboutMe(findGameHiddenLogsByPlayerUuidAndName(playerUuid, player.getName()));
-      knownInfosDto.setAllGameLogs(findGameByPlayerUuid(playerUuid).getLog());
-      knownInfosDto.setOtherPlayers(getOtherPlayersAndNumberOfLettersByPlayerUuid(playerUuid));
+
+      Game game = findGameByPlayerUuid(playerUuid);
+      if (game != null) {
+        knownInfosDto.setGameLogsAboutMe(getGameLogsByPlayerName(player.getName(), game));
+        knownInfosDto.setGameHiddenLogsAboutMe(getGameHiddenLogsByPlayerName(player.getName(), game));
+        knownInfosDto.setAllGameLogs(game.getLog());
+        knownInfosDto.setOtherPlayers(getOtherPlayersAndNumberOfLettersByPlayerUuidAndGame(playerUuid, game));
+      }
+
     } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE);
     return knownInfosDto;
   }
@@ -300,18 +306,6 @@ public class GameServiceImpl implements GameService {
   @Override
   public Game findGameByPlayerUuid(String playerUuid) {
     return gameRepository.findGameByPlayerUuid(playerUuid);
-  }
-
-  @Override
-  public List<String> findGameLogsByPlayerUuidAndName(String uuid, String name) {
-    Game game = findGameByPlayerUuid(uuid);
-    return game.getLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
-  }
-
-  @Override
-  public List<String> findGameHiddenLogsByPlayerUuidAndName(String uuid, String name) {
-    Game game = findGameByPlayerUuid(uuid);
-    return game.getHiddenLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
   }
 
   @Override
@@ -348,6 +342,14 @@ public class GameServiceImpl implements GameService {
     } else throw new GameException(NO_PLAYER_FOUND_WITH_GIVEN_UUID + requestDto.getPlayerUuid());
 
     return responseDto;
+  }
+
+  public List<String> getGameLogsByPlayerName(String name, Game game) {
+    return game.getLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
+  }
+
+  public List<String> getGameHiddenLogsByPlayerName(String name, Game game) {
+    return game.getHiddenLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
   }
 
   private boolean isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(CreateGameDto createGameDto) {
@@ -411,10 +413,10 @@ public class GameServiceImpl implements GameService {
     return targetablePlayers.isEmpty();
   }
 
-  private List<PlayerAndNumberOfLettersDto> getOtherPlayersAndNumberOfLettersByPlayerUuid(String uuid) {
+  private List<PlayerAndNumberOfLettersDto> getOtherPlayersAndNumberOfLettersByPlayerUuidAndGame(String uuid, Game game) {
     List<PlayerAndNumberOfLettersDto> dtoList = new ArrayList<>();
 
-    findGameByPlayerUuid(uuid).getPlayersInGame().stream()
+    game.getPlayersInGame().stream()
         .filter(player -> !player.getUuid().equals(uuid))
         .forEach(player -> {
           PlayerAndNumberOfLettersDto dto = new PlayerAndNumberOfLettersDto();
@@ -965,7 +967,7 @@ public class GameServiceImpl implements GameService {
     int requiredLetters;
 
     if (game.getPlayersInGame().size() == 2) {
-      requiredLetters = game.getIs2019Version() ? 6 : 7;
+      requiredLetters = game.is2019Version() ? 6 : 7;
     } else if (game.getPlayersInGame().size() == 3) {
       requiredLetters = 5;
     } else if (game.getPlayersInGame().size() == 4) {

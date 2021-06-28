@@ -46,7 +46,7 @@ public class MainController {
   // TODO feature:
   //  ! Extra karakterek (és logikájuk (pl. Kili))
   //  ! CustomCard.class: CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.)
-  //  ! logolás (FE teszteléshez)
+  //  ! Slf4j logolás (FE teszteléshez)
 
   @GetMapping("/cards/original")
   public List<CardResponseDto> getOriginalCards() {

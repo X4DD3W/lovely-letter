@@ -27,9 +27,5 @@ public interface GameService {
 
   Game findGameByPlayerUuid(String playerUuid);
 
-  List<String> findGameLogsByPlayerUuidAndName(String uuid, String name);
-
-  List<String> findGameHiddenLogsByPlayerUuidAndName(String uuid, String name);
-
   ResponseDto putBackCards(PutBackCardsRequestDto requestDto);
 }

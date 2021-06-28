@@ -101,4 +101,8 @@ public class Game {
   public boolean isTurnOfChancellorActive() {
     return this.isTurnOfChancellorActive;
   }
+
+  public boolean is2019Version() {
+    return this.is2019Version;
+  }
 }

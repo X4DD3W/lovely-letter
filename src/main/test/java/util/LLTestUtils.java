@@ -1,8 +1,12 @@
 package util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.Game;
 import hu.xaddew.lovelyletter.model.OriginalCard;
+import hu.xaddew.lovelyletter.model.Player;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,10 +17,14 @@ public class LLTestUtils {
 
   public static final int NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS = 10;
   public static final int NUMBER_OF_PRE_GENERATED_GAMES = 3;
+  public static final int FOUR_PLAYERS = 4;
+  public static final int FIRST_INDEX = 1;
   public static final String CARD_NAME = "cardName";
   public static final String CARD_DESCRIPTION = "Description";
   public static final String ACTUAL_PLAYER = "actualPlayer";
   public static final String UUID = "UUID";
+  public static final String INVALID_UUID = "invalidUuid";
+  public static final String PLAYER_NAME = "playerName";
 
   public static List<OriginalCard> initOriginalCards(int numberOfOriginalCards) {
     List<OriginalCard> originalCards = new ArrayList<>();
@@ -67,5 +75,31 @@ public class LLTestUtils {
           .build());
     }
     return games;
+  }
+
+  public static List<Player> initPlayers(int numberOfPlayers) {
+    List<Player> players = new ArrayList<>();
+    for (int i = 1; i <= numberOfPlayers; i++) {
+      players.add(Player.builder()
+          .id((long) i)
+          .uuid(UUID + i)
+          .name(PLAYER_NAME + i)
+          .cardsInHand(new ArrayList<>())
+          .playedCards(new ArrayList<>())
+          .numberOfLetters(0)
+          .isInPlay(true)
+          .orderNumber(null)
+          .build());
+    }
+    return players;
+  }
+
+  public void assertGeneratedValuesOfGamesAreEquals(int numberOfPreGeneratedGames, List<GodModeDto> godModeDtoList) {
+    for (int i = 1; i <= numberOfPreGeneratedGames ; i++) {
+      GodModeDto actualDto = godModeDtoList.get(i - 1);
+      assertEquals(i, actualDto.getId());
+      assertEquals(UUID + i, actualDto.getUuid());
+      assertEquals(ACTUAL_PLAYER, actualDto.getActualPlayer());
+    }
   }
 }
