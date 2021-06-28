@@ -5,13 +5,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PutBackCardsResponseDto {
+public class ResponseDto {
 
-  // TODO refactor: szerkezetre ugyanaz, mint PlayCardResponseDto
   private String message;
   private String lastLog;
 
-  public PutBackCardsResponseDto() {
+  public ResponseDto() {
     this.message = "";
     this.lastLog = "";
   }

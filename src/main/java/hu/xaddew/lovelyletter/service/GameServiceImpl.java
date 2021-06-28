@@ -6,13 +6,12 @@ import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
-import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
+import hu.xaddew.lovelyletter.dto.ResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerAndNumberOfLettersDto;
 import hu.xaddew.lovelyletter.dto.PlayerAndPlayedCardsDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
-import hu.xaddew.lovelyletter.dto.PutBackCardsResponseDto;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.CustomCard;
@@ -222,8 +221,8 @@ public class GameServiceImpl implements GameService {
   }
 
   @Override
-  public PlayCardResponseDto playCard(PlayCardRequestDto requestDto) {
-    PlayCardResponseDto responseDto = new PlayCardResponseDto();
+  public ResponseDto playCard(PlayCardRequestDto requestDto) {
+    ResponseDto responseDto = new ResponseDto();
     Player actualPlayer = playerService.findByUuid(requestDto.getPlayerUuid());
     if (actualPlayer != null) {
       Game game = findGameByPlayerUuid(actualPlayer.getUuid());
@@ -316,11 +315,11 @@ public class GameServiceImpl implements GameService {
   }
 
   @Override
-  public PutBackCardsResponseDto putBackCards(PutBackCardsRequestDto requestDto) {
+  public ResponseDto putBackCards(PutBackCardsRequestDto requestDto) {
     if (requestDto == null) {
       throw new GameException(MISSING_PUT_BACK_A_CARD_REQUEST_ERROR_MESSAGE);
     }
-    PutBackCardsResponseDto responseDto = new PutBackCardsResponseDto();
+    ResponseDto responseDto = new ResponseDto();
     Player actualPlayer = playerService.findByUuid(requestDto.getPlayerUuid());
     if (actualPlayer != null) {
       Game game = findGameByPlayerUuid(actualPlayer.getUuid());
@@ -338,7 +337,6 @@ public class GameServiceImpl implements GameService {
             });
             if (!cardsWantToPutBack.contains(null) && cardsWantToPutBack.size() == requestDto
                 .getCardsToPutBack().size() && actualPlayer.hasOnlyOneCardInHand()) {
-              // TODO kártyák visszatétele ALULRA(?)
               responseDto.setLastLog(addLogWhenAPlayerUseChancellorToPutBackCards(actualPlayer, requestDto.getCardsToPutBack().size(), game));
               game.setIsTurnOfChancellorActive(false);
               setNextPlayerInOrder(actualPlayer, game);
@@ -382,7 +380,7 @@ public class GameServiceImpl implements GameService {
     dtoList.add(dto);
   }
 
-  private void playOutPrince(Player player, Card cardWantToPlayOut, PlayCardResponseDto responseDto, Game game) {
+  private void playOutPrince(Player player, Card cardWantToPlayOut, ResponseDto responseDto, Game game) {
     player.discard(cardWantToPlayOut);
     Card cardToDiscard = player.cardInHand();
     player.discard(cardToDiscard);
@@ -598,9 +596,9 @@ public class GameServiceImpl implements GameService {
     }
   }
 
-  private PlayCardResponseDto processAdditionalInfo(Player actualPlayer, Player targetPlayer,
+  private ResponseDto processAdditionalInfo(Player actualPlayer, Player targetPlayer,
       Game game, PlayCardRequestDto requestDto) {
-    PlayCardResponseDto responseDto = new PlayCardResponseDto();
+    ResponseDto responseDto = new ResponseDto();
     Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
     String cardNameWantToPlayOut = cardWantToPlayOut.getCardName();
     AdditionalInfoDto info = requestDto.getAdditionalInfo();

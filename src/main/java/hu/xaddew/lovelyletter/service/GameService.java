@@ -5,10 +5,9 @@ import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
-import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
+import hu.xaddew.lovelyletter.dto.ResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
-import hu.xaddew.lovelyletter.dto.PutBackCardsResponseDto;
 import hu.xaddew.lovelyletter.model.Game;
 import java.util.List;
 
@@ -22,7 +21,7 @@ public interface GameService {
 
   GameStatusDto getGameStatus(String gameUuid);
 
-  PlayCardResponseDto playCard(PlayCardRequestDto requestDto);
+  ResponseDto playCard(PlayCardRequestDto requestDto);
 
   PlayerKnownInfosDto getAllInfosByPlayerUuid(String playerUuid);
 
@@ -32,5 +31,5 @@ public interface GameService {
 
   List<String> findGameHiddenLogsByPlayerUuidAndName(String uuid, String name);
 
-  PutBackCardsResponseDto putBackCards(PutBackCardsRequestDto requestDto);
+  ResponseDto putBackCards(PutBackCardsRequestDto requestDto);
 }

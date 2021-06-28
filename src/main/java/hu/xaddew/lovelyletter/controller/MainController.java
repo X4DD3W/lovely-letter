@@ -6,10 +6,9 @@ import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
-import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
+import hu.xaddew.lovelyletter.dto.ResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
-import hu.xaddew.lovelyletter.dto.PutBackCardsResponseDto;
 import hu.xaddew.lovelyletter.service.CustomCardService;
 import hu.xaddew.lovelyletter.service.GameService;
 import hu.xaddew.lovelyletter.service.NewReleaseCardService;
@@ -40,18 +39,14 @@ public class MainController {
   private final CustomCardService customCardService;
   private final GameService gameService;
 
-  // TODO
-  //   + játék létrehozáskor állítható be az extra tartalom (klasszikus helyett 2019-es verzió és opcionális extra karakterek)
-  //   ! 2019-es verzió:
-  //      + új értékek (Hercegnő, Grófnő és Király eggyel magasabb Kancellár miatt)
-  //      + új kártyák (5db): 6 - Kancellár (2),  0 - Kém (2) ÉS plusz egy Őr (összesen így 6 Őr)
-  //      + változik a győzelemhez szükséges levelek száma
-  //      + 6 fővel is játszható a játék
-  //      ? új logikák: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate nem tudja)
-  //   ! Extra karakterek (és logikájuk (pl. Kili))
-
-  // TODO
+  // TODO tesztelni/javítani:
   //  - duplaHerceg selfTarget nem/rosszul működik
+  //  ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
+
+  // TODO feature:
+  //  ! Extra karakterek (és logikájuk (pl. Kili))
+  //  ! CustomCard.class: CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.)
+  //  ! logolás (FE teszteléshez)
 
   @GetMapping("/cards/original")
   public List<CardResponseDto> getOriginalCards() {
@@ -89,12 +84,12 @@ public class MainController {
   }
 
   @PostMapping("/play-card")
-  public PlayCardResponseDto playCard(@RequestBody PlayCardRequestDto requestDto) {
+  public ResponseDto playCard(@RequestBody PlayCardRequestDto requestDto) {
     return gameService.playCard(requestDto);
   }
 
   @PostMapping("/put-back-cards")
-  public PutBackCardsResponseDto putBackCardsWithChancellor(@RequestBody PutBackCardsRequestDto requestDto) {
+  public ResponseDto putBackCardsWithChancellor(@RequestBody PutBackCardsRequestDto requestDto) {
     return gameService.putBackCards(requestDto);
   }
 
