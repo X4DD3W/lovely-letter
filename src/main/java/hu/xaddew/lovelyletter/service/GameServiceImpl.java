@@ -81,8 +81,6 @@ public class GameServiceImpl implements GameService {
   private static final String GUARD = "Őr";
   private static final String SPY = "Kém";
   private static final String COMPARE_CARD_IN_HAND_WITH = " Báróval összehasonlította a kézben lévő lapját ";
-  private static final String KING_OR_PRINCE_OR_BARON_OR_PRIEST_OR_GUARD_REGEX = "Király|Herceg|Báró|Pap|Őr";
-  private static final String KING_OR_BARON_OR_PRIEST_OR_GUARD_REGEX = "Király|Báró|Pap|Őr";
 
   private int randomIndex;
 
@@ -158,6 +156,10 @@ public class GameServiceImpl implements GameService {
     dealOneCardToAllPlayers(game);
     determineStartPlayer(game);
 
+    if (isGame2019Version) {
+      game.setIs2019Version(true);
+    }
+
     addGameCreationLogs(game);
     gameRepository.save(game);
     playerRepository.saveAll(players);
@@ -228,14 +230,13 @@ public class GameServiceImpl implements GameService {
       if (game != null) {
         if (actualPlayer.getName().equals(game.getActualPlayer())) {
           if (hasPlayerTheCardSheOrHeWantToPlay(actualPlayer, requestDto.getCardName())) {
-            // TODO másik három helyen már nem kell csekkolni?!
-            if (isCountessWithKingOrPrince(actualPlayer)) {
+            if (isCountessWithKingOrPrince(actualPlayer) && !requestDto.getCardName().equals(COUNTESS)) {
               throw new GameException(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE);
             }
-            if (requestDto.getCardName().matches(KING_OR_PRINCE_OR_BARON_OR_PRIEST_OR_GUARD_REGEX)) {
+            if (requestDto.getCardName().matches(KING  + "|" + BARON + "|" + PRIEST + "|" + GUARD + "|" + PRINCE)) {
               if (isNotThereOtherTargetablePlayer(actualPlayer, game)) {
                 Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
-                if (requestDto.getCardName().matches(KING_OR_BARON_OR_PRIEST_OR_GUARD_REGEX)) {
+                if (requestDto.getCardName().matches(KING  + "|" + BARON + "|" + PRIEST + "|" + GUARD)) {
                   actualPlayer.discard(cardWantToPlayOut);
                   responseDto.setLastLog(addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(actualPlayer, cardWantToPlayOut, game));
                 } else {
@@ -249,7 +250,6 @@ public class GameServiceImpl implements GameService {
                         .filter(p -> p.getName().equals(requestDto.getAdditionalInfo().getTargetPlayer()))
                         .findFirst().orElse(null);
                     if (targetPlayer != null) {
-                      // TODO de ha Herceg van nálad, kijelölheted magadat!
                       if (targetPlayer.getName().equals(actualPlayer.getName()) && requestDto.getCardName().matches(PRINCE)) {
                         Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
                         playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
@@ -612,17 +612,12 @@ public class GameServiceImpl implements GameService {
         responseDto.setLastLog(addLogWhenAPlayerMustDiscardPrincess(actualPlayer, game));
         break;
       case COUNTESS:
-        if (isCountessWithKingOrPrince(actualPlayer)) {
-          throw new GameException(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE);
-        } else {
-          actualPlayer.discard(cardWantToPlayOut);
-          responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game));
-          break;
-        }
+      case HANDMAID:
+      case SPY:
+        actualPlayer.discard(cardWantToPlayOut);
+        responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game));
+        break;
       case KING:
-        if (isCountessWithKingOrPrince(actualPlayer)) {
-          throw new GameException(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE);
-        }
         actualPlayer.discard(cardWantToPlayOut);
         Card actualPlayersCardInHand = actualPlayer.cardInHand();
         Card targetPlayersCardInHand = targetPlayer.cardInHand();
@@ -644,9 +639,6 @@ public class GameServiceImpl implements GameService {
         responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(actualPlayer, game, drawnCardsByChancellor.size()));
         break;
       case PRINCE:
-        if (isCountessWithKingOrPrince(actualPlayer)) {
-          throw new GameException(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE);
-        }
         if (targetPlayer.getName().equals(actualPlayer.getName())) {
           playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
           break;
@@ -666,11 +658,6 @@ public class GameServiceImpl implements GameService {
             responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, cardToDiscard, game));
           }
         }
-        break;
-      case HANDMAID:
-      case SPY:
-        actualPlayer.discard(cardWantToPlayOut);
-        responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game));
         break;
       case BARON:
         String cardNameOfActualPlayerToHiddenLog = cardNameInHandOf(actualPlayer);

@@ -51,10 +51,7 @@ public class MainController {
   //   ! Extra karakterek (és logikájuk (pl. Kili))
 
   // TODO
-  //  ? Kém +1 token logika nem megy
   //  - duplaHerceg selfTarget nem/rosszul működik
-  //  ? Grófnő-Király-Herceg check selfTargeting előtt
-  //  ? "Laci Herceggel eldobta a saját kézben lévő lapját, ami egy Grófnő volt."
 
   @GetMapping("/cards/original")
   public List<CardResponseDto> getOriginalCards() {
