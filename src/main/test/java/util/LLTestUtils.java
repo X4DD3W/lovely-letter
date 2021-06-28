@@ -2,8 +2,10 @@ package util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import hu.xaddew.lovelyletter.dto.CreateGameDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.model.Card;
+import hu.xaddew.lovelyletter.model.CustomCard;
 import hu.xaddew.lovelyletter.model.Game;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
@@ -20,6 +22,7 @@ public class LLTestUtils {
   public static final int FOUR_PLAYERS = 4;
   public static final int FIRST_INDEX = 1;
   public static final String CARD_NAME = "cardName";
+  public static final String INVALID_CUSTOM_CARD_NAME = "invalidCustomCardName";
   public static final String CARD_DESCRIPTION = "Description";
   public static final String ACTUAL_PLAYER = "actualPlayer";
   public static final String UUID = "UUID";
@@ -60,6 +63,23 @@ public class LLTestUtils {
     return cards;
   }
 
+  public static List<CustomCard> initCustomCards(int numberOfCustomCards) {
+    List<CustomCard> customCards = new ArrayList<>();
+    for (int i = 1; i <= numberOfCustomCards; i++) {
+      customCards.add(CustomCard.builder()
+          .id((long) i)
+          .cardName(CARD_NAME + i)
+          .cardValue(numberOfCustomCards - i)
+          .quantity(i)
+          .description(CARD_DESCRIPTION + i)
+          .is2PlayerPublic(false)
+          .isAtAPlayer(false)
+          .isPutAside(false)
+          .build());
+    }
+    return customCards;
+  }
+
   public static List<Game> initGames(int numberOfGames) {
     List<Game> games = new ArrayList<>();
     for (int i = 1; i <= numberOfGames; i++) {
@@ -92,6 +112,13 @@ public class LLTestUtils {
           .build());
     }
     return players;
+  }
+
+  public static CreateGameDto initCreateGameDto(List<String> playerNames, boolean is2019Version) {
+    CreateGameDto createGameDto = new CreateGameDto();
+    createGameDto.setPlayerNames(playerNames);
+    createGameDto.setIs2019Version(is2019Version);
+    return createGameDto;
   }
 
   public void assertGeneratedValuesOfGamesAreEquals(int numberOfPreGeneratedGames, List<GodModeDto> godModeDtoList) {

@@ -5,34 +5,48 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static util.LLTestUtils.ACTUAL_PLAYER;
 import static util.LLTestUtils.FIRST_INDEX;
 import static util.LLTestUtils.FOUR_PLAYERS;
+import static util.LLTestUtils.INVALID_CUSTOM_CARD_NAME;
 import static util.LLTestUtils.INVALID_UUID;
+import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS;
 import static util.LLTestUtils.UUID;
+import static util.LLTestUtils.initCreateGameDto;
+import static util.LLTestUtils.initCustomCards;
 import static util.LLTestUtils.initGames;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_GAMES;
+import static util.LLTestUtils.initOriginalCards;
 import static util.LLTestUtils.initPlayers;
 
+import hu.xaddew.lovelyletter.dto.CreateGameDto;
+import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.exception.GameException;
+import hu.xaddew.lovelyletter.model.CustomCard;
 import hu.xaddew.lovelyletter.model.Game;
+import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
 import hu.xaddew.lovelyletter.repository.PlayerRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
 import util.LLTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,10 +56,19 @@ class GameServiceImplUnitTest {
   private Random random;
 
   @Mock
+  private ModelMapper modelMapper;
+
+  @Mock
   private CardServiceImpl cardService;
 
   @Mock
   private OriginalCardServiceImpl originalCardService;
+
+  @Mock
+  private NewReleaseCardService newReleaseCardService;
+
+  @Mock
+  private CustomCardService customCardService;
 
   @Mock
   private PlayerServiceImpl playerService;
@@ -61,16 +84,20 @@ class GameServiceImplUnitTest {
 
   private static List<Game> games;
   private static List<Player> players;
+  private static List<OriginalCard> originalCards;
+  private static List<CustomCard> customCards;
+  private static CreateGameDto createGameDto;
 
   private Game resultGame;
   private List<GodModeDto> godModeDtoList;
-  private GameStatusDto gameStatusDto;
-  private PlayerKnownInfosDto playerKnownInfosDto;
+  private CreatedGameResponseDto createdGameResponseDto;
 
   @BeforeAll
   static void init() {
     games = initGames(NUMBER_OF_PRE_GENERATED_GAMES);
     players = initPlayers(FOUR_PLAYERS);
+    originalCards = initOriginalCards(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS);
+    customCards = initCustomCards(5);
   }
 
   @Test
@@ -126,7 +153,7 @@ class GameServiceImplUnitTest {
     String gameUuid = UUID + FIRST_INDEX;
     when(gameRepository.findByUuid(gameUuid)).thenReturn(games.get(FIRST_INDEX));
 
-    gameStatusDto = gameService.getGameStatus(gameUuid);
+    GameStatusDto gameStatusDto = gameService.getGameStatus(gameUuid);
 
     verify(gameRepository).findByUuid(gameUuid);
 
@@ -145,7 +172,7 @@ class GameServiceImplUnitTest {
     when(playerRepository.findByUuid(playerUuid)).thenReturn(players.get(FIRST_INDEX));
     when(gameRepository.findGameByPlayerUuid(playerUuid)).thenReturn(games.get(FIRST_INDEX));
 
-    playerKnownInfosDto = gameService.getAllInfosByPlayerUuid(playerUuid);
+    PlayerKnownInfosDto playerKnownInfosDto = gameService.getAllInfosByPlayerUuid(playerUuid);
 
     verify(playerRepository).findByUuid(playerUuid);
     verify(gameRepository).findGameByPlayerUuid(playerUuid);
@@ -183,7 +210,72 @@ class GameServiceImplUnitTest {
     assertNull(resultGame);
   }
 
-  // TODO test: createGame, playCard, putBackCards
+  @Test
+  void createGameThrowsGameExceptionIfDtoIsNull() {
+    assertThrows(GameException.class, () -> gameService.createGame(null));
+  }
+
+  @Test
+  void createGameThrowsGameExceptionIfPlayerNumberIsFiveAndOutOfRangeInClassicGame() {
+    createGameDto = initCreateGameDto(List.of("A", "B", "C", "D", "E"), false);
+    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+  }
+
+  @Test
+  void createGameThrowsGameExceptionIfPlayerNumberIsOneAndOutOfRangeInClassicGame() {
+    createGameDto = initCreateGameDto(List.of("A"), false);
+    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+  }
+
+  @Test
+  void createGameThrowsGameExceptionIfPlayerNumberIsSevenAndOutOfRangeIn2019VersionOfGame() {
+    createGameDto = initCreateGameDto(List.of("A", "B", "C", "D", "E", "F", "G"), true);
+    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+  }
+
+  @Test
+  void createGameThrowsGameExceptionIfPlayerNumberIsOneAndOutOfRangeIn2019VersionOfGame() {
+    createGameDto = initCreateGameDto(List.of("A"), true);
+    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+  }
+
+  @Test
+  void createGameThrowsGameExceptionIfThereIsDuplicatedPlayerNames() {
+    createGameDto = initCreateGameDto(List.of("A", "A"), false);
+    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+  }
+
+  @Test
+  void createGameThrowsGameExceptionIfThereIsInvalidCustomCardInTheCustomCardNameList() {
+    createGameDto = initCreateGameDto(List.of("A", "B"), false);
+    createGameDto.setCustomCardNames(List.of(INVALID_CUSTOM_CARD_NAME));
+
+    when(customCardService.findAll()).thenReturn(customCards);
+
+    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+  }
+
+  // TODO ittTartok
+  @Test
+  void createGameInClassicVersionForFourPlayers() {
+    createGameDto = initCreateGameDto(List.of("A", "B", "C", "D"), false);
+    createGameDto.setCustomCardNames(customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
+    when(customCardService.findAll()).thenReturn(customCards);
+    when(originalCardService.findAll()).thenReturn(originalCards);
+
+    createdGameResponseDto = gameService.createGame(createGameDto);
+
+    verify(random, times(10)).nextInt();
+    verify(customCardService).findAll();
+    verify(originalCardService).findAll();
+    verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS)).map(any(), eq(OriginalCard.class));
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS)).save(any());
+    verify(gameRepository).save(any());
+    verify(playerRepository).saveAll(any());
+
+    assertNotNull(createdGameResponseDto);
+  }
+
 
 
 }
