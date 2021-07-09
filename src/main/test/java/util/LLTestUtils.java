@@ -18,6 +18,7 @@ import lombok.experimental.UtilityClass;
 public class LLTestUtils {
 
   public static final int NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS = 10;
+  public static final int NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS = 5;
   public static final int NUMBER_OF_PRE_GENERATED_GAMES = 3;
   public static final int FOUR_PLAYERS = 4;
   public static final int FIRST_INDEX = 1;

@@ -473,16 +473,20 @@ public class GameServiceImpl implements GameService {
 
     if (is2019Version) {
       List<NewReleaseCard> cardsFromDatabase = newReleaseCardService.findAll();
-      customCardsInPlay.forEach(card -> cardsFromDatabase.add(modelMapper.map(card, NewReleaseCard.class)));
+      cardsFromDatabase.addAll(mapList(customCardsInPlay, NewReleaseCard.class));
       drawDeck = createNewDrawDeckFromNewReleaseCards(cardsFromDatabase);
     } else {
       List<OriginalCard> cardsFromDatabase = originalCardService.findAll();
-      customCardsInPlay.forEach(card -> cardsFromDatabase.add(modelMapper.map(card, OriginalCard.class)));
+      cardsFromDatabase.addAll(mapList(customCardsInPlay, OriginalCard.class));
       drawDeck = createNewDrawDeckFromOriginalCards(cardsFromDatabase);
     }
     game.setDrawDeck(drawDeck);
     drawDeck.forEach(card -> card.setGame(game));
     putAsideCards(game);
+  }
+
+  private <S, T> List<T> mapList(List<S> source, Class<T> targetClass) {
+    return source.stream().map(e -> modelMapper.map(e, targetClass)).collect(Collectors.toList());
   }
 
   private List<Card> createNewDrawDeckFromNewReleaseCards(List<NewReleaseCard> newReleaseCards) {

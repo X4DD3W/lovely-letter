@@ -42,6 +42,7 @@ public class MainController {
   // TODO tesztelni/javítani:
   //  - duplaHerceg selfTarget nem/rosszul működik
   //  ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
+  //  ? Hibernate OneToMany (gameId-val összekapcsolás refactor)
 
   // TODO feature:
   //  ! Extra karakterek (és logikájuk (pl. Kili))

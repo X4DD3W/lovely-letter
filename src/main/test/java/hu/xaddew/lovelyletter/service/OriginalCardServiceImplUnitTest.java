@@ -37,22 +37,22 @@ class OriginalCardServiceImplUnitTest {
   @InjectMocks
   private OriginalCardServiceImpl originalCardService;
 
-  private static List<OriginalCard> cards;
+  private static List<OriginalCard> originalCards;
   private static List<CardResponseDto> resultCards;
 
   @BeforeAll
   static void init() {
-    cards = initOriginalCards(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS);
+    originalCards = initOriginalCards(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS);
   }
 
   @Test
   void testInitialization() {
-    assertEquals(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS, cards.size());
+    assertEquals(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS, originalCards.size());
   }
 
   @Test
   void getAllCards() {
-    when(originalCardRepository.findAll()).thenReturn(cards);
+    when(originalCardRepository.findAll()).thenReturn(originalCards);
 
     resultCards = originalCardService.getAllCards();
 

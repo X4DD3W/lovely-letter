@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +17,7 @@ import static util.LLTestUtils.FIRST_INDEX;
 import static util.LLTestUtils.FOUR_PLAYERS;
 import static util.LLTestUtils.INVALID_CUSTOM_CARD_NAME;
 import static util.LLTestUtils.INVALID_UUID;
+import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS;
 import static util.LLTestUtils.UUID;
 import static util.LLTestUtils.initCreateGameDto;
@@ -45,6 +48,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import util.LLTestUtils;
@@ -55,8 +59,8 @@ class GameServiceImplUnitTest {
   @Mock
   private Random random;
 
-  @Mock
-  private ModelMapper modelMapper;
+  @Spy
+  private final ModelMapper modelMapper = new ModelMapper();
 
   @Mock
   private CardServiceImpl cardService;
@@ -97,7 +101,7 @@ class GameServiceImplUnitTest {
     games = initGames(NUMBER_OF_PRE_GENERATED_GAMES);
     players = initPlayers(FOUR_PLAYERS);
     originalCards = initOriginalCards(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS);
-    customCards = initCustomCards(5);
+    customCards = initCustomCards(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS);
   }
 
   @Test
@@ -255,21 +259,22 @@ class GameServiceImplUnitTest {
     assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
   }
 
-  // TODO ittTartok
   @Test
   void createGameInClassicVersionForFourPlayers() {
     createGameDto = initCreateGameDto(List.of("A", "B", "C", "D"), false);
     createGameDto.setCustomCardNames(customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
+
     when(customCardService.findAll()).thenReturn(customCards);
     when(originalCardService.findAll()).thenReturn(originalCards);
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, times(10)).nextInt();
-    verify(customCardService).findAll();
+    verify(random, atLeast(4)).nextInt(anyInt());
+    verify(customCardService, times(2)).findAll();
     verify(originalCardService).findAll();
-    verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS)).map(any(), eq(OriginalCard.class));
-    verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS)).save(any());
+    verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(OriginalCard.class));
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS
+        + NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
     verify(gameRepository).save(any());
     verify(playerRepository).saveAll(any());
 
