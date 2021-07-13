@@ -3,10 +3,15 @@ package hu.xaddew.lovelyletter.service;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.INVALID_CUSTOM_CARD_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.KING;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.NOT_YOUR_TURN_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.NO_PLAYER_FOUND_WITH_GIVEN_UUID;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NAME_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -30,6 +35,7 @@ import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS;
 import static util.LLTestUtils.TWO_PLAYER_NUMBER;
 import static util.LLTestUtils.UUID;
+import static util.LLTestUtils.getPlayerNamesOf;
 import static util.LLTestUtils.initCreateGameDto;
 import static util.LLTestUtils.initCustomCards;
 import static util.LLTestUtils.initGames;
@@ -37,6 +43,7 @@ import static util.LLTestUtils.initNewReleaseCards;
 import static util.LLTestUtils.initOriginalCards;
 import static util.LLTestUtils.initPlayers;
 import static util.LLTestUtils.initTestPlayer;
+import static util.LLTestUtils.assertGeneratedValuesOfGamesAreEquals;
 
 import hu.xaddew.lovelyletter.dto.CreateGameDto;
 import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
@@ -66,16 +73,15 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import util.LLTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class GameServiceImplUnitTest {
 
-  @Mock
-  private Random random;
-
   @Spy
   private final ModelMapper modelMapper = new ModelMapper();
+
+  @Mock
+  private Random random;
 
   @Mock
   private CardServiceImpl cardService;
@@ -109,7 +115,7 @@ class GameServiceImplUnitTest {
   private static CreateGameDto createGameDto;
   private static PlayCardRequestDto playCardRequestDto;
 
-  private Game resultGame;
+  private Game game;
   private List<GodModeDto> godModeDtoList;
   private CreatedGameResponseDto createdGameResponseDto;
   private List<String> playerNames;
@@ -127,6 +133,10 @@ class GameServiceImplUnitTest {
   @Test
   void testInitialization() {
     assertEquals(NUMBER_OF_PRE_GENERATED_GAMES, games.size());
+    assertEquals(FOUR_PLAYER_NUMBER, players.size());
+    assertEquals(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS, originalCards.size());
+    assertEquals(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS, newReleaseCards.size());
+    assertEquals(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS, customCards.size());
   }
 
   @Test
@@ -138,7 +148,7 @@ class GameServiceImplUnitTest {
     verify(gameRepository).findAll();
 
     assertEquals(NUMBER_OF_PRE_GENERATED_GAMES, godModeDtoList.size());
-    LLTestUtils.assertGeneratedValuesOfGamesAreEquals(NUMBER_OF_PRE_GENERATED_GAMES, godModeDtoList);
+    assertGeneratedValuesOfGamesAreEquals(NUMBER_OF_PRE_GENERATED_GAMES, godModeDtoList);
   }
 
   @Test
@@ -215,12 +225,12 @@ class GameServiceImplUnitTest {
     String playerUuid = UUID + FIRST_INDEX;
     when(gameRepository.findGameByPlayerUuid(playerUuid)).thenReturn(games.get(FIRST_INDEX));
 
-    resultGame = gameService.findGameByPlayerUuid(playerUuid);
+    game = gameService.findGameByPlayerUuid(playerUuid);
 
     verify(gameRepository).findGameByPlayerUuid(playerUuid);
 
-    assertNotNull(resultGame);
-    assertEquals(resultGame, games.get(FIRST_INDEX));
+    assertNotNull(game);
+    assertEquals(game, games.get(FIRST_INDEX));
   }
 
   @Test
@@ -228,61 +238,71 @@ class GameServiceImplUnitTest {
     String playerUuid = UUID + FIRST_INDEX;
     when(gameRepository.findGameByPlayerUuid(playerUuid)).thenReturn(null);
 
-    resultGame = gameService.findGameByPlayerUuid(playerUuid);
+    game = gameService.findGameByPlayerUuid(playerUuid);
 
     verify(gameRepository).findGameByPlayerUuid(playerUuid);
 
-    assertNull(resultGame);
+    assertNull(game);
   }
 
   @Test
   void createGameThrowsGameExceptionIfDtoIsNull() {
-    assertThrows(GameException.class, () -> gameService.createGame(null));
+    exception = assertThrows(GameException.class, () -> gameService.createGame(null));
+    assertEquals(MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE, exception.getMessage());
   }
 
   @Test
   void createGameThrowsGameExceptionIfPlayerNumberIsFiveAndOutOfRangeInClassicGame() {
-    createGameDto = initCreateGameDto(List.of("A", "B", "C", "D", "E"), false);
-    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    createGameDto = initCreateGameDto(getPlayerNamesOf(5), false);
+    exception = assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    assertEquals(PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE, exception.getMessage());
   }
 
   @Test
   void createGameThrowsGameExceptionIfPlayerNumberIsOneAndOutOfRangeInClassicGame() {
-    createGameDto = initCreateGameDto(List.of("A"), false);
-    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    createGameDto = initCreateGameDto(getPlayerNamesOf(1), false);
+    exception = assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    assertEquals(PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE, exception.getMessage());
   }
 
   @Test
   void createGameThrowsGameExceptionIfPlayerNumberIsSevenAndOutOfRangeIn2019VersionOfGame() {
-    createGameDto = initCreateGameDto(List.of("A", "B", "C", "D", "E", "F", "G"), true);
-    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    createGameDto = initCreateGameDto(getPlayerNamesOf(7), true);
+    exception = assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    assertEquals(PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE, exception.getMessage());
   }
 
   @Test
   void createGameThrowsGameExceptionIfPlayerNumberIsOneAndOutOfRangeIn2019VersionOfGame() {
-    createGameDto = initCreateGameDto(List.of("A"), true);
-    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    createGameDto = initCreateGameDto(getPlayerNamesOf(1), true);
+    exception = assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    assertEquals(PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE, exception.getMessage());
   }
 
   @Test
   void createGameThrowsGameExceptionIfThereIsDuplicatedPlayerNames() {
     createGameDto = initCreateGameDto(List.of("A", "A"), false);
-    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    exception = assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    assertEquals(PLAYER_NAME_ERROR_MESSAGE, exception.getMessage());
   }
 
   @Test
   void createGameThrowsGameExceptionIfThereIsInvalidCustomCardInTheCustomCardNameList() {
-    createGameDto = initCreateGameDto(List.of("A", "B"), false);
+    createGameDto = initCreateGameDto(getPlayerNamesOf(2), false);
     createGameDto.setCustomCardNames(List.of(INVALID_CUSTOM_CARD_NAME));
 
     when(customCardService.findAll()).thenReturn(customCards);
 
-    assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+    exception = assertThrows(GameException.class, () -> gameService.createGame(createGameDto));
+
+    verify(customCardService).findAll();
+
+    assertEquals(INVALID_CUSTOM_CARD_ERROR_MESSAGE, exception.getMessage());
   }
 
   @Test
   void createGameInClassicVersionForFourPlayersWithoutCustomCards() {
-    playerNames = List.of("A", "B", "C", "D");
+    playerNames = getPlayerNamesOf(4);
     createGameDto = initCreateGameDto(playerNames, false);
     createGameDto.setCustomCardNames(new ArrayList<>());
 
@@ -291,12 +311,9 @@ class GameServiceImplUnitTest {
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, times(10)).nextInt(anyInt());
-    verify(customCardService, times(2)).findAll();
+    verifyGameCreationCommonInvocations(10);
     verify(originalCardService).findAll();
     verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS)).save(any());
-    verify(gameRepository).save(any());
-    verify(playerRepository).saveAll(any());
 
     assertNotNull(createdGameResponseDto);
     assertEquals(FOUR_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
@@ -307,7 +324,7 @@ class GameServiceImplUnitTest {
 
   @Test
   void createGameInClassicVersionForTwoPlayersWithoutCustomCards() {
-    playerNames = List.of("A", "B");
+    playerNames = getPlayerNamesOf(2);
     createGameDto = initCreateGameDto(playerNames, false);
     createGameDto.setCustomCardNames(new ArrayList<>());
 
@@ -316,12 +333,9 @@ class GameServiceImplUnitTest {
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, times(9)).nextInt(anyInt());
-    verify(customCardService, times(2)).findAll();
+    verifyGameCreationCommonInvocations(9);
     verify(originalCardService).findAll();
     verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS)).save(any());
-    verify(gameRepository).save(any());
-    verify(playerRepository).saveAll(any());
 
     assertNotNull(createdGameResponseDto);
     assertEquals(TWO_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
@@ -332,7 +346,7 @@ class GameServiceImplUnitTest {
 
   @Test
   void createGameInClassicVersionForFourPlayersWithCustomCards() {
-    playerNames = List.of("A", "B", "C", "D");
+    playerNames = getPlayerNamesOf(4);
     createGameDto = initCreateGameDto(playerNames, false);
     createGameDto.setCustomCardNames(
         customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
@@ -342,14 +356,11 @@ class GameServiceImplUnitTest {
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, times(10)).nextInt(anyInt());
-    verify(customCardService, times(2)).findAll();
+    verifyGameCreationCommonInvocations(10);
     verify(originalCardService).findAll();
     verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(OriginalCard.class));
     verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS +
         NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
-    verify(gameRepository).save(any());
-    verify(playerRepository).saveAll(any());
 
     assertNotNull(createdGameResponseDto);
     assertEquals(FOUR_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
@@ -360,7 +371,7 @@ class GameServiceImplUnitTest {
 
   @Test
   void createGameInClassicVersionForTwoPlayersWithCustomCards() {
-    playerNames = List.of("A", "B");
+    playerNames = getPlayerNamesOf(2);
     createGameDto = initCreateGameDto(playerNames, false);
     createGameDto.setCustomCardNames(
         customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
@@ -370,14 +381,11 @@ class GameServiceImplUnitTest {
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, times(9)).nextInt(anyInt());
-    verify(customCardService, times(2)).findAll();
+    verifyGameCreationCommonInvocations(9);
     verify(originalCardService).findAll();
     verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(OriginalCard.class));
     verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS +
         NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
-    verify(gameRepository).save(any());
-    verify(playerRepository).saveAll(any());
 
     assertNotNull(createdGameResponseDto);
     assertEquals(TWO_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
@@ -388,7 +396,7 @@ class GameServiceImplUnitTest {
 
   @Test
   void createGameIn2019VersionForFourPlayersWithoutCustomCards() {
-    playerNames = List.of("A", "B", "C", "D");
+    playerNames = getPlayerNamesOf(4);
     createGameDto = initCreateGameDto(playerNames, true);
     createGameDto.setCustomCardNames(new ArrayList<>());
 
@@ -397,12 +405,9 @@ class GameServiceImplUnitTest {
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, times(10)).nextInt(anyInt());
-    verify(customCardService, times(2)).findAll();
+    verifyGameCreationCommonInvocations(10);
     verify(newReleaseCardService).findAll();
     verify(cardService, times(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS)).save(any());
-    verify(gameRepository).save(any());
-    verify(playerRepository).saveAll(any());
 
     assertNotNull(createdGameResponseDto);
     assertEquals(FOUR_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
@@ -413,7 +418,7 @@ class GameServiceImplUnitTest {
 
   @Test
   void createGameIn2019VersionForTwoPlayersWithoutCustomCards() {
-    playerNames = List.of("A", "B");
+    playerNames = getPlayerNamesOf(2);
     createGameDto = initCreateGameDto(playerNames, true);
     createGameDto.setCustomCardNames(new ArrayList<>());
 
@@ -422,12 +427,9 @@ class GameServiceImplUnitTest {
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, times(9)).nextInt(anyInt());
-    verify(customCardService, times(2)).findAll();
+    verifyGameCreationCommonInvocations(9);
     verify(newReleaseCardService).findAll();
     verify(cardService, times(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS)).save(any());
-    verify(gameRepository).save(any());
-    verify(playerRepository).saveAll(any());
 
     assertNotNull(createdGameResponseDto);
     assertEquals(TWO_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
@@ -438,7 +440,7 @@ class GameServiceImplUnitTest {
 
   @Test
   void createGameIn2019VersionForFourPlayersWithCustomCards() {
-    playerNames = List.of("A", "B", "C", "D");
+    playerNames = getPlayerNamesOf(4);
     createGameDto = initCreateGameDto(playerNames, true);
     createGameDto.setCustomCardNames(
         customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
@@ -448,14 +450,11 @@ class GameServiceImplUnitTest {
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, times(10)).nextInt(anyInt());
-    verify(customCardService, times(2)).findAll();
+    verifyGameCreationCommonInvocations(10);
     verify(newReleaseCardService).findAll();
     verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(NewReleaseCard.class));
     verify(cardService, times(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS +
         NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
-    verify(gameRepository).save(any());
-    verify(playerRepository).saveAll(any());
 
     assertNotNull(createdGameResponseDto);
     assertEquals(FOUR_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
@@ -466,7 +465,7 @@ class GameServiceImplUnitTest {
 
   @Test
   void createGameIn2019VersionForTwoPlayersWithCustomCards() {
-    playerNames = List.of("A", "B");
+    playerNames = getPlayerNamesOf(2);
     createGameDto = initCreateGameDto(playerNames, true);
     createGameDto.setCustomCardNames(
         customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
@@ -476,14 +475,11 @@ class GameServiceImplUnitTest {
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, times(9)).nextInt(anyInt());
-    verify(customCardService, times(2)).findAll();
+    verifyGameCreationCommonInvocations(9);
     verify(newReleaseCardService).findAll();
     verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(NewReleaseCard.class));
     verify(cardService, times(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS +
         NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
-    verify(gameRepository).save(any());
-    verify(playerRepository).saveAll(any());
 
     assertNotNull(createdGameResponseDto);
     assertEquals(TWO_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
@@ -505,6 +501,8 @@ class GameServiceImplUnitTest {
     assertEquals(NO_PLAYER_FOUND_WITH_GIVEN_UUID + UUID, exception.getMessage());
   }
 
+
+  // TODO itt tartok: test refactor
   @Test
   void playCardThrowsGameExceptionIfGameIsNotFound() {
     Player player = initTestPlayer();
@@ -515,8 +513,7 @@ class GameServiceImplUnitTest {
 
     exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
 
-    verify(playerService).findByUuid(player.getUuid());
-    verify(gameRepository).findGameByPlayerUuid(player.getUuid());
+    verifyCardPlayingCommonInvocations(player.getUuid());
 
     assertEquals(NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE, exception.getMessage());
   }
@@ -532,8 +529,7 @@ class GameServiceImplUnitTest {
 
     exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
 
-    verify(playerService).findByUuid(player.getUuid());
-    verify(gameRepository).findGameByPlayerUuid(player.getUuid());
+    verifyCardPlayingCommonInvocations(player.getUuid());
 
     assertEquals(NOT_YOUR_TURN_ERROR_MESSAGE + player.getName() + ".", exception.getMessage());
   }
@@ -553,8 +549,7 @@ class GameServiceImplUnitTest {
 
     exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
 
-    verify(playerService).findByUuid(player.getUuid());
-    verify(gameRepository).findGameByPlayerUuid(player.getUuid());
+    verifyCardPlayingCommonInvocations(player.getUuid());
 
     assertEquals(HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE, exception.getMessage());
   }
@@ -576,10 +571,21 @@ class GameServiceImplUnitTest {
 
     exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
 
-    verify(playerService).findByUuid(player.getUuid());
-    verify(gameRepository).findGameByPlayerUuid(player.getUuid());
+    verifyCardPlayingCommonInvocations(player.getUuid());
 
     assertEquals(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  private void verifyGameCreationCommonInvocations(int numberOfCalls) {
+    verify(random, times(numberOfCalls)).nextInt(anyInt());
+    verify(customCardService, times(2)).findAll();
+    verify(gameRepository).save(any());
+    verify(playerRepository).saveAll(any());
+  }
+
+  private void verifyCardPlayingCommonInvocations(String uuid) {
+    verify(playerService).findByUuid(uuid);
+    verify(gameRepository).findGameByPlayerUuid(uuid);
   }
 
 }

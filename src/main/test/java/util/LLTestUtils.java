@@ -35,6 +35,7 @@ public class LLTestUtils {
   public static final String UUID = "UUID";
   public static final String INVALID_UUID = "invalidUuid";
   public static final String PLAYER_NAME = "playerName";
+  public static final List<String> PLAYER_NAMES = List.of("A", "B", "C", "D", "E", "F", "G");
 
   public static List<OriginalCard> initOriginalCards(int numberOfOriginalCards) {
     List<OriginalCard> originalCards = new ArrayList<>();
@@ -173,5 +174,9 @@ public class LLTestUtils {
       assertEquals(UUID + i, actualDto.getUuid());
       assertEquals(ACTUAL_PLAYER, actualDto.getActualPlayer());
     }
+  }
+
+  public static List<String> getPlayerNamesOf(int number) {
+    return PLAYER_NAMES.subList(0, number);
   }
 }
