@@ -1,5 +1,9 @@
 package hu.xaddew.lovelyletter.service;
 
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.KING;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.NOT_YOUR_TURN_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.NO_PLAYER_FOUND_WITH_GIVEN_UUID;
@@ -15,6 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static util.LLTestUtils.ACTUAL_PLAYER;
+import static util.LLTestUtils.CARD_NAME;
 import static util.LLTestUtils.FIRST_INDEX;
 import static util.LLTestUtils.FOUR_PLAYER_NUMBER;
 import static util.LLTestUtils.INVALID_CUSTOM_CARD_NAME;
@@ -41,6 +46,7 @@ import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.exception.GameException;
+import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.CustomCard;
 import hu.xaddew.lovelyletter.model.Game;
 import hu.xaddew.lovelyletter.model.NewReleaseCard;
@@ -493,6 +499,9 @@ class GameServiceImplUnitTest {
     when(playerService.findByUuid(UUID)).thenReturn(null);
 
     exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verify(playerService).findByUuid(UUID);
+
     assertEquals(NO_PLAYER_FOUND_WITH_GIVEN_UUID + UUID, exception.getMessage());
   }
 
@@ -505,6 +514,10 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(null);
 
     exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verify(playerService).findByUuid(player.getUuid());
+    verify(gameRepository).findGameByPlayerUuid(player.getUuid());
+
     assertEquals(NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE, exception.getMessage());
   }
 
@@ -518,7 +531,55 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
 
     exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verify(playerService).findByUuid(player.getUuid());
+    verify(gameRepository).findGameByPlayerUuid(player.getUuid());
+
     assertEquals(NOT_YOUR_TURN_ERROR_MESSAGE + player.getName() + ".", exception.getMessage());
+  }
+
+  @Test
+  void playCardThrowsGameExceptionIfPlayerHasNoCardWhatWantToPlayOut() {
+    Player player = initTestPlayer();
+    playCardRequestDto = PlayCardRequestDto.builder()
+        .cardName(CARD_NAME)
+        .playerUuid(player.getUuid())
+        .build();
+    Game game = games.get(0);
+    game.setActualPlayer(player.getName());
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verify(playerService).findByUuid(player.getUuid());
+    verify(gameRepository).findGameByPlayerUuid(player.getUuid());
+
+    assertEquals(HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  @Test
+  void playCardThrowsGameExceptionIfPlayerTryToPlayOutCountessInsteadOfPrinceOrKing() {
+    Player player = initTestPlayer();
+    playCardRequestDto = PlayCardRequestDto.builder()
+        .cardName(KING)
+        .playerUuid(player.getUuid())
+        .build();
+    Game game = games.get(0);
+    game.setActualPlayer(player.getName());
+    player.setCardsInHand(
+        List.of(Card.builder().cardName(COUNTESS).build(), Card.builder().cardName(KING).build()));
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verify(playerService).findByUuid(player.getUuid());
+    verify(gameRepository).findGameByPlayerUuid(player.getUuid());
+
+    assertEquals(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE, exception.getMessage());
   }
 
 }
