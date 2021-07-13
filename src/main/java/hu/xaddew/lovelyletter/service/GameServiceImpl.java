@@ -42,44 +42,44 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class GameServiceImpl implements GameService {
 
-  private static final String MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE = "Hibás kérés játék létrehozásakor.";
-  private static final String PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE = "A játékosok száma 2, 3 vagy 4 lehet.";
-  private static final String PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE = "A 2019-es kiadású játékban a játékosok száma 2-6 között lehet.";
-  private static final String PLAYER_NAME_ERROR_MESSAGE = "Nem szerepelhet két játékos ugyanazzal a névvel!";
-  private static final String INVALID_CUSTOM_CARD_ERROR_MESSAGE = "Egy vagy több ismeretlen kártya szerepel a megadott egyedi kártyák listájában.";
-  private static final String PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE = "Az általad választott játékost Szobalány védi.";
-  private static final String PLAYER_SELF_TARGETING_ERROR_MESSAGE = "Király, Báró, Pap és Őr kijátszásakor nem választhatod saját magadat.";
-  private static final String PLAYER_NOT_FOUND_ERROR_MESSAGE = "Nem találtam az általad választott játékost.";
-  private static final String PLAYER_NOT_SELECTED_ERROR_MESSAGE = "Nem választottál másik játékost a kártya hatásához.";
-  private static final String HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE = "Nincsen nálad a kártya, amit ki szeretnél játszani.";
-  private static final String COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE = "Ha a Grófnő a Királlyal vagy a Herceggel egyszerre van a kezedben, a Grófnőt kell eldobnod.";
-  private static final String NOT_YOUR_TURN_ERROR_MESSAGE = "Nem a te köröd van, ";
-  private static final String NO_GAME_FOUND_WITH_GIVEN_UUID_ERROR_MESSAGE = "Nem találtam játékot ezzel az uuid-val: ";
-  private static final String NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE = "Nem találtam játékot ezzel a játékossal.";
-  private static final String HAVE_NO_CARDS_WHAT_WANT_TO_PUT_BACK_ERROR_MESSAGE = "Az általad visszatenni kívánt lap(ok) nincs(enek) nálad.";
-  private static final String MISSING_PUT_BACK_A_CARD_REQUEST_ERROR_MESSAGE = "A visszarakandó kártyák nevének megadása szükséges.";
-  private static final String PLAYER_IS_ALREADY_OUT_OF_ROUND_ERROR_MESSAGE = "Az általad választott játékos már kiesett a fordulóból.";
-  private static final String NO_PLAYER_FOUND_WITH_GIVEN_UUID = "Nem találtam játékost ezzel az uuid-val: ";
-  private static final String ACTUAL_PLAYER_IS = "Soron lévő játékos: ";
-  private static final String GAME_IS_CREATED_UUID = "Játék létrehozva. Uuid: ";
-  private static final String PLAYERS_ARE = "Játékosok: ";
-  private static final String COMPARE_CARD_IN_HAND_WITH = " Báróval összehasonlította a kézben lévő lapját ";
-  private static final String ROUND_IS_OVER_ONLY_ONE_PLAYER_LEFT = "A forduló véget ért, mert csak egy játékos maradt bent.";
-  private static final String ROUND_IS_OVER_DRAW_DECK_IS_EMPTY = "A forduló véget ért, mert elfogyott a húzópakli.";
-  private static final String WON_THE_ROUND = " nyerte a fordulót!";
-  private static final String GAME_IS_OVER_STATUS_MESSAGE = "A játék véget ért, mivel valaki elég szerelmes levelet gyűjtött össze!";
-  private static final String NEW_ROUND_BEGINS_STATUS_MESSAGE = "Új forduló kezdődik. ";
-  private static final String CONGRATULATE = "Gratulálunk, ";
-  private static final String PRINCESS = "Hercegnő";
-  private static final String COUNTESS = "Grófnő";
-  private static final String KING = "Király";
-  private static final String CHANCELLOR = "Kancellár";
-  private static final String PRINCE = "Herceg";
-  private static final String HANDMAID = "Szobalány";
-  private static final String BARON = "Báró";
-  private static final String PRIEST = "Pap";
-  private static final String GUARD = "Őr";
-  private static final String SPY = "Kém";
+  public static final String MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE = "Hibás kérés játék létrehozásakor.";
+  public static final String PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE = "A játékosok száma 2, 3 vagy 4 lehet.";
+  public static final String PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE = "A 2019-es kiadású játékban a játékosok száma 2-6 között lehet.";
+  public static final String PLAYER_NAME_ERROR_MESSAGE = "Nem szerepelhet két játékos ugyanazzal a névvel!";
+  public static final String INVALID_CUSTOM_CARD_ERROR_MESSAGE = "Egy vagy több ismeretlen kártya szerepel a megadott egyedi kártyák listájában.";
+  public static final String PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE = "Az általad választott játékost Szobalány védi.";
+  public static final String PLAYER_SELF_TARGETING_ERROR_MESSAGE = "Király, Báró, Pap és Őr kijátszásakor nem választhatod saját magadat.";
+  public static final String PLAYER_NOT_FOUND_ERROR_MESSAGE = "Nem találtam az általad választott játékost.";
+  public static final String PLAYER_NOT_SELECTED_ERROR_MESSAGE = "Nem választottál másik játékost a kártya hatásához.";
+  public static final String HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE = "Nincsen nálad a kártya, amit ki szeretnél játszani.";
+  public static final String COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE = "Ha a Grófnő a Királlyal vagy a Herceggel egyszerre van a kezedben, a Grófnőt kell eldobnod.";
+  public static final String NOT_YOUR_TURN_ERROR_MESSAGE = "Nem a te köröd van, ";
+  public static final String NO_GAME_FOUND_WITH_GIVEN_UUID_ERROR_MESSAGE = "Nem találtam játékot ezzel az uuid-val: ";
+  public static final String NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE = "Nem találtam játékot ezzel a játékossal.";
+  public static final String HAVE_NO_CARDS_WHAT_WANT_TO_PUT_BACK_ERROR_MESSAGE = "Az általad visszatenni kívánt lap(ok) nincs(enek) nálad.";
+  public static final String MISSING_PUT_BACK_A_CARD_REQUEST_ERROR_MESSAGE = "A visszarakandó kártyák nevének megadása szükséges.";
+  public static final String PLAYER_IS_ALREADY_OUT_OF_ROUND_ERROR_MESSAGE = "Az általad választott játékos már kiesett a fordulóból.";
+  public static final String NO_PLAYER_FOUND_WITH_GIVEN_UUID = "Nem találtam játékost ezzel az uuid-val: ";
+  public static final String ACTUAL_PLAYER_IS = "Soron lévő játékos: ";
+  public static final String GAME_IS_CREATED_UUID = "Játék létrehozva. Uuid: ";
+  public static final String PLAYERS_ARE = "Játékosok: ";
+  public static final String COMPARE_CARD_IN_HAND_WITH = " Báróval összehasonlította a kézben lévő lapját ";
+  public static final String ROUND_IS_OVER_ONLY_ONE_PLAYER_LEFT = "A forduló véget ért, mert csak egy játékos maradt bent.";
+  public static final String ROUND_IS_OVER_DRAW_DECK_IS_EMPTY = "A forduló véget ért, mert elfogyott a húzópakli.";
+  public static final String WON_THE_ROUND = " nyerte a fordulót!";
+  public static final String GAME_IS_OVER_STATUS_MESSAGE = "A játék véget ért, mivel valaki elég szerelmes levelet gyűjtött össze!";
+  public static final String NEW_ROUND_BEGINS_STATUS_MESSAGE = "Új forduló kezdődik. ";
+  public static final String CONGRATULATE = "Gratulálunk, ";
+  public static final String PRINCESS = "Hercegnő";
+  public static final String COUNTESS = "Grófnő";
+  public static final String KING = "Király";
+  public static final String CHANCELLOR = "Kancellár";
+  public static final String PRINCE = "Herceg";
+  public static final String HANDMAID = "Szobalány";
+  public static final String BARON = "Báró";
+  public static final String PRIEST = "Pap";
+  public static final String GUARD = "Őr";
+  public static final String SPY = "Kém";
 
   private int randomIndex;
 
@@ -473,11 +473,15 @@ public class GameServiceImpl implements GameService {
 
     if (is2019Version) {
       List<NewReleaseCard> cardsFromDatabase = newReleaseCardService.findAll();
-      cardsFromDatabase.addAll(mapList(customCardsInPlay, NewReleaseCard.class));
+      if (!customCardsInPlay.isEmpty()) {
+        cardsFromDatabase.addAll(mapList(customCardsInPlay, NewReleaseCard.class));
+      }
       drawDeck = createNewDrawDeckFromNewReleaseCards(cardsFromDatabase);
     } else {
       List<OriginalCard> cardsFromDatabase = originalCardService.findAll();
-      cardsFromDatabase.addAll(mapList(customCardsInPlay, OriginalCard.class));
+      if (!customCardsInPlay.isEmpty()) {
+        cardsFromDatabase.addAll(mapList(customCardsInPlay, OriginalCard.class));
+      }
       drawDeck = createNewDrawDeckFromOriginalCards(cardsFromDatabase);
     }
     game.setDrawDeck(drawDeck);
