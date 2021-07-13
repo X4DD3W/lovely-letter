@@ -2,11 +2,14 @@ package util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import hu.xaddew.lovelyletter.dto.AdditionalInfoDto;
 import hu.xaddew.lovelyletter.dto.CreateGameDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
+import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.CustomCard;
 import hu.xaddew.lovelyletter.model.Game;
+import hu.xaddew.lovelyletter.model.NewReleaseCard;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import java.util.ArrayList;
@@ -18,10 +21,13 @@ import lombok.experimental.UtilityClass;
 public class LLTestUtils {
 
   public static final int NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS = 10;
-  public static final int NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS = 5;
+  public static final int NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS = 3;
+  public static final int NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS = 10;
   public static final int NUMBER_OF_PRE_GENERATED_GAMES = 3;
-  public static final int FOUR_PLAYERS = 4;
+  public static final int TWO_PLAYER_NUMBER = 2;
+  public static final int FOUR_PLAYER_NUMBER = 4;
   public static final int FIRST_INDEX = 1;
+  public static final int TEST_PLAYER_UNIVERSAL_NUMBER = 77;
   public static final String CARD_NAME = "cardName";
   public static final String INVALID_CUSTOM_CARD_NAME = "invalidCustomCardName";
   public static final String CARD_DESCRIPTION = "Description";
@@ -81,6 +87,23 @@ public class LLTestUtils {
     return customCards;
   }
 
+  public static List<NewReleaseCard> initNewReleaseCards(int numberOfNewReleaseCards) {
+    List<NewReleaseCard> newReleaseCards = new ArrayList<>();
+    for (int i = 1; i <= numberOfNewReleaseCards; i++) {
+      newReleaseCards.add(NewReleaseCard.builder()
+          .id((long) i)
+          .cardName(CARD_NAME + i)
+          .cardValue(numberOfNewReleaseCards - i)
+          .quantity(i)
+          .description(CARD_DESCRIPTION + i)
+          .is2PlayerPublic(false)
+          .isAtAPlayer(false)
+          .isPutAside(false)
+          .build());
+    }
+    return newReleaseCards;
+  }
+
   public static List<Game> initGames(int numberOfGames) {
     List<Game> games = new ArrayList<>();
     for (int i = 1; i <= numberOfGames; i++) {
@@ -115,11 +138,32 @@ public class LLTestUtils {
     return players;
   }
 
+  public static Player initTestPlayer() {
+    return Player.builder()
+        .id((long) TEST_PLAYER_UNIVERSAL_NUMBER)
+        .uuid(String.valueOf(TEST_PLAYER_UNIVERSAL_NUMBER))
+        .name(PLAYER_NAME + TEST_PLAYER_UNIVERSAL_NUMBER)
+        .cardsInHand(new ArrayList<>())
+        .playedCards(new ArrayList<>())
+        .numberOfLetters(0)
+        .isInPlay(true)
+        .orderNumber(1)
+        .build();
+  }
+
   public static CreateGameDto initCreateGameDto(List<String> playerNames, boolean is2019Version) {
     CreateGameDto createGameDto = new CreateGameDto();
     createGameDto.setPlayerNames(playerNames);
     createGameDto.setIs2019Version(is2019Version);
     return createGameDto;
+  }
+
+  public static PlayCardRequestDto initPlayCardRequestDto(String cardName, AdditionalInfoDto infoDto) {
+    return PlayCardRequestDto.builder()
+        .playerUuid(UUID)
+        .cardName(cardName)
+        .additionalInfo(infoDto)
+        .build();
   }
 
   public void assertGeneratedValuesOfGamesAreEquals(int numberOfPreGeneratedGames, List<GodModeDto> godModeDtoList) {

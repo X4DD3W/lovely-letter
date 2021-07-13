@@ -1,5 +1,8 @@
 package hu.xaddew.lovelyletter.service;
 
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.NOT_YOUR_TURN_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.NO_PLAYER_FOUND_WITH_GIVEN_UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -8,33 +11,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static util.LLTestUtils.ACTUAL_PLAYER;
 import static util.LLTestUtils.FIRST_INDEX;
-import static util.LLTestUtils.FOUR_PLAYERS;
+import static util.LLTestUtils.FOUR_PLAYER_NUMBER;
 import static util.LLTestUtils.INVALID_CUSTOM_CARD_NAME;
 import static util.LLTestUtils.INVALID_UUID;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS;
+import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_GAMES;
+import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS;
+import static util.LLTestUtils.TWO_PLAYER_NUMBER;
 import static util.LLTestUtils.UUID;
 import static util.LLTestUtils.initCreateGameDto;
 import static util.LLTestUtils.initCustomCards;
 import static util.LLTestUtils.initGames;
-import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_GAMES;
+import static util.LLTestUtils.initNewReleaseCards;
 import static util.LLTestUtils.initOriginalCards;
 import static util.LLTestUtils.initPlayers;
+import static util.LLTestUtils.initTestPlayer;
 
 import hu.xaddew.lovelyletter.dto.CreateGameDto;
 import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
+import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
+import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.CustomCard;
 import hu.xaddew.lovelyletter.model.Game;
+import hu.xaddew.lovelyletter.model.NewReleaseCard;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
@@ -43,7 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -90,17 +99,22 @@ class GameServiceImplUnitTest {
   private static List<Player> players;
   private static List<OriginalCard> originalCards;
   private static List<CustomCard> customCards;
+  private static List<NewReleaseCard> newReleaseCards;
   private static CreateGameDto createGameDto;
+  private static PlayCardRequestDto playCardRequestDto;
 
   private Game resultGame;
   private List<GodModeDto> godModeDtoList;
   private CreatedGameResponseDto createdGameResponseDto;
+  private List<String> playerNames;
+  private GameException exception;
 
-  @BeforeAll
-  static void init() {
+  @BeforeEach
+  void init() {
     games = initGames(NUMBER_OF_PRE_GENERATED_GAMES);
-    players = initPlayers(FOUR_PLAYERS);
+    players = initPlayers(FOUR_PLAYER_NUMBER);
     originalCards = initOriginalCards(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS);
+    newReleaseCards = initNewReleaseCards(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS);
     customCards = initCustomCards(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS);
   }
 
@@ -155,6 +169,7 @@ class GameServiceImplUnitTest {
   @Test
   void getGameStatus() {
     String gameUuid = UUID + FIRST_INDEX;
+    games.get(FIRST_INDEX).setPlayersInGame(players);
     when(gameRepository.findByUuid(gameUuid)).thenReturn(games.get(FIRST_INDEX));
 
     GameStatusDto gameStatusDto = gameService.getGameStatus(gameUuid);
@@ -260,27 +275,250 @@ class GameServiceImplUnitTest {
   }
 
   @Test
-  void createGameInClassicVersionForFourPlayers() {
-    createGameDto = initCreateGameDto(List.of("A", "B", "C", "D"), false);
-    createGameDto.setCustomCardNames(customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
+  void createGameInClassicVersionForFourPlayersWithoutCustomCards() {
+    playerNames = List.of("A", "B", "C", "D");
+    createGameDto = initCreateGameDto(playerNames, false);
+    createGameDto.setCustomCardNames(new ArrayList<>());
 
     when(customCardService.findAll()).thenReturn(customCards);
     when(originalCardService.findAll()).thenReturn(originalCards);
 
     createdGameResponseDto = gameService.createGame(createGameDto);
 
-    verify(random, atLeast(4)).nextInt(anyInt());
+    verify(random, times(10)).nextInt(anyInt());
     verify(customCardService, times(2)).findAll();
     verify(originalCardService).findAll();
-    verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(OriginalCard.class));
-    verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS
-        + NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS)).save(any());
     verify(gameRepository).save(any());
     verify(playerRepository).saveAll(any());
 
     assertNotNull(createdGameResponseDto);
+    assertEquals(FOUR_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
+    assertEquals(playerNames,
+        createdGameResponseDto.getPlayerUuidDtos().stream().map(PlayerUuidDto::getName)
+            .collect(Collectors.toList()));
   }
 
+  @Test
+  void createGameInClassicVersionForTwoPlayersWithoutCustomCards() {
+    playerNames = List.of("A", "B");
+    createGameDto = initCreateGameDto(playerNames, false);
+    createGameDto.setCustomCardNames(new ArrayList<>());
 
+    when(customCardService.findAll()).thenReturn(customCards);
+    when(originalCardService.findAll()).thenReturn(originalCards);
+
+    createdGameResponseDto = gameService.createGame(createGameDto);
+
+    verify(random, times(9)).nextInt(anyInt());
+    verify(customCardService, times(2)).findAll();
+    verify(originalCardService).findAll();
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS)).save(any());
+    verify(gameRepository).save(any());
+    verify(playerRepository).saveAll(any());
+
+    assertNotNull(createdGameResponseDto);
+    assertEquals(TWO_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
+    assertEquals(playerNames,
+        createdGameResponseDto.getPlayerUuidDtos().stream().map(PlayerUuidDto::getName)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  void createGameInClassicVersionForFourPlayersWithCustomCards() {
+    playerNames = List.of("A", "B", "C", "D");
+    createGameDto = initCreateGameDto(playerNames, false);
+    createGameDto.setCustomCardNames(
+        customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
+
+    when(customCardService.findAll()).thenReturn(customCards);
+    when(originalCardService.findAll()).thenReturn(originalCards);
+
+    createdGameResponseDto = gameService.createGame(createGameDto);
+
+    verify(random, times(10)).nextInt(anyInt());
+    verify(customCardService, times(2)).findAll();
+    verify(originalCardService).findAll();
+    verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(OriginalCard.class));
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS +
+        NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
+    verify(gameRepository).save(any());
+    verify(playerRepository).saveAll(any());
+
+    assertNotNull(createdGameResponseDto);
+    assertEquals(FOUR_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
+    assertEquals(playerNames,
+        createdGameResponseDto.getPlayerUuidDtos().stream().map(PlayerUuidDto::getName)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  void createGameInClassicVersionForTwoPlayersWithCustomCards() {
+    playerNames = List.of("A", "B");
+    createGameDto = initCreateGameDto(playerNames, false);
+    createGameDto.setCustomCardNames(
+        customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
+
+    when(customCardService.findAll()).thenReturn(customCards);
+    when(originalCardService.findAll()).thenReturn(originalCards);
+
+    createdGameResponseDto = gameService.createGame(createGameDto);
+
+    verify(random, times(9)).nextInt(anyInt());
+    verify(customCardService, times(2)).findAll();
+    verify(originalCardService).findAll();
+    verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(OriginalCard.class));
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS +
+        NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
+    verify(gameRepository).save(any());
+    verify(playerRepository).saveAll(any());
+
+    assertNotNull(createdGameResponseDto);
+    assertEquals(TWO_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
+    assertEquals(playerNames,
+        createdGameResponseDto.getPlayerUuidDtos().stream().map(PlayerUuidDto::getName)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  void createGameIn2019VersionForFourPlayersWithoutCustomCards() {
+    playerNames = List.of("A", "B", "C", "D");
+    createGameDto = initCreateGameDto(playerNames, true);
+    createGameDto.setCustomCardNames(new ArrayList<>());
+
+    when(customCardService.findAll()).thenReturn(customCards);
+    when(newReleaseCardService.findAll()).thenReturn(newReleaseCards);
+
+    createdGameResponseDto = gameService.createGame(createGameDto);
+
+    verify(random, times(10)).nextInt(anyInt());
+    verify(customCardService, times(2)).findAll();
+    verify(newReleaseCardService).findAll();
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS)).save(any());
+    verify(gameRepository).save(any());
+    verify(playerRepository).saveAll(any());
+
+    assertNotNull(createdGameResponseDto);
+    assertEquals(FOUR_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
+    assertEquals(playerNames,
+        createdGameResponseDto.getPlayerUuidDtos().stream().map(PlayerUuidDto::getName)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  void createGameIn2019VersionForTwoPlayersWithoutCustomCards() {
+    playerNames = List.of("A", "B");
+    createGameDto = initCreateGameDto(playerNames, true);
+    createGameDto.setCustomCardNames(new ArrayList<>());
+
+    when(customCardService.findAll()).thenReturn(customCards);
+    when(newReleaseCardService.findAll()).thenReturn(newReleaseCards);
+
+    createdGameResponseDto = gameService.createGame(createGameDto);
+
+    verify(random, times(9)).nextInt(anyInt());
+    verify(customCardService, times(2)).findAll();
+    verify(newReleaseCardService).findAll();
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS)).save(any());
+    verify(gameRepository).save(any());
+    verify(playerRepository).saveAll(any());
+
+    assertNotNull(createdGameResponseDto);
+    assertEquals(TWO_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
+    assertEquals(playerNames,
+        createdGameResponseDto.getPlayerUuidDtos().stream().map(PlayerUuidDto::getName)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  void createGameIn2019VersionForFourPlayersWithCustomCards() {
+    playerNames = List.of("A", "B", "C", "D");
+    createGameDto = initCreateGameDto(playerNames, true);
+    createGameDto.setCustomCardNames(
+        customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
+
+    when(customCardService.findAll()).thenReturn(customCards);
+    when(newReleaseCardService.findAll()).thenReturn(newReleaseCards);
+
+    createdGameResponseDto = gameService.createGame(createGameDto);
+
+    verify(random, times(10)).nextInt(anyInt());
+    verify(customCardService, times(2)).findAll();
+    verify(newReleaseCardService).findAll();
+    verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(NewReleaseCard.class));
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS +
+        NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
+    verify(gameRepository).save(any());
+    verify(playerRepository).saveAll(any());
+
+    assertNotNull(createdGameResponseDto);
+    assertEquals(FOUR_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
+    assertEquals(playerNames,
+        createdGameResponseDto.getPlayerUuidDtos().stream().map(PlayerUuidDto::getName)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  void createGameIn2019VersionForTwoPlayersWithCustomCards() {
+    playerNames = List.of("A", "B");
+    createGameDto = initCreateGameDto(playerNames, true);
+    createGameDto.setCustomCardNames(
+        customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()));
+
+    when(customCardService.findAll()).thenReturn(customCards);
+    when(newReleaseCardService.findAll()).thenReturn(newReleaseCards);
+
+    createdGameResponseDto = gameService.createGame(createGameDto);
+
+    verify(random, times(9)).nextInt(anyInt());
+    verify(customCardService, times(2)).findAll();
+    verify(newReleaseCardService).findAll();
+    verify(modelMapper, times(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).map(any(), eq(NewReleaseCard.class));
+    verify(cardService, times(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS +
+        NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS)).save(any());
+    verify(gameRepository).save(any());
+    verify(playerRepository).saveAll(any());
+
+    assertNotNull(createdGameResponseDto);
+    assertEquals(TWO_PLAYER_NUMBER, createdGameResponseDto.getPlayerUuidDtos().size());
+    assertEquals(playerNames,
+        createdGameResponseDto.getPlayerUuidDtos().stream().map(PlayerUuidDto::getName)
+            .collect(Collectors.toList()));
+  }
+
+  @Test
+  void playCardThrowsGameExceptionIfActualPlayerIsNotFound() {
+    playCardRequestDto = PlayCardRequestDto.builder().playerUuid(UUID).build();
+
+    when(playerService.findByUuid(UUID)).thenReturn(null);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+    assertEquals(NO_PLAYER_FOUND_WITH_GIVEN_UUID + UUID, exception.getMessage());
+  }
+
+  @Test
+  void playCardThrowsGameExceptionIfGameIsNotFound() {
+    Player player = initTestPlayer();
+    playCardRequestDto = PlayCardRequestDto.builder().playerUuid(player.getUuid()).build();
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(null);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+    assertEquals(NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  @Test
+  void playCardThrowsGameExceptionIfPlayerIsNotTheActualPlayer() {
+    Player player = initTestPlayer();
+    playCardRequestDto = PlayCardRequestDto.builder().playerUuid(player.getUuid()).build();
+    Game game = games.get(0);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+    assertEquals(NOT_YOUR_TURN_ERROR_MESSAGE + player.getName() + ".", exception.getMessage());
+  }
 
 }
