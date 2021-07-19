@@ -60,4 +60,8 @@ public class Card {
   @JsonIgnore
   @Column(name = "is_at_a_player")
   private Boolean isAtAPlayer;
+
+  public Card(String cardName) {
+    this.cardName = cardName;
+  }
 }

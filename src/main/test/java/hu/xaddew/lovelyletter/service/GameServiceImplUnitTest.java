@@ -2,6 +2,7 @@ package hu.xaddew.lovelyletter.service;
 
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.HANDMAID;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.INVALID_CUSTOM_CARD_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.KING;
@@ -12,7 +13,9 @@ import static hu.xaddew.lovelyletter.service.GameServiceImpl.NO_PLAYER_FOUND_WIT
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NAME_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.PRINCE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,6 +36,7 @@ import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_GAMES;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS;
+import static util.LLTestUtils.THREE_PLAYER_NUMBER;
 import static util.LLTestUtils.TWO_PLAYER_NUMBER;
 import static util.LLTestUtils.UUID;
 import static util.LLTestUtils.getPlayerNamesOf;
@@ -41,7 +45,6 @@ import static util.LLTestUtils.initCustomCards;
 import static util.LLTestUtils.initGames;
 import static util.LLTestUtils.initNewReleaseCards;
 import static util.LLTestUtils.initOriginalCards;
-import static util.LLTestUtils.initPlayers;
 import static util.LLTestUtils.initTestPlayer;
 import static util.LLTestUtils.assertGeneratedValuesOfGamesAreEquals;
 
@@ -52,6 +55,7 @@ import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
+import hu.xaddew.lovelyletter.dto.ResponseDto;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.CustomCard;
@@ -107,15 +111,15 @@ class GameServiceImplUnitTest {
   @InjectMocks
   private GameServiceImpl gameService;
 
-  private static List<Game> games;
-  private static List<Player> players;
-  private static List<OriginalCard> originalCards;
-  private static List<CustomCard> customCards;
-  private static List<NewReleaseCard> newReleaseCards;
-  private static CreateGameDto createGameDto;
-  private static PlayCardRequestDto playCardRequestDto;
-
+  private List<Game> games;
+  private List<Player> players;
   private Game game;
+  private Player player;
+  private List<OriginalCard> originalCards;
+  private List<CustomCard> customCards;
+  private List<NewReleaseCard> newReleaseCards;
+  private CreateGameDto createGameDto;
+  private PlayCardRequestDto playCardRequestDto;
   private List<GodModeDto> godModeDtoList;
   private CreatedGameResponseDto createdGameResponseDto;
   private List<String> playerNames;
@@ -123,8 +127,8 @@ class GameServiceImplUnitTest {
 
   @BeforeEach
   void init() {
-    games = initGames(NUMBER_OF_PRE_GENERATED_GAMES);
-    players = initPlayers(FOUR_PLAYER_NUMBER);
+    games = initGames(NUMBER_OF_PRE_GENERATED_GAMES, THREE_PLAYER_NUMBER);
+    players = games.get(0).getPlayersInGame();
     originalCards = initOriginalCards(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS);
     newReleaseCards = initNewReleaseCards(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS);
     customCards = initCustomCards(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS);
@@ -133,7 +137,7 @@ class GameServiceImplUnitTest {
   @Test
   void testInitialization() {
     assertEquals(NUMBER_OF_PRE_GENERATED_GAMES, games.size());
-    assertEquals(FOUR_PLAYER_NUMBER, players.size());
+    assertEquals(THREE_PLAYER_NUMBER, players.size());
     assertEquals(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS, originalCards.size());
     assertEquals(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS, newReleaseCards.size());
     assertEquals(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS, customCards.size());
@@ -142,11 +146,8 @@ class GameServiceImplUnitTest {
   @Test
   void getAllGamesWithSecretInfos() {
     when(gameRepository.findAll()).thenReturn(games);
-
     godModeDtoList = gameService.getAllGamesWithSecretInfos();
-
     verify(gameRepository).findAll();
-
     assertEquals(NUMBER_OF_PRE_GENERATED_GAMES, godModeDtoList.size());
     assertGeneratedValuesOfGamesAreEquals(NUMBER_OF_PRE_GENERATED_GAMES, godModeDtoList);
   }
@@ -154,22 +155,16 @@ class GameServiceImplUnitTest {
   @Test
   void getAllGamesWithSecretInfosIfListIsEmpty() {
     when(gameRepository.findAll()).thenReturn(new ArrayList<>());
-
     godModeDtoList = gameService.getAllGamesWithSecretInfos();
-
     verify(gameRepository).findAll();
-
     assertTrue(godModeDtoList.isEmpty());
   }
 
   @Test
   void findAll() {
     when(gameRepository.findAll()).thenReturn(games);
-
     List<Game> result = gameService.findAll();
-
     verify(gameRepository).findAll();
-
     assertNotNull(result);
     assertEquals(result, games);
   }
@@ -501,8 +496,6 @@ class GameServiceImplUnitTest {
     assertEquals(NO_PLAYER_FOUND_WITH_GIVEN_UUID + UUID, exception.getMessage());
   }
 
-
-  // TODO itt tartok: test refactor
   @Test
   void playCardThrowsGameExceptionIfGameIsNotFound() {
     Player player = initTestPlayer();
@@ -555,7 +548,7 @@ class GameServiceImplUnitTest {
   }
 
   @Test
-  void playCardThrowsGameExceptionIfPlayerTryToPlayOutCountessInsteadOfPrinceOrKing() {
+  void playCardThrowsGameExceptionIfPlayerTryToPlayOutCountessInsteadOfKing() {
     Player player = initTestPlayer();
     playCardRequestDto = PlayCardRequestDto.builder()
         .cardName(KING)
@@ -576,8 +569,64 @@ class GameServiceImplUnitTest {
     assertEquals(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE, exception.getMessage());
   }
 
-  private void verifyGameCreationCommonInvocations(int numberOfCalls) {
-    verify(random, times(numberOfCalls)).nextInt(anyInt());
+  @Test
+  void playCardThrowsGameExceptionIfPlayerTryToPlayOutCountessInsteadOfPrince() {
+    Player player = initTestPlayer();
+    playCardRequestDto = PlayCardRequestDto.builder()
+        .cardName(PRINCE)
+        .playerUuid(player.getUuid())
+        .build();
+    Game game = games.get(0);
+    game.setActualPlayer(player.getName());
+    player.setCardsInHand(
+        List.of(Card.builder().cardName(COUNTESS).build(), Card.builder().cardName(PRINCE).build()));
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+
+    assertEquals(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutKingAndThereIsNotOtherTargetablePlayer() {
+    Card cardToPlayOut = new Card(KING);
+    // ismétlődés:
+    player = players.get(0);
+    Game game = games.get(0);
+    player.getCardsInHand().add(cardToPlayOut);
+    playCardRequestDto = PlayCardRequestDto.builder()
+        .cardName(KING)
+        .playerUuid(player.getUuid())
+        .build();
+    players.forEach(p -> p.getPlayedCards().add(new Card(HANDMAID)));
+    // ismétlődés vége
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, playCardRequestDto.getCardName()))
+        .thenReturn(cardToPlayOut);
+
+    ResponseDto responseDto = gameService.playCard(playCardRequestDto);
+
+    String generatedLog = "1. " + player.getName() + " kijátszott egy " + KING + "t, de mivel nem volt "
+        + "megcélozható játékos, nem történt semmi.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(game.getLog().contains(generatedLog));
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertEquals(1, player.getCardsInHand().size());
+    assertNotEquals(player.getName(), game.getActualPlayer());
+  }
+
+  private void verifyGameCreationCommonInvocations(int times) {
+    verify(random, times(times)).nextInt(anyInt());
     verify(customCardService, times(2)).findAll();
     verify(gameRepository).save(any());
     verify(playerRepository).saveAll(any());
@@ -587,5 +636,4 @@ class GameServiceImplUnitTest {
     verify(playerService).findByUuid(uuid);
     verify(gameRepository).findGameByPlayerUuid(uuid);
   }
-
 }

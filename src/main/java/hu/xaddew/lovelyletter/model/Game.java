@@ -71,6 +71,10 @@ public class Game {
     return newLog;
   }
 
+  public String getLastLog() {
+    return this.log.isEmpty() ? "" : this.log.get(this.log.size() - 1);
+  }
+
   public void addHiddenLog(String message) {
     String newLog = (this.hiddenLog.size() + 1) + ". " + message;
     this.hiddenLog.add(newLog);
