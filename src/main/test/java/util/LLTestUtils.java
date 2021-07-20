@@ -40,7 +40,7 @@ public class LLTestUtils {
   public static List<Game> initGames(int numberOfGames, int numberOfPlayers) {
     List<Game> games = new ArrayList<>();
     for (int i = 1; i <= numberOfGames; i++) {
-      List<Card> drawDeck = List.of(initCardInDrawDeck(CARD_NAME));
+      List<Card> drawDeck = initCards(4);
       List<Player> players = initPlayers(numberOfPlayers);
       games.add(Game.builder()
           .id((long) i)
@@ -56,19 +56,6 @@ public class LLTestUtils {
           .build());
     }
     return games;
-  }
-
-  public static Card initCardInDrawDeck(String cardName) {
-    return Card.builder()
-        .id((long) UNIVERSAL_NUMBER)
-        .cardName(cardName)
-        .cardValue(UNIVERSAL_NUMBER)
-        .quantity(UNIVERSAL_NUMBER)
-        .description(CARD_DESCRIPTION)
-        .is2PlayerPublic(false)
-        .isAtAPlayer(false)
-        .isPutAside(false)
-        .build();
   }
 
   public static List<Player> initPlayers(int numberOfPlayers) {

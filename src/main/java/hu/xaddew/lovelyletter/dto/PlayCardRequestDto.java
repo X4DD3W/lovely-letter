@@ -16,4 +16,13 @@ public class PlayCardRequestDto {
   private String playerUuid;
   private String cardName;
   private AdditionalInfoDto additionalInfo;
+
+  public PlayCardRequestDto(String playerUuid) {
+    this.playerUuid = playerUuid;
+  }
+
+  public PlayCardRequestDto(String playerUuid, String cardName) {
+    this.playerUuid = playerUuid;
+    this.cardName = cardName;
+  }
 }

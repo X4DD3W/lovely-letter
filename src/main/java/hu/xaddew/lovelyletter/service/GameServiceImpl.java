@@ -745,11 +745,8 @@ public class GameServiceImpl implements GameService {
   private String addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(Player actualPlayer,
       Card cardWantToPlayOut, Game game) {
     String cardName = cardWantToPlayOut.getCardName();
-    if (cardName.equals("Pap")) {
-      cardName = "Papo";
-    }
-    return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardName
-        + "t, de mivel nem volt megcélozható játékos, nem történt semmi.");
+    return game.addLog(actualPlayer.getName() + " kijátszott lapja egy " + cardName + " volt, "
+        + "de megcélozható játékos híján nem történt semmi.");
   }
 
   private String addLogWhenAPlayerMustDiscardPrincess(Player actualPlayer, Game game) {
