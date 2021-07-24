@@ -12,13 +12,20 @@ import static hu.xaddew.lovelyletter.service.GameServiceImpl.MISSING_GAME_CREATE
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.NOT_YOUR_TURN_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.NO_PLAYER_FOUND_WITH_GIVEN_UUID;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_IS_ALREADY_OUT_OF_ROUND_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NAME_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NOT_FOUND_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NOT_SELECTED_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.PLAYER_SELF_TARGETING_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PRIEST;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PRINCE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PRINCESS;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.ROUND_IS_OVER_DRAW_DECK_IS_EMPTY;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.SPY;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.WON_THE_ROUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -42,8 +49,10 @@ import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_GAMES;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS;
 import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS;
+import static util.LLTestUtils.PLAYER_NAME;
 import static util.LLTestUtils.THREE_PLAYER_NUMBER;
 import static util.LLTestUtils.TWO_PLAYER_NUMBER;
+import static util.LLTestUtils.UNIVERSAL_NUMBER;
 import static util.LLTestUtils.UUID;
 import static util.LLTestUtils.getPlayerNamesOf;
 import static util.LLTestUtils.initCreateGameDto;
@@ -54,6 +63,7 @@ import static util.LLTestUtils.initOriginalCards;
 import static util.LLTestUtils.initTestPlayer;
 import static util.LLTestUtils.assertGeneratedValuesOfGamesAreEquals;
 
+import hu.xaddew.lovelyletter.dto.AdditionalInfoDto;
 import hu.xaddew.lovelyletter.dto.CreateGameDto;
 import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
@@ -123,6 +133,8 @@ class GameServiceImplUnitTest {
   private List<Player> players;
   private Game game;
   private Player player;
+  private Card cardToPlayOut;
+  private AdditionalInfoDto infoDto;
   private List<OriginalCard> originalCards;
   private List<CustomCard> customCards;
   private List<NewReleaseCard> newReleaseCards;
@@ -142,6 +154,7 @@ class GameServiceImplUnitTest {
     originalCards = initOriginalCards(NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS);
     newReleaseCards = initNewReleaseCards(NUMBER_OF_PRE_GENERATED_NEW_RELEASE_CARDS);
     customCards = initCustomCards(NUMBER_OF_PRE_GENERATED_CUSTOM_CARDS);
+    infoDto = new AdditionalInfoDto();
   }
 
   @Test
@@ -590,7 +603,7 @@ class GameServiceImplUnitTest {
   void playCardIfPlayerPlayOutKingOrBaronOrPriestOrGuardAndThereIsNoOtherTargetablePlayer(String cardName) {
     player = players.get(0);
     game = games.get(0);
-    Card cardToPlayOut = new Card(cardName);
+    cardToPlayOut = new Card(cardName);
     player.getCardsInHand().add(cardToPlayOut);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardName);
     players.forEach(p -> p.getPlayedCards().add(new Card(HANDMAID)));
@@ -620,7 +633,7 @@ class GameServiceImplUnitTest {
   void playCardIfPlayerPlayOutPrinceInsteadOfPrincessAndThereIsNoOtherTargetablePlayer() {
     player = players.get(0);
     game = games.get(0);
-    Card cardToPlayOut = new Card(PRINCE);
+    cardToPlayOut = new Card(PRINCE);
     Card princess = new Card(PRINCESS);
     player.setCardsInHand(new ArrayList<>());
     player.getCardsInHand().add(princess);
@@ -654,13 +667,13 @@ class GameServiceImplUnitTest {
   void playCardIfPlayerPlayOutPrinceInsteadOfNonPrincessCardAndThereIsNoOtherTargetablePlayerAndDrawThePutAsideCard() {
     player = players.get(0);
     game = games.get(0);
-    Card cardToPlayOut = new Card(PRINCE);
+    cardToPlayOut = new Card(PRINCE);
     Card cardToDiscard = player.getCardsInHand().get(0);
-    Card putAsideCard = new Card("");
+    Card putAsideCard = new Card(CARD_NAME);
+    putAsideCard.setCardValue(UNIVERSAL_NUMBER);
     putAsideCard.setIsPutAside(true);
     game.setDrawDeck(new ArrayList<>());
     game.getDrawDeck().add(putAsideCard);
-    // TODO ittTartok
     player.getCardsInHand().add(cardToPlayOut);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE);
     players.forEach(p -> p.getPlayedCards().add(new Card(HANDMAID)));
@@ -676,16 +689,22 @@ class GameServiceImplUnitTest {
         + cardToDiscard.getCardName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(gameRepository).save(game);
     verify(gameRepository).saveAndFlush(game);
 
     assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(game.getLog().contains(generatedLog));
+    assertTrue(game.getLog().contains("2. " + ROUND_IS_OVER_DRAW_DECK_IS_EMPTY));
+    assertTrue(game.getLog().contains("3. " + player.getName() + WON_THE_ROUND));
+    assertFalse(game.getIsGameOver());
   }
 
   @Test
-  void playCardIfPlayerPlayOutPrinceInsteadOfNonPrincessCardAndThereIsNoOtherTargetablePlayerAndDrawFromDeck() {
+  void playCardIfPlayerPlayOutPrinceInsteadOfGuardAndThereIsNoOtherTargetablePlayerAndDrawFromDeck() {
     player = players.get(0);
     game = games.get(0);
-    Card cardToPlayOut = new Card(PRINCE);
+    cardToPlayOut = new Card(PRINCE);
     Card cardToDiscard = player.getCardsInHand().get(0);
     player.getCardsInHand().add(cardToPlayOut);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE);
@@ -713,12 +732,46 @@ class GameServiceImplUnitTest {
     assertNotEquals(player.getName(), game.getActualPlayer());
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {KING, BARON, PRIEST, GUARD})
-  void playCardIfPlayerPlayOutKingOrBaronOrPriestOrGuardAndAdditionalInfoIsEmpty(String cardName) {
+  @Test
+  void playCardIfPlayerPlayOutPrinceInsteadOfOtherPrinceAndDrawFromDeck() {
     player = players.get(0);
     game = games.get(0);
-    Card cardToPlayOut = new Card(cardName);
+    cardToPlayOut = new Card(PRINCE);
+    Card cardToDiscard = new Card(PRINCE);
+    player.setCardsInHand(new ArrayList<>());
+    player.getCardsInHand().add(cardToPlayOut);
+    player.getCardsInHand().add(cardToDiscard);
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE,
+        new AdditionalInfoDto(player.getName(), PRINCE));
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, playCardRequestDto.getCardName()))
+        .thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
+        + cardToDiscard.getCardName() + " volt.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(game.getLog().contains(generatedLog));
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(player.getPlayedCards().contains(cardToDiscard));
+    assertEquals(1, player.getCardsInHand().size());
+    assertNotEquals(player.getName(), game.getActualPlayer());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {KING, BARON, PRIEST, GUARD})
+  void playCardThrowsIfPlayerPlayOutKingOrBaronOrPriestOrGuardAndAdditionalInfoIsEmpty(String cardName) {
+    player = players.get(0);
+    game = games.get(0);
+    cardToPlayOut = new Card(cardName);
     player.getCardsInHand().add(cardToPlayOut);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardName);
 
@@ -730,6 +783,185 @@ class GameServiceImplUnitTest {
     verifyCardPlayingCommonInvocations(player.getUuid());
 
     assertEquals(PLAYER_NOT_SELECTED_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {KING, BARON, PRIEST, GUARD})
+  void playCardIfPlayerPlayOutKingOrBaronOrPriestOrGuardAndTargetPlayerIsNotFound(String cardName) {
+    player = players.get(0);
+    game = games.get(0);
+    cardToPlayOut = new Card(cardName);
+    player.getCardsInHand().add(cardToPlayOut);
+    infoDto.setTargetPlayer(PLAYER_NAME);
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardName, infoDto);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+
+    assertEquals(PLAYER_NOT_FOUND_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {KING, BARON, PRIEST, GUARD})
+  void playCardIfPlayerPlayOutKingOrBaronOrPriestOrGuardAndTargetPlayerIsSelf(String cardName) {
+    player = players.get(0);
+    game = games.get(0);
+    cardToPlayOut = new Card(cardName);
+    player.getCardsInHand().add(cardToPlayOut);
+    infoDto.setTargetPlayer(player.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardName, infoDto);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+
+    assertEquals(PLAYER_SELF_TARGETING_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {KING, BARON, PRIEST, GUARD})
+  void playCardIfPlayerPlayOutKingOrBaronOrPriestOrGuardAndTargetPlayerIsOutOfGame(String cardName) {
+    player = players.get(0);
+    game = games.get(0);
+    cardToPlayOut = new Card(cardName);
+    player.getCardsInHand().add(cardToPlayOut);
+    infoDto.setTargetPlayer(PLAYER_NAME + 2);
+    players.get(1).setIsInPlay(false);
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardName, infoDto);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+
+    assertEquals(PLAYER_IS_ALREADY_OUT_OF_ROUND_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {KING, BARON, PRIEST, GUARD})
+  void playCardIfPlayerPlayOutKingOrBaronOrPriestOrGuardAndTargetPlayersLastCardIsHandmaid(String cardName) {
+    player = players.get(0);
+    game = games.get(0);
+    cardToPlayOut = new Card(cardName);
+    player.getCardsInHand().add(cardToPlayOut);
+    infoDto.setTargetPlayer(PLAYER_NAME + 2);
+    players.get(1).getPlayedCards().add(new Card(HANDMAID));
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardName, infoDto);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+
+    assertEquals(PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutPrincess() {
+    player = players.get(0);
+    game = games.get(0);
+    cardToPlayOut = new Card(PRINCESS);
+    player.getCardsInHand().add(cardToPlayOut);
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCESS);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, PRINCESS)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " eldobta a Hercegnőt, így kiesett a játékból.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, PRINCESS);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertFalse(player.getIsInPlay());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {COUNTESS, HANDMAID, SPY})
+  void playCardIfPlayerPlayOutCountessOrHandmaidOrSpy(String cardName) {
+    player = players.get(0);
+    game = games.get(0);
+    cardToPlayOut = new Card(cardName);
+    player.getCardsInHand().add(cardToPlayOut);
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardName);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, cardName)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " kijátszott lapja egy " + cardName + " volt.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, cardName);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutKing() {
+    player = players.get(0);
+    game = games.get(0);
+
+    cardToPlayOut = new Card(KING);
+    Card cardFromActualPlayersHand = new Card(PRIEST);
+    Player targetPlayer = players.get(1);
+    Card tradedCard = targetPlayer.getCardsInHand().get(0);
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), KING, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardFromActualPlayersHand);
+    cardsInHand.add(cardToPlayOut);
+
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, KING)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog =
+        "1. " + player.getName() + " kijátszott egy Királyt, ő és " + targetPlayer.getName()
+            + " kártyát cseréltek.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, KING);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(player.getCardsInHand().contains(tradedCard));
+    assertTrue(targetPlayer.getCardsInHand().contains(cardFromActualPlayersHand));
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutChancellor() {
+    // TODO itt tartok
   }
 
   private void verifyGameCreationCommonInvocations(int times) {

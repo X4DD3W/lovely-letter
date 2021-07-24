@@ -257,7 +257,7 @@ public class GameServiceImpl implements GameService {
                       } else {
                         if (!targetPlayer.getName().equals(actualPlayer.getName())) {
                           if (isPlayerInPlay(targetPlayer)) {
-                            if (!isTargetPlayersLastCardHandmaid(targetPlayer)) {
+                            if (!isTargetPlayerLastCardHandmaid(targetPlayer)) {
                               responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
                               setNextPlayerInOrder(actualPlayer, game);
                               gameRepository.saveAndFlush(game);
@@ -598,7 +598,7 @@ public class GameServiceImpl implements GameService {
     return player.getIsInPlay();
   }
 
-  private boolean isTargetPlayersLastCardHandmaid(Player targetPlayer) {
+  private boolean isTargetPlayerLastCardHandmaid(Player targetPlayer) {
     if (targetPlayer.getPlayedCards().isEmpty()) {
       return false;
     } else {
@@ -744,9 +744,9 @@ public class GameServiceImpl implements GameService {
 
   private String addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(Player actualPlayer,
       Card cardWantToPlayOut, Game game) {
-    String cardName = cardWantToPlayOut.getCardName();
-    return game.addLog(actualPlayer.getName() + " kijátszott lapja egy " + cardName + " volt, "
-        + "de megcélozható játékos híján nem történt semmi.");
+    return game.addLog(
+        actualPlayer.getName() + " kijátszott lapja egy " + cardWantToPlayOut.getCardName()
+            + " volt, de megcélozható játékos híján nem történt semmi.");
   }
 
   private String addLogWhenAPlayerMustDiscardPrincess(Player actualPlayer, Game game) {
@@ -802,11 +802,8 @@ public class GameServiceImpl implements GameService {
   }
 
   private String addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(Player actualPlayer,
-      String cardNameWantToPlayOut, Game game) {
-    if (cardNameWantToPlayOut.equals("Kém")) {
-      cardNameWantToPlayOut = "Kéme";
-    }
-    return game.addLog(actualPlayer.getName() + " kijátszott egy " + cardNameWantToPlayOut + "t.");
+      String cardName, Game game) {
+    return game.addLog(actualPlayer.getName() + " kijátszott lapja egy " + cardName + " volt.");
   }
 
   private String addLogWhenAPlayerUseBaronSuccessful(Player targetPlayer,

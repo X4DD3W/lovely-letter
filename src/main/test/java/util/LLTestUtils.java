@@ -62,7 +62,9 @@ public class LLTestUtils {
     List<Player> players = new ArrayList<>();
     for (int i = 1; i <= numberOfPlayers; i++) {
       List<Card> cardsInHand = new ArrayList<>();
-      cardsInHand.add(new Card(GUARD));
+      Card starterCardInHand = new Card(GUARD);
+      starterCardInHand.setCardValue(1);
+      cardsInHand.add(starterCardInHand);
       players.add(Player.builder()
           .id((long) i)
           .uuid(UUID + i)
