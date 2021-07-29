@@ -49,6 +49,11 @@ public class MainController {
   //  ! CustomCard.class: CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.)
   //  ! Slf4j logolás (FE teszteléshez)
 
+  // TODO extra
+  //  ! scheduler: ha egy játéknál 1 órája nem történt változás, zárja le.
+  //  ! scheduler: 3 hónap után törölje a lezárt játékokat.
+  //  ! Flux státusz csekkolásához?
+
   @GetMapping("/cards/original")
   public List<CardResponseDto> getOriginalCards() {
     return originalCardService.getAllCards();
