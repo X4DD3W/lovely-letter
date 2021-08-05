@@ -64,4 +64,9 @@ public class Card {
   public Card(String cardName) {
     this.cardName = cardName;
   }
+
+  public Card(String cardName, Integer cardValue) {
+    this.cardName = cardName;
+    this.cardValue = cardValue;
+  }
 }

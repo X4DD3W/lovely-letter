@@ -995,18 +995,254 @@ class GameServiceImplUnitTest {
   }
 
   @Test
+  void playCardIfPlayerPlayOutPrinceAndTargetPlayerHasPrincess() {
+    player = players.get(0);
+    game = games.get(0);
+
+    cardToPlayOut = new Card(PRINCE);
+    Card otherCardInHand = new Card(PRIEST);
+
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = new Card(PRINCESS);
+    List<Card> cardsInHandAtTargetPlayer = new ArrayList<>();
+    cardsInHandAtTargetPlayer.add(cardAtTargetPlayer);
+    targetPlayer.setCardsInHand(cardsInHandAtTargetPlayer);
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    cardsInHand.add(otherCardInHand);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, PRINCE)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " Herceggel eldobatta " + targetPlayer.getName()
+        + " lapját, ami egy Hercegnő volt, így " + targetPlayer.getName() + " kiesett a játékból.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(targetPlayer.getPlayedCards().contains(cardAtTargetPlayer));
+    assertFalse(targetPlayer.getIsInPlay());
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutPrinceAndTargetPlayerHasNotPrincessAndDrawDeckIsNotEmpty() {
+    player = players.get(0);
+    game = games.get(0);
+
+    cardToPlayOut = new Card(PRINCE);
+    Card otherCardInHand = new Card(PRIEST);
+
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = targetPlayer.cardInHand();
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    cardsInHand.add(otherCardInHand);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, PRINCE)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " Herceggel eldobatta " + targetPlayer.getName()
+        + " lapját, ami egy " + cardAtTargetPlayer.getCardName() + " volt.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(targetPlayer.getPlayedCards().contains(cardAtTargetPlayer));
+    assertTrue(targetPlayer.getIsInPlay());
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutPrinceAndTargetPlayerHasNotPrincessAndDrawDeckIsEmpty() {
+    player = players.get(0);
+    game = games.get(0);
+
+    List<Card> drawDeck = new ArrayList<>();
+    Card putAsideCard = new Card(KING, 5);
+    putAsideCard.setIsPutAside(true);
+    drawDeck.add(putAsideCard);
+    game.setDrawDeck(drawDeck);
+
+    cardToPlayOut = new Card(PRINCE);
+    Card otherCardInHand = new Card(PRIEST, 2);
+
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = targetPlayer.cardInHand();
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    cardsInHand.add(otherCardInHand);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, PRINCE)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " Herceggel eldobatta " + targetPlayer.getName()
+        + " lapját, ami egy " + cardAtTargetPlayer.getCardName() + " volt.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertEquals(1, targetPlayer.getNumberOfLetters());
+  }
+
+  // TODO ebből a három Baronosból parameterized!
+  @Test
   void playCardIfPlayerPlayOutBaronAndWinTheCompare() {
-    // TODO ittTartok
+    player = players.get(0);
+    game = games.get(0);
+
+    cardToPlayOut = new Card(BARON);
+    Card otherCardInActualPlayer = new Card(PRIEST, 2);
+
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = targetPlayer.getCardsInHand().get(0);
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), BARON, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    cardsInHand.add(otherCardInActualPlayer);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, BARON)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
+        targetPlayer.getName() + " kézben lévő lapjával. " + targetPlayer.getName()
+        + " kiesett a játékból, kézben lévő lapját ("
+        + cardAtTargetPlayer.getCardName() + ") pedig eldobta.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, BARON);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(player.getCardsInHand().contains(otherCardInActualPlayer));
+    assertTrue(targetPlayer.getPlayedCards().contains(cardAtTargetPlayer));
+    assertFalse(targetPlayer.getIsInPlay());
   }
 
   @Test
   void playCardIfPlayerPlayOutBaronAndLostTheCompare() {
+    player = players.get(0);
+    game = games.get(0);
 
+    cardToPlayOut = new Card(BARON);
+    Card otherCardInActualPlayer = new Card(PRIEST, 0);
+
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = targetPlayer.getCardsInHand().get(0);
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), BARON, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    cardsInHand.add(otherCardInActualPlayer);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, BARON)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
+        targetPlayer.getName() + " kézben lévő lapjával. " + player.getName()
+        + " kiesett a játékból, kézben lévő lapját ("
+        + otherCardInActualPlayer.getCardName() + ") pedig eldobta.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, BARON);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(player.getPlayedCards().contains(otherCardInActualPlayer));
+    assertTrue(targetPlayer.getCardsInHand().contains(cardAtTargetPlayer));
+    assertFalse(player.getIsInPlay());
   }
 
   @Test
   void playCardIfPlayerPlayOutBaronAndItIsDraw() {
+    player = players.get(0);
+    game = games.get(0);
 
+    cardToPlayOut = new Card(BARON);
+    Card otherCardInActualPlayer = new Card(PRIEST, 1);
+
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = targetPlayer.getCardsInHand().get(0);
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), BARON, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    cardsInHand.add(otherCardInActualPlayer);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, BARON)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
+        targetPlayer.getName() + " kézben lévő lapjával. "
+        + "A lapok értéke azonos volt, így senki sem esett ki a játékból.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, BARON);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(player.getCardsInHand().contains(otherCardInActualPlayer));
+    assertTrue(targetPlayer.getCardsInHand().contains(cardAtTargetPlayer));
+    assertTrue(player.getIsInPlay());
+    assertTrue(targetPlayer.getIsInPlay());
   }
 
   @Test

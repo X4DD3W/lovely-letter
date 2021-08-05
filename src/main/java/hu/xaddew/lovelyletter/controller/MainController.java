@@ -40,9 +40,9 @@ public class MainController {
   private final GameService gameService;
 
   // TODO tesztelni/javítani:
-  //  - duplaHerceg selfTarget nem/rosszul működik
-  //  ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
   //  ? Hibernate OneToMany (gameId-val összekapcsolás refactor)
+  //  ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
+  // tesztek: refactor, összevonni parameterized-dá
 
   // TODO feature:
   //  ! Extra karakterek (és logikájuk (pl. Kili))
@@ -52,7 +52,6 @@ public class MainController {
   // TODO extra
   //  ! scheduler: ha egy játéknál 1 órája nem történt változás, zárja le.
   //  ! scheduler: 3 hónap után törölje a lezárt játékokat.
-  //  ! Flux státusz csekkolásához?
 
   @GetMapping("/cards/original")
   public List<CardResponseDto> getOriginalCards() {
