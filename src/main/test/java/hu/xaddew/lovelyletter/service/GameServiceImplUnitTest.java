@@ -83,6 +83,7 @@ import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
 import hu.xaddew.lovelyletter.repository.PlayerRepository;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -134,7 +135,10 @@ class GameServiceImplUnitTest {
   private List<Player> players;
   private Game game;
   private Player player;
+  private Player targetPlayer;
   private Card cardToPlayOut;
+  private Card otherCardAtActualPlayer;
+  private Card cardAtTargetPlayer;
   private AdditionalInfoDto infoDto;
   private List<OriginalCard> originalCards;
   private List<CustomCard> customCards;
@@ -585,9 +589,9 @@ class GameServiceImplUnitTest {
   void playCardThrowsGameExceptionIfPlayerTryToPlayOutCountessInsteadOfKingOrPrince(String cardName) {
     player = initTestPlayer();
     game = games.get(0);
-    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardName);
     game.setActualPlayer(player.getName());
-    player.setCardsInHand(List.of(new Card(COUNTESS), new Card(cardName)));
+    setCardsAtActualPlayer(new Card(COUNTESS), new Card(cardName));
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardName);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -622,10 +626,7 @@ class GameServiceImplUnitTest {
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(game.getLog().contains(generatedLog));
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertCardPlayingCommonAssertions();
     assertEquals(1, player.getCardsInHand().size());
     assertNotEquals(player.getName(), game.getActualPlayer());
   }
@@ -635,17 +636,16 @@ class GameServiceImplUnitTest {
     player = players.get(0);
     game = games.get(0);
     cardToPlayOut = new Card(PRINCE);
-    Card princess = new Card(PRINCESS);
-    player.setCardsInHand(new ArrayList<>());
-    player.getCardsInHand().add(princess);
-    player.getCardsInHand().add(cardToPlayOut);
+    otherCardAtActualPlayer = new Card(PRINCESS);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
+
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE);
+
     players.forEach(p -> p.getPlayedCards().add(new Card(HANDMAID)));
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
-    when(cardService.getCardAtPlayerByCardName(player, playCardRequestDto.getCardName()))
-        .thenReturn(cardToPlayOut);
+    when(cardService.getCardAtPlayerByCardName(player, playCardRequestDto.getCardName())).thenReturn(cardToPlayOut);
 
     responseDto = gameService.playCard(playCardRequestDto);
 
@@ -654,11 +654,8 @@ class GameServiceImplUnitTest {
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(game.getLog().contains(generatedLog));
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
-    assertTrue(player.getPlayedCards().contains(princess));
+    assertCardPlayingCommonAssertions();
+    assertTrue(player.getPlayedCards().contains(otherCardAtActualPlayer));
     assertTrue(player.getCardsInHand().isEmpty());
     assertFalse(player.getIsInPlay());
     assertNotEquals(player.getName(), game.getActualPlayer());
@@ -669,12 +666,10 @@ class GameServiceImplUnitTest {
     player = players.get(0);
     game = games.get(0);
     cardToPlayOut = new Card(PRINCE);
-    Card cardToDiscard = player.getCardsInHand().get(0);
-    Card putAsideCard = new Card(CARD_NAME);
-    putAsideCard.setCardValue(UNIVERSAL_NUMBER);
-    putAsideCard.setIsPutAside(true);
-    game.setDrawDeck(new ArrayList<>());
-    game.getDrawDeck().add(putAsideCard);
+    otherCardAtActualPlayer = player.cardInHand();
+
+    setPutAsideCard(CARD_NAME, UNIVERSAL_NUMBER);
+
     player.getCardsInHand().add(cardToPlayOut);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE);
     players.forEach(p -> p.getPlayedCards().add(new Card(HANDMAID)));
@@ -687,7 +682,7 @@ class GameServiceImplUnitTest {
     responseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
-        + cardToDiscard.getCardName() + " volt.";
+        + otherCardAtActualPlayer.getCardName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(gameRepository).save(game);
@@ -706,7 +701,7 @@ class GameServiceImplUnitTest {
     player = players.get(0);
     game = games.get(0);
     cardToPlayOut = new Card(PRINCE);
-    Card cardToDiscard = player.getCardsInHand().get(0);
+    otherCardAtActualPlayer = player.cardInHand();
     player.getCardsInHand().add(cardToPlayOut);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE);
     players.forEach(p -> p.getPlayedCards().add(new Card(HANDMAID)));
@@ -719,16 +714,13 @@ class GameServiceImplUnitTest {
     responseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
-        + cardToDiscard.getCardName() + " volt.";
+        + otherCardAtActualPlayer.getCardName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(game.getLog().contains(generatedLog));
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
-    assertTrue(player.getPlayedCards().contains(cardToDiscard));
+    assertCardPlayingCommonAssertions();
+    assertTrue(player.getPlayedCards().contains(otherCardAtActualPlayer));
     assertEquals(1, player.getCardsInHand().size());
     assertNotEquals(player.getName(), game.getActualPlayer());
   }
@@ -738,10 +730,8 @@ class GameServiceImplUnitTest {
     player = players.get(0);
     game = games.get(0);
     cardToPlayOut = new Card(PRINCE);
-    Card cardToDiscard = new Card(PRINCE);
-    player.setCardsInHand(new ArrayList<>());
-    player.getCardsInHand().add(cardToPlayOut);
-    player.getCardsInHand().add(cardToDiscard);
+    otherCardAtActualPlayer = new Card(PRINCE);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE,
         new AdditionalInfoDto(player.getName(), PRINCE));
 
@@ -753,16 +743,13 @@ class GameServiceImplUnitTest {
     responseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
-        + cardToDiscard.getCardName() + " volt.";
+        + otherCardAtActualPlayer.getCardName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(game.getLog().contains(generatedLog));
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
-    assertTrue(player.getPlayedCards().contains(cardToDiscard));
+    assertCardPlayingCommonAssertions();
+    assertTrue(player.getPlayedCards().contains(otherCardAtActualPlayer));
     assertEquals(1, player.getCardsInHand().size());
     assertNotEquals(player.getName(), game.getActualPlayer());
   }
@@ -888,10 +875,8 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, PRINCESS);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
+    assertCardPlayingCommonAssertions();
     assertFalse(player.getIsInPlay());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
   }
 
   @ParameterizedTest
@@ -915,9 +900,7 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, cardName);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertCardPlayingCommonAssertions();
   }
 
   @Test
@@ -926,18 +909,14 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(KING);
-    Card cardFromActualPlayersHand = new Card(PRIEST);
-    Player targetPlayer = players.get(1);
-    Card tradedCard = targetPlayer.getCardsInHand().get(0);
+    otherCardAtActualPlayer = new Card(PRIEST);
+    targetPlayer = players.get(1);
+    cardAtTargetPlayer = targetPlayer.cardInHand();
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), KING, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardFromActualPlayersHand);
-    cardsInHand.add(cardToPlayOut);
-
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -953,11 +932,9 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, KING);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
-    assertTrue(player.getCardsInHand().contains(tradedCard));
-    assertTrue(targetPlayer.getCardsInHand().contains(cardFromActualPlayersHand));
+    assertCardPlayingCommonAssertions();
+    assertTrue(player.getCardsInHand().contains(cardAtTargetPlayer));
+    assertTrue(targetPlayer.getCardsInHand().contains(otherCardAtActualPlayer));
   }
 
   @Test
@@ -966,15 +943,12 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(PRINCE);
-    Card otherCardInHand = new Card(PRIEST);
+    otherCardAtActualPlayer = new Card(PRIEST);
 
     infoDto.setTargetPlayer(player.getName());
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    cardsInHand.add(otherCardInHand);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -983,16 +957,14 @@ class GameServiceImplUnitTest {
     responseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy " +
-    otherCardInHand.getCardName() + " volt.";
+        otherCardAtActualPlayer.getCardName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
-    assertFalse(player.getCardsInHand().contains(otherCardInHand));
+    assertCardPlayingCommonAssertions();
+    assertFalse(player.getCardsInHand().contains(otherCardAtActualPlayer));
   }
 
   @Test
@@ -1001,21 +973,16 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(PRINCE);
-    Card otherCardInHand = new Card(PRIEST);
+    otherCardAtActualPlayer = new Card(PRIEST);
 
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = new Card(PRINCESS);
-    List<Card> cardsInHandAtTargetPlayer = new ArrayList<>();
-    cardsInHandAtTargetPlayer.add(cardAtTargetPlayer);
-    targetPlayer.setCardsInHand(cardsInHandAtTargetPlayer);
+    targetPlayer = players.get(1);
+    cardAtTargetPlayer = new Card(PRINCESS);
+    setCardsAtTargetPlayer(cardAtTargetPlayer);
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    cardsInHand.add(otherCardInHand);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1030,9 +997,7 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertCardPlayingCommonAssertions();
     assertTrue(targetPlayer.getPlayedCards().contains(cardAtTargetPlayer));
     assertFalse(targetPlayer.getIsInPlay());
   }
@@ -1043,18 +1008,15 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(PRINCE);
-    Card otherCardInHand = new Card(PRIEST);
+    otherCardAtActualPlayer = new Card(PRIEST);
 
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = targetPlayer.cardInHand();
+    targetPlayer = players.get(1);
+    cardAtTargetPlayer = targetPlayer.cardInHand();
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    cardsInHand.add(otherCardInHand);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1069,9 +1031,7 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertCardPlayingCommonAssertions();
     assertTrue(targetPlayer.getPlayedCards().contains(cardAtTargetPlayer));
     assertTrue(targetPlayer.getIsInPlay());
   }
@@ -1081,25 +1041,18 @@ class GameServiceImplUnitTest {
     player = players.get(0);
     game = games.get(0);
 
-    List<Card> drawDeck = new ArrayList<>();
-    Card putAsideCard = new Card(KING, 5);
-    putAsideCard.setIsPutAside(true);
-    drawDeck.add(putAsideCard);
-    game.setDrawDeck(drawDeck);
+    setPutAsideCard(KING, 5);
 
     cardToPlayOut = new Card(PRINCE);
-    Card otherCardInHand = new Card(PRIEST, 2);
+    otherCardAtActualPlayer = new Card(PRIEST, 2);
 
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = targetPlayer.cardInHand();
+    targetPlayer = players.get(1);
+    cardAtTargetPlayer = targetPlayer.cardInHand();
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    cardsInHand.add(otherCardInHand);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1116,28 +1069,25 @@ class GameServiceImplUnitTest {
 
     assertNotNull(responseDto);
     assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(game.getLog().contains(generatedLog));
     assertEquals(1, targetPlayer.getNumberOfLetters());
   }
 
-  // TODO ebből a három Baronosból parameterized!
   @Test
   void playCardIfPlayerPlayOutBaronAndWinTheCompare() {
     player = players.get(0);
     game = games.get(0);
 
     cardToPlayOut = new Card(BARON);
-    Card otherCardInActualPlayer = new Card(PRIEST, 2);
+    otherCardAtActualPlayer = new Card(PRIEST, 2);
 
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = targetPlayer.getCardsInHand().get(0);
+    targetPlayer = players.get(1);
+    cardAtTargetPlayer = targetPlayer.cardInHand();
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), BARON, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    cardsInHand.add(otherCardInActualPlayer);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1154,10 +1104,8 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, BARON);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
-    assertTrue(player.getCardsInHand().contains(otherCardInActualPlayer));
+    assertCardPlayingCommonAssertions();
+    assertTrue(player.getCardsInHand().contains(otherCardAtActualPlayer));
     assertTrue(targetPlayer.getPlayedCards().contains(cardAtTargetPlayer));
     assertFalse(targetPlayer.getIsInPlay());
   }
@@ -1168,18 +1116,15 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(BARON);
-    Card otherCardInActualPlayer = new Card(PRIEST, 0);
+    otherCardAtActualPlayer = new Card(PRIEST, 0);
 
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = targetPlayer.getCardsInHand().get(0);
+    targetPlayer = players.get(1);
+    cardAtTargetPlayer = targetPlayer.cardInHand();
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), BARON, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    cardsInHand.add(otherCardInActualPlayer);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1190,16 +1135,14 @@ class GameServiceImplUnitTest {
     generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
         targetPlayer.getName() + " kézben lévő lapjával. " + player.getName()
         + " kiesett a játékból, kézben lévő lapját ("
-        + otherCardInActualPlayer.getCardName() + ") pedig eldobta.";
+        + otherCardAtActualPlayer.getCardName() + ") pedig eldobta.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(cardService).getCardAtPlayerByCardName(player, BARON);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
-    assertTrue(player.getPlayedCards().contains(otherCardInActualPlayer));
+    assertCardPlayingCommonAssertions();
+    assertTrue(player.getPlayedCards().contains(otherCardAtActualPlayer));
     assertTrue(targetPlayer.getCardsInHand().contains(cardAtTargetPlayer));
     assertFalse(player.getIsInPlay());
   }
@@ -1210,18 +1153,15 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(BARON);
-    Card otherCardInActualPlayer = new Card(PRIEST, 1);
+    otherCardAtActualPlayer = new Card(PRIEST, 1);
 
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = targetPlayer.getCardsInHand().get(0);
+    targetPlayer = players.get(1);
+    cardAtTargetPlayer = targetPlayer.cardInHand();
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), BARON, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    cardsInHand.add(otherCardInActualPlayer);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1237,10 +1177,8 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, BARON);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
-    assertTrue(player.getCardsInHand().contains(otherCardInActualPlayer));
+    assertCardPlayingCommonAssertions();
+    assertTrue(player.getCardsInHand().contains(otherCardAtActualPlayer));
     assertTrue(targetPlayer.getCardsInHand().contains(cardAtTargetPlayer));
     assertTrue(player.getIsInPlay());
     assertTrue(targetPlayer.getIsInPlay());
@@ -1252,15 +1190,13 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(PRIEST);
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = targetPlayer.getCardsInHand().get(0);
+    targetPlayer = players.get(1);
+    cardAtTargetPlayer = targetPlayer.cardInHand();
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRIEST, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1275,9 +1211,7 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, PRIEST);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertCardPlayingCommonAssertions();
     assertTrue(targetPlayer.getCardsInHand().contains(cardAtTargetPlayer));
   }
 
@@ -1287,19 +1221,16 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(GUARD);
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = new Card(BARON);
-    List<Card> cardsInHandAtTargetPlayer = new ArrayList<>();
-    cardsInHandAtTargetPlayer.add(cardAtTargetPlayer);
-    targetPlayer.setCardsInHand(cardsInHandAtTargetPlayer);
+    targetPlayer = players.get(1);
+
+    cardAtTargetPlayer = new Card(BARON);
+    setCardsAtTargetPlayer(cardAtTargetPlayer);
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     infoDto.setNamedCard(BARON);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), GUARD, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1316,9 +1247,7 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, GUARD);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertCardPlayingCommonAssertions();
     assertTrue(targetPlayer.getPlayedCards().contains(cardAtTargetPlayer));
     assertFalse(targetPlayer.getIsInPlay());
   }
@@ -1329,19 +1258,16 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(GUARD);
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = new Card(BARON);
-    List<Card> cardsInHandAtTargetPlayer = new ArrayList<>();
-    cardsInHandAtTargetPlayer.add(cardAtTargetPlayer);
-    targetPlayer.setCardsInHand(cardsInHandAtTargetPlayer);
+    targetPlayer = players.get(1);
+
+    cardAtTargetPlayer = new Card(BARON);
+    setCardsAtTargetPlayer(cardAtTargetPlayer);
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     infoDto.setNamedCard(KING);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), GUARD, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1357,9 +1283,7 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, GUARD);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertCardPlayingCommonAssertions();
     assertTrue(targetPlayer.getCardsInHand().contains(cardAtTargetPlayer));
     assertTrue(targetPlayer.getIsInPlay());
   }
@@ -1370,19 +1294,15 @@ class GameServiceImplUnitTest {
     game = games.get(0);
 
     cardToPlayOut = new Card(GUARD);
-    Player targetPlayer = players.get(1);
-    Card cardAtTargetPlayer = new Card(BARON);
-    List<Card> cardsInHandAtTargetPlayer = new ArrayList<>();
-    cardsInHandAtTargetPlayer.add(cardAtTargetPlayer);
-    targetPlayer.setCardsInHand(cardsInHandAtTargetPlayer);
+    targetPlayer = players.get(1);
+    cardAtTargetPlayer = new Card(BARON);
+    setCardsAtTargetPlayer(cardAtTargetPlayer);
 
     infoDto.setTargetPlayer(targetPlayer.getName());
     infoDto.setNamedCard(GUARD);
     playCardRequestDto = new PlayCardRequestDto(player.getUuid(), GUARD, infoDto);
 
-    List<Card> cardsInHand = new ArrayList<>();
-    cardsInHand.add(cardToPlayOut);
-    player.setCardsInHand(cardsInHand);
+    setCardsAtActualPlayer(cardToPlayOut);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
@@ -1395,25 +1315,11 @@ class GameServiceImplUnitTest {
     assertEquals(GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE, exception.getMessage());
   }
 
-  @Test
-  void playCardIfPlayerPlayOutChancellorAndDrawZeroCard() {
-
-  }
-
-  @Test
-  void playCardIfPlayerPlayOutChancellorAndDrawOneCard() {
-
-  }
-
-  @Test
-  void playCardIfPlayerPlayOutChancellorAndDrawTwoCards() {
-
-  }
-
-  @Test
-  void playCardIfPlayerPlayOutAnyAndRoundEndsBecauseThereIsOnlyOneActivePlayer() {
-
-  }
+  // TODO
+  //   playCardIfPlayerPlayOutChancellorAndDrawZeroCard
+  //   playCardIfPlayerPlayOutChancellorAndDrawOneCard
+  //   playCardIfPlayerPlayOutChancellorAndDrawTwoCards
+  //   playCardIfPlayerPlayOutAnyAndRoundEndsBecauseThereIsOnlyOneActivePlayer
 
   private void verifyGameCreationCommonInvocations(int times) {
     verify(random, times(times)).nextInt(anyInt());
@@ -1425,5 +1331,30 @@ class GameServiceImplUnitTest {
   private void verifyCardPlayingCommonInvocations(String uuid) {
     verify(playerService).findByUuid(uuid);
     verify(gameRepository).findGameByPlayerUuid(uuid);
+  }
+
+  private void assertCardPlayingCommonAssertions() {
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(game.getLog().contains(generatedLog));
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+  }
+
+  private void setPutAsideCard(String cardName, int cardValue) {
+    List<Card> drawDeck = new ArrayList<>();
+    Card putAsideCard = new Card(cardName, cardValue);
+    putAsideCard.setIsPutAside(true);
+    drawDeck.add(putAsideCard);
+    game.setDrawDeck(drawDeck);
+  }
+
+  private void setCardsAtActualPlayer(Card ...cards) {
+    List<Card> cardsInHand = new ArrayList<>(Arrays.asList(cards));
+    player.setCardsInHand(cardsInHand);
+  }
+
+  private void setCardsAtTargetPlayer(Card ...cards) {
+    List<Card> cardsInHand = new ArrayList<>(Arrays.asList(cards));
+    targetPlayer.setCardsInHand(cardsInHand);
   }
 }
