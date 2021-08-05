@@ -59,6 +59,7 @@ public class GameServiceImpl implements GameService {
   public static final String HAVE_NO_CARDS_WHAT_WANT_TO_PUT_BACK_ERROR_MESSAGE = "Az általad visszatenni kívánt lap(ok) nincs(enek) nálad.";
   public static final String MISSING_PUT_BACK_A_CARD_REQUEST_ERROR_MESSAGE = "A visszarakandó kártyák nevének megadása szükséges.";
   public static final String PLAYER_IS_ALREADY_OUT_OF_ROUND_ERROR_MESSAGE = "Az általad választott játékos már kiesett a fordulóból.";
+  public static final String GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE = "Őrrel nem tippelhetsz Őrt.";
   public static final String NO_PLAYER_FOUND_WITH_GIVEN_UUID = "Nem találtam játékost ezzel az uuid-val: ";
   public static final String ACTUAL_PLAYER_IS = "Soron lévő játékos: ";
   public static final String GAME_IS_CREATED_UUID = "Játék létrehozva. Uuid: ";
@@ -612,6 +613,11 @@ public class GameServiceImpl implements GameService {
     Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
     String cardNameWantToPlayOut = cardWantToPlayOut.getCardName();
     AdditionalInfoDto info = requestDto.getAdditionalInfo();
+    Card cardToDiscard;
+
+    if (requestDto.getCardName().equals(GUARD) && info.getNamedCard().equals(GUARD)) {
+      throw new GameException(GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE);
+    }
 
     switch (cardNameWantToPlayOut) {
       case PRINCESS:
@@ -647,24 +653,19 @@ public class GameServiceImpl implements GameService {
         responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(actualPlayer, game, drawnCardsByChancellor.size()));
         break;
       case PRINCE:
-        if (targetPlayer.getName().equals(actualPlayer.getName())) {
-          playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
-          break;
+        actualPlayer.discard(cardWantToPlayOut);
+        cardToDiscard = targetPlayer.cardInHand();
+        targetPlayer.discard(cardToDiscard);
+        if (cardToDiscard.getCardName().equals(PRINCESS)) {
+          targetPlayer.setIsInPlay(false);
+          responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, game));
         } else {
-          actualPlayer.discard(cardWantToPlayOut);
-          Card cardToDiscard = targetPlayer.cardInHand();
-          targetPlayer.discard(cardToDiscard);
-          if (cardToDiscard.getCardName().equals(PRINCESS)) {
-            targetPlayer.setIsInPlay(false);
-            responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, game));
+          if (game.getAvailableCards().isEmpty()) {
+            drawThePutAsideCard(targetPlayer, game);
           } else {
-            if (game.getAvailableCards().isEmpty()) {
-              drawThePutAsideCard(targetPlayer, game);
-            } else {
-              drawCard(targetPlayer, game);
-            }
-            responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, cardToDiscard, game));
+            drawCard(targetPlayer, game);
           }
+          responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, cardToDiscard, game));
         }
         break;
       case BARON:
@@ -672,12 +673,12 @@ public class GameServiceImpl implements GameService {
         String cardNameOfTargetPlayerToHiddenLog = cardNameInHandOf(targetPlayer);
         actualPlayer.discard(cardWantToPlayOut);
         if (cardValueInHandOf(targetPlayer) < cardValueInHandOf(actualPlayer)) {
-          Card cardToDiscard = targetPlayer.cardInHand();
+          cardToDiscard = targetPlayer.cardInHand();
           targetPlayer.discard(cardToDiscard);
           targetPlayer.setIsInPlay(false);
           responseDto.setLastLog(addLogWhenAPlayerUseBaronSuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
         } else if (cardValueInHandOf(targetPlayer) > cardValueInHandOf(actualPlayer)) {
-          Card cardToDiscard = actualPlayer.cardInHand();
+          cardToDiscard = actualPlayer.cardInHand();
           actualPlayer.discard(cardToDiscard);
           actualPlayer.setIsInPlay(false);
           responseDto.setLastLog(addLogWhenAPlayerUseBaronUnsuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
@@ -696,12 +697,13 @@ public class GameServiceImpl implements GameService {
       case GUARD:
         actualPlayer.discard(cardWantToPlayOut);
         if (cardNameInHandOf(targetPlayer).equals(info.getNamedCard())) {
-          Card cardToDiscard = targetPlayer.cardInHand();
+          cardToDiscard = targetPlayer.cardInHand();
           targetPlayer.discard(cardToDiscard);
           targetPlayer.setIsInPlay(false);
           responseDto.setLastLog(addLogWhenAPlayerUseGuardSuccessfully(requestDto, actualPlayer, targetPlayer, game));
         } else {
-          responseDto.setLastLog(addLogWhenAPlayerUseGuardUnSuccessfully(requestDto, actualPlayer, targetPlayer, game));
+          responseDto.setLastLog(
+              addLogWhenAPlayerUseGuardUnsuccessfully(requestDto, actualPlayer, targetPlayer, game));
         }
         break;
       default:
@@ -847,7 +849,7 @@ public class GameServiceImpl implements GameService {
             + targetPlayer.getName() + " kiesett a játékból.");
   }
 
-  private String addLogWhenAPlayerUseGuardUnSuccessfully(PlayCardRequestDto requestDto,
+  private String addLogWhenAPlayerUseGuardUnsuccessfully(PlayCardRequestDto requestDto,
       Player actualPlayer, Player targetPlayer, Game game) {
     String namedCard = requestDto.getAdditionalInfo().getNamedCard();
     return game.addLog(

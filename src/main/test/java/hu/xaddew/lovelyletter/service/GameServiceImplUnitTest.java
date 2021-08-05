@@ -4,6 +4,7 @@ import static hu.xaddew.lovelyletter.service.GameServiceImpl.BARON;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.GUARD;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.HANDMAID;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.INVALID_CUSTOM_CARD_ERROR_MESSAGE;
@@ -1247,21 +1248,170 @@ class GameServiceImplUnitTest {
 
   @Test
   void playCardIfPlayerPlayOutPriest() {
+    player = players.get(0);
+    game = games.get(0);
 
+    cardToPlayOut = new Card(PRIEST);
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = targetPlayer.getCardsInHand().get(0);
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRIEST, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, PRIEST)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog =
+        "1. " + player.getName() + " megnézte, mi van " + targetPlayer.getName() + " kezében.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, PRIEST);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(targetPlayer.getCardsInHand().contains(cardAtTargetPlayer));
   }
 
   @Test
   void playCardIfPlayerPlayOutGuardAndUseSuccessfully() {
+    player = players.get(0);
+    game = games.get(0);
 
+    cardToPlayOut = new Card(GUARD);
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = new Card(BARON);
+    List<Card> cardsInHandAtTargetPlayer = new ArrayList<>();
+    cardsInHandAtTargetPlayer.add(cardAtTargetPlayer);
+    targetPlayer.setCardsInHand(cardsInHandAtTargetPlayer);
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    infoDto.setNamedCard(BARON);
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), GUARD, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, GUARD)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog =
+        "1. " + player.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
+            + " kezében " + cardAtTargetPlayer.getCardName() + " van. Így igaz. "
+            + targetPlayer.getName() + " kiesett a játékból.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, GUARD);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(targetPlayer.getPlayedCards().contains(cardAtTargetPlayer));
+    assertFalse(targetPlayer.getIsInPlay());
   }
 
   @Test
   void playCardIfPlayerPlayOutGuardAndUseUnsuccessfully() {
+    player = players.get(0);
+    game = games.get(0);
+
+    cardToPlayOut = new Card(GUARD);
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = new Card(BARON);
+    List<Card> cardsInHandAtTargetPlayer = new ArrayList<>();
+    cardsInHandAtTargetPlayer.add(cardAtTargetPlayer);
+    targetPlayer.setCardsInHand(cardsInHandAtTargetPlayer);
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    infoDto.setNamedCard(KING);
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), GUARD, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, GUARD)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog =
+        "1. " + player.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
+            + " kezében " + infoDto.getNamedCard() + " van. Nem talált.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, GUARD);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertTrue(targetPlayer.getCardsInHand().contains(cardAtTargetPlayer));
+    assertTrue(targetPlayer.getIsInPlay());
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutGuardAndGuessGuard() {
+    player = players.get(0);
+    game = games.get(0);
+
+    cardToPlayOut = new Card(GUARD);
+    Player targetPlayer = players.get(1);
+    Card cardAtTargetPlayer = new Card(BARON);
+    List<Card> cardsInHandAtTargetPlayer = new ArrayList<>();
+    cardsInHandAtTargetPlayer.add(cardAtTargetPlayer);
+    targetPlayer.setCardsInHand(cardsInHandAtTargetPlayer);
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    infoDto.setNamedCard(GUARD);
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), GUARD, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, GUARD)).thenReturn(cardToPlayOut);
+
+    exception = assertThrows(GameException.class, () -> gameService.playCard(playCardRequestDto));
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+
+    assertEquals(GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE, exception.getMessage());
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutChancellorAndDrawZeroCard() {
 
   }
 
   @Test
-  void playCardIfPlayerPlayOutChancellor() {
+  void playCardIfPlayerPlayOutChancellorAndDrawOneCard() {
+
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutChancellorAndDrawTwoCards() {
+
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutAnyAndRoundEndsBecauseThereIsOnlyOneActivePlayer() {
 
   }
 
