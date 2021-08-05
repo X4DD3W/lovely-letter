@@ -960,8 +960,73 @@ class GameServiceImplUnitTest {
   }
 
   @Test
+  void playCardIfPlayerPlayOutPrinceWithSelfTarget() {
+    player = players.get(0);
+    game = games.get(0);
+
+    cardToPlayOut = new Card(PRINCE);
+    Card otherCardInHand = new Card(PRIEST);
+
+    infoDto.setTargetPlayer(player.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), PRINCE, infoDto);
+
+    List<Card> cardsInHand = new ArrayList<>();
+    cardsInHand.add(cardToPlayOut);
+    cardsInHand.add(otherCardInHand);
+    player.setCardsInHand(cardsInHand);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, PRINCE)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy " +
+    otherCardInHand.getCardName() + " volt.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(player.getPlayedCards().contains(cardToPlayOut));
+    assertFalse(player.getCardsInHand().contains(otherCardInHand));
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutBaronAndWinTheCompare() {
+    // TODO ittTartok
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutBaronAndLostTheCompare() {
+
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutBaronAndItIsDraw() {
+
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutPriest() {
+
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutGuardAndUseSuccessfully() {
+
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutGuardAndUseUnsuccessfully() {
+
+  }
+
+  @Test
   void playCardIfPlayerPlayOutChancellor() {
-    // TODO itt tartok
+
   }
 
   private void verifyGameCreationCommonInvocations(int times) {

@@ -646,7 +646,8 @@ public class GameServiceImpl implements GameService {
             .map(Card::getCardName).collect(Collectors.joining(", ")) + ".");
         responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(actualPlayer, game, drawnCardsByChancellor.size()));
         break;
-      case PRINCE:
+        // TODO case: PRINCE-ig nem jön el soha
+/*      case PRINCE:
         if (targetPlayer.getName().equals(actualPlayer.getName())) {
           playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
           break;
@@ -666,7 +667,7 @@ public class GameServiceImpl implements GameService {
             responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, cardToDiscard, game));
           }
         }
-        break;
+        break;*/
       case BARON:
         String cardNameOfActualPlayerToHiddenLog = cardNameInHandOf(actualPlayer);
         String cardNameOfTargetPlayerToHiddenLog = cardNameInHandOf(targetPlayer);
