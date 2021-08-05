@@ -13,8 +13,8 @@ public class CardServiceImpl implements CardService {
   private final CardRepository cardRepository;
 
   @Override
-  public void save(Card card) {
-    cardRepository.save(card);
+  public Card save(Card card) {
+    return cardRepository.save(card);
   }
 
   @Override

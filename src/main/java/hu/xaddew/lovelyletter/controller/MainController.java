@@ -40,9 +40,9 @@ public class MainController {
   private final GameService gameService;
 
   // TODO tesztelni/javítani:
+  //  ? minden service-re unit tesztet írni
   //  ? Hibernate OneToMany (gameId-val összekapcsolás refactor)
   //  ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
-  // tesztek: refactor, összevonni parameterized-dá
 
   // TODO feature:
   //  ! Extra karakterek (és logikájuk (pl. Kili))
