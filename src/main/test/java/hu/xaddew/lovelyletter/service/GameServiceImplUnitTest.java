@@ -1,6 +1,7 @@
 package hu.xaddew.lovelyletter.service;
 
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.BARON;
+import static hu.xaddew.lovelyletter.service.GameServiceImpl.CHANCELLOR;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.GUARD;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1315,10 +1317,129 @@ class GameServiceImplUnitTest {
     assertEquals(GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE, exception.getMessage());
   }
 
+  @Test
+  void playCardIfPlayerPlayOutChancellorAndDrawZeroCard() {
+    player = players.get(0);
+    game = games.get(0);
+    game.getDrawDeck().forEach(card -> card.setIsAtAPlayer(true));
+
+    cardToPlayOut = new Card(CHANCELLOR);
+    otherCardAtActualPlayer = new Card(PRIEST, 2);
+
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), CHANCELLOR);
+
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, CHANCELLOR)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName()
+        + " kijátszott egy Kancellárt, de mivel a húzópakli üres volt, a kártyának nincsen hatása.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, CHANCELLOR);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(game.getLog().contains(generatedLog));
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutChancellorAndDrawOneCard() {
+    player = players.get(0);
+    game = games.get(0);
+
+    Card drawnByChancellor = new Card(HANDMAID, 4);
+    drawnByChancellor.setIsAtAPlayer(false);
+    drawnByChancellor.setIs2PlayerPublic(false);
+    drawnByChancellor.setIsPutAside(false);
+
+    List<Card> drawDeck = new ArrayList<>();
+    drawDeck.add(drawnByChancellor);
+    game.setDrawDeck(drawDeck);
+
+    cardToPlayOut = new Card(CHANCELLOR);
+    otherCardAtActualPlayer = new Card(PRIEST, 2);
+
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), CHANCELLOR);
+
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, CHANCELLOR)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName()
+        + " kijátszott egy Kancellárt, amivel felhúzta a pakli felső 1 lapját. A kezében lévő 2"
+        + " lapból egyet meg kell tartania, a többit pedig visszatennie a pakli aljára.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, CHANCELLOR);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(responseDto.getMessage().contains(drawnByChancellor.getCardName()));
+    assertTrue(game.getLog().contains(generatedLog));
+    assertTrue(game.getIsTurnOfChancellorActive());
+  }
+
+  @Test
+  void playCardIfPlayerPlayOutChancellorAndDrawTwoCards() {
+    player = players.get(0);
+    game = games.get(0);
+
+    Card drawnByChancellor = new Card(HANDMAID, 4);
+    drawnByChancellor.setIsAtAPlayer(false);
+    drawnByChancellor.setIs2PlayerPublic(false);
+    drawnByChancellor.setIsPutAside(false);
+
+    Card drawnByChancellor2 = new Card(HANDMAID, 4);
+    drawnByChancellor2.setIsAtAPlayer(false);
+    drawnByChancellor2.setIs2PlayerPublic(false);
+    drawnByChancellor2.setIsPutAside(false);
+
+    List<Card> drawDeck = new ArrayList<>();
+    drawDeck.add(drawnByChancellor);
+    drawDeck.add(drawnByChancellor2);
+    game.setDrawDeck(drawDeck);
+
+    cardToPlayOut = new Card(CHANCELLOR);
+    otherCardAtActualPlayer = new Card(PRIEST, 2);
+
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), CHANCELLOR);
+
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, CHANCELLOR)).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName()
+        + " kijátszott egy Kancellárt, amivel felhúzta a pakli felső 2 lapját. A kezében lévő 3"
+        + " lapból egyet meg kell tartania, a többit pedig visszatennie a pakli aljára.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, CHANCELLOR);
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(responseDto.getMessage().contains(drawnByChancellor.getCardName()));
+    assertTrue(responseDto.getMessage().contains(drawnByChancellor2.getCardName()));
+    assertTrue(game.getLog().contains(generatedLog));
+    assertTrue(game.getIsTurnOfChancellorActive());
+  }
+
   // TODO
-  //   playCardIfPlayerPlayOutChancellorAndDrawZeroCard
-  //   playCardIfPlayerPlayOutChancellorAndDrawOneCard
-  //   playCardIfPlayerPlayOutChancellorAndDrawTwoCards
   //   playCardIfPlayerPlayOutAnyAndRoundEndsBecauseThereIsOnlyOneActivePlayer
 
   private void verifyGameCreationCommonInvocations(int times) {

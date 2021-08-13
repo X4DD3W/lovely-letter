@@ -645,6 +645,7 @@ public class GameServiceImpl implements GameService {
         actualPlayer.discard(cardWantToPlayOut);
         if (game.getAvailableCards().isEmpty()) {
           responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawZeroCard(actualPlayer, game));
+          break;
         }
         List<Card> drawnCardsByChancellor = drawCardsBecauseOfChancellor(actualPlayer, game);
         game.setIsTurnOfChancellorActive(true);
