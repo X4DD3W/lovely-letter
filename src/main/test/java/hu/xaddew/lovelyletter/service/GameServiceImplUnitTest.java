@@ -38,7 +38,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1439,8 +1438,44 @@ class GameServiceImplUnitTest {
     assertTrue(game.getIsTurnOfChancellorActive());
   }
 
-  // TODO
-  //   playCardIfPlayerPlayOutAnyAndRoundEndsBecauseThereIsOnlyOneActivePlayer
+  @Test
+  void playCardAndRoundEndsBecauseThereIsOnlyOneActivePlayer() {
+    List<Player> playersInGame = new ArrayList<>();
+    player = players.get(0);
+    targetPlayer = players.get(1);
+    playersInGame.add(player);
+    playersInGame.add(targetPlayer);
+
+    game = games.get(0);
+    game.setPlayersInGame(playersInGame);
+
+    cardToPlayOut = new Card(BARON, 3);
+    otherCardAtActualPlayer = new Card(PRINCESS, 8);
+    setCardsAtActualPlayer(cardToPlayOut, otherCardAtActualPlayer);
+    cardAtTargetPlayer = targetPlayer.cardInHand();
+
+    infoDto.setTargetPlayer(targetPlayer.getName());
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardToPlayOut.getCardName(), infoDto);
+
+    when(playerService.findByUuid(player.getUuid())).thenReturn(player);
+    when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
+    when(cardService.getCardAtPlayerByCardName(player, cardToPlayOut.getCardName())).thenReturn(cardToPlayOut);
+
+    responseDto = gameService.playCard(playCardRequestDto);
+
+    generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
+        targetPlayer.getName() + " kézben lévő lapjával. " + targetPlayer.getName()
+        + " kiesett a játékból, kézben lévő lapját ("
+        + cardAtTargetPlayer.getCardName() + ") pedig eldobta.";
+
+    verifyCardPlayingCommonInvocations(player.getUuid());
+    verify(cardService).getCardAtPlayerByCardName(player, cardToPlayOut.getCardName());
+    verify(gameRepository).saveAndFlush(game);
+
+    assertNotNull(responseDto);
+    assertEquals(generatedLog, responseDto.getLastLog());
+    assertTrue(game.getLog().contains(generatedLog));
+  }
 
   private void verifyGameCreationCommonInvocations(int times) {
     verify(random, times(times)).nextInt(anyInt());
