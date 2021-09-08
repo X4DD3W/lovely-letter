@@ -21,6 +21,7 @@ import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
 import hu.xaddew.lovelyletter.repository.PlayerRepository;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -162,7 +164,7 @@ public class GameServiceImpl implements GameService {
 
     addGameCreationLogs(game);
     gameRepository.save(game);
-    playerRepository.saveAll(players);
+    // playerRepository.saveAll(players);
 
     responseDto.setGameUuid(game.getUuid());
     responseDto.setPlayerUuidDtos(playerUuidDtos);
@@ -343,6 +345,23 @@ public class GameServiceImpl implements GameService {
     } else throw new GameException(NO_PLAYER_FOUND_WITH_GIVEN_UUID + requestDto.getPlayerUuid());
 
     return responseDto;
+  }
+
+  @Override
+  @Transactional
+  public void closeOpenGamesInactiveFor(LocalDateTime modifyDate) {
+    List<Game> games = gameRepository.findAllByIsGameOverFalseAndModifyDateGreaterThan(modifyDate);
+    games.forEach(game -> {
+      game.addLog("Game is closed because of inactivity.");
+      game.setIsGameOver(true);
+    });
+    log.info("Number of closed games: {}", games.size());
+  }
+
+  @Override
+  @Transactional
+  public void deleteClosedGamesOlderThan(LocalDateTime modifyDate) {
+    gameRepository.deleteAllByIsGameOverTrueAndModifyDateGreaterThan(modifyDate);
   }
 
   public List<String> getGameLogsByPlayerName(String name, Game game) {

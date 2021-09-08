@@ -80,6 +80,12 @@ CREATE TABLE players
 
 CREATE TABLE games
 (
-    id      bigint auto_increment primary key,
-    uuid    varchar(255) null
+    id              bigint auto_increment primary key,
+    uuid            varchar(255) null,
+    actual_player   varchar(128),
+    is2019version   bit(1),
+    is_game_over    bit(1),
+    is_turn_of_chancellor_active    bit(1),
+    create_date timestamp default current_timestamp,
+    modify_date timestamp default current_timestamp on update current_timestamp
 );

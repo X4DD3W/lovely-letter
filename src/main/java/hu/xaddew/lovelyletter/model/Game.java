@@ -1,12 +1,16 @@
 package hu.xaddew.lovelyletter.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -16,6 +20,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Getter
 @Setter
@@ -23,6 +30,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name = "games")
+@EntityListeners(AuditingEntityListener.class)
 public class Game {
 
   @Id
@@ -31,10 +39,10 @@ public class Game {
 
   private String uuid;
 
-  @OneToMany(mappedBy = "game")
+  @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Card> drawDeck;
 
-  @OneToMany(mappedBy = "game")
+  @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Player> playersInGame;
 
   private String actualPlayer;
@@ -51,6 +59,14 @@ public class Game {
 
   @JsonIgnore
   private Boolean isTurnOfChancellorActive;
+
+  @Column(name = "create_date", insertable = false, updatable = false)
+  @CreatedDate
+  private LocalDateTime createDate;
+
+  @Column(name = "modify_date")
+  @LastModifiedDate
+  private LocalDateTime modifyDate;
 
   public Game() {
     this.id = null;

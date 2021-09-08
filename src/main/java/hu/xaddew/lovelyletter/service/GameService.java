@@ -9,6 +9,7 @@ import hu.xaddew.lovelyletter.dto.ResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
 import hu.xaddew.lovelyletter.model.Game;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface GameService {
@@ -28,4 +29,8 @@ public interface GameService {
   Game findGameByPlayerUuid(String playerUuid);
 
   ResponseDto putBackCards(PutBackCardsRequestDto requestDto);
+
+  void closeOpenGamesInactiveFor(LocalDateTime modifyDate);
+
+  void deleteClosedGamesOlderThan(LocalDateTime modifyDate);
 }
