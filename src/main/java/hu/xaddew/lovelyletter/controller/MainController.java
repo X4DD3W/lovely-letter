@@ -45,8 +45,13 @@ public class MainController {
   //  ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
 
   // TODO feature:
-  //  ! Extra karakterek (és logikájuk (pl. Kili))
   //  ! CustomCard.class: CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.)
+  //  ~ "Furcsa alakok" és logikájuk
+  //      + Kili
+  //      ! Vándorszínész
+  //      ! Dalnok
+  //      ! Orvosdoktor
+  //  ! "A káosz egy létra" és logikájuk (Paplovag, Sámán, Mágus, Druida)
   //  ! Slf4j logolás (FE teszteléshez)
 
   @GetMapping("/cards/original")

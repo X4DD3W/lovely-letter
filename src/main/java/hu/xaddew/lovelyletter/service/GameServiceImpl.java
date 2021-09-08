@@ -48,7 +48,8 @@ public class GameServiceImpl implements GameService {
   public static final String PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE = "A játékosok száma 2, 3 vagy 4 lehet.";
   public static final String PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE = "A 2019-es kiadású játékban a játékosok száma 2-6 között lehet.";
   public static final String PLAYER_NAME_ERROR_MESSAGE = "Nem szerepelhet két játékos ugyanazzal a névvel!";
-  public static final String INVALID_CUSTOM_CARD_ERROR_MESSAGE = "Egy vagy több ismeretlen kártya szerepel a megadott egyedi kártyák listájában.";
+  public static final String RESERVED_NAMES_ERROR_MESSAGE = "A játékos neve nem lehet az alábbiak valamelyike: ";
+  public static final String INVALID_CUSTOM_CARD_ERROR_MESSAGE = "Egy vagy több ismeretlen kártya szerepel a megadott egyedi kártyák listájában: ";
   public static final String PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE = "Az általad választott játékost Szobalány védi.";
   public static final String PLAYER_SELF_TARGETING_ERROR_MESSAGE = "Király, Báró, Pap és Őr kijátszásakor nem választhatod saját magadat.";
   public static final String PLAYER_NOT_FOUND_ERROR_MESSAGE = "Nem találtam az általad választott játékost.";
@@ -83,6 +84,9 @@ public class GameServiceImpl implements GameService {
   public static final String PRIEST = "Pap";
   public static final String GUARD = "Őr";
   public static final String SPY = "Kém";
+  public static final String KILI = "Kili";
+  public static final List<String> reservedNames = List.of(PRINCESS, COUNTESS, KING, CHANCELLOR,
+      PRINCE, HANDMAID, BARON, PRIEST, GUARD, SPY, KILI);
 
   private int randomIndex;
 
@@ -117,8 +121,12 @@ public class GameServiceImpl implements GameService {
       throw new GameException(PLAYER_NAME_ERROR_MESSAGE);
     }
 
+    if (isThereAreReservedNameInGivenPlayerNames(createGameDto)) {
+      throw new GameException(RESERVED_NAMES_ERROR_MESSAGE + reservedNames);
+    }
+
     if (isThereInvalidCustomCardInTheList(createGameDto.getCustomCardNames())) {
-      throw new GameException(INVALID_CUSTOM_CARD_ERROR_MESSAGE);
+      throw new GameException(INVALID_CUSTOM_CARD_ERROR_MESSAGE + createGameDto.getCustomCardNames());
     }
 
     CreatedGameResponseDto responseDto = new CreatedGameResponseDto();
@@ -164,7 +172,6 @@ public class GameServiceImpl implements GameService {
 
     addGameCreationLogs(game);
     gameRepository.save(game);
-    // playerRepository.saveAll(players);
 
     responseDto.setGameUuid(game.getUuid());
     responseDto.setPlayerUuidDtos(playerUuidDtos);
@@ -385,6 +392,10 @@ public class GameServiceImpl implements GameService {
   private boolean isThereAreDuplicatedNamesInGivenPlayerNames(CreateGameDto createGameDto) {
     return createGameDto.getPlayerNames().stream().distinct()
         .count() != createGameDto.getPlayerNames().size();
+  }
+
+  private boolean isThereAreReservedNameInGivenPlayerNames(CreateGameDto createGameDto) {
+    return !Collections.disjoint(reservedNames, createGameDto.getPlayerNames());
   }
 
   private boolean isThereInvalidCustomCardInTheList(List<String> customCardNames) {
@@ -647,6 +658,7 @@ public class GameServiceImpl implements GameService {
       case COUNTESS:
       case HANDMAID:
       case SPY:
+      case KILI:
         actualPlayer.discard(cardWantToPlayOut);
         responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game));
         break;
@@ -695,8 +707,13 @@ public class GameServiceImpl implements GameService {
         if (cardValueInHandOf(targetPlayer) < cardValueInHandOf(actualPlayer)) {
           cardToDiscard = targetPlayer.cardInHand();
           targetPlayer.discard(cardToDiscard);
-          targetPlayer.setIsInPlay(false);
-          responseDto.setLastLog(addLogWhenAPlayerUseBaronSuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
+          if (cardToDiscard.getCardName().equals(KILI)) {
+            drawCard(targetPlayer, game);
+            responseDto.setLastLog(addLogWhenAPlayerShouldDiscardKiliByBaron(targetPlayer, cardToDiscard, actualPlayer, game));
+          } else {
+            targetPlayer.setIsInPlay(false);
+            responseDto.setLastLog(addLogWhenAPlayerUseBaronSuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
+          }
         } else if (cardValueInHandOf(targetPlayer) > cardValueInHandOf(actualPlayer)) {
           cardToDiscard = actualPlayer.cardInHand();
           actualPlayer.discard(cardToDiscard);
@@ -719,8 +736,13 @@ public class GameServiceImpl implements GameService {
         if (cardNameInHandOf(targetPlayer).equals(info.getNamedCard())) {
           cardToDiscard = targetPlayer.cardInHand();
           targetPlayer.discard(cardToDiscard);
-          targetPlayer.setIsInPlay(false);
-          responseDto.setLastLog(addLogWhenAPlayerUseGuardSuccessfully(requestDto, actualPlayer, targetPlayer, game));
+          if (cardToDiscard.getCardName().equals(KILI)) {
+            drawCard(targetPlayer, game);
+            responseDto.setLastLog(addLogWhenAPlayerShouldDiscardKiliByGuard(requestDto, actualPlayer, targetPlayer, game));
+          } else {
+            targetPlayer.setIsInPlay(false);
+            responseDto.setLastLog(addLogWhenAPlayerUseGuardSuccessfully(requestDto, actualPlayer, targetPlayer, game));
+          }
         } else {
           responseDto.setLastLog(
               addLogWhenAPlayerUseGuardUnsuccessfully(requestDto, actualPlayer, targetPlayer, game));
@@ -828,6 +850,15 @@ public class GameServiceImpl implements GameService {
     return game.addLog(actualPlayer.getName() + " kijátszott lapja egy " + cardName + " volt.");
   }
 
+  private String addLogWhenAPlayerShouldDiscardKiliByBaron(Player targetPlayer, Card cardToDiscard,
+      Player actualPlayer, Game game) {
+    return game.addLog(actualPlayer.getName() + COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
+        + " kézben lévő lapjával. " + targetPlayer.getName()
+        + " kézben lévő lapja " + cardToDiscard.getCardName()
+        + " volt, aki megmentett gazdáját a kiesétől ("
+        + targetPlayer.getName() + " húzott egy új lapot).");
+  }
+
   private String addLogWhenAPlayerUseBaronSuccessful(Player targetPlayer,
       Card cardToDiscard, Player actualPlayer, Game game) {
     return game.addLog(
@@ -858,6 +889,15 @@ public class GameServiceImpl implements GameService {
   private String addLogWhenAPlayerUsePriest(Player actualPlayer, Player targetPlayer, Game game) {
     return game.addLog(
         actualPlayer.getName() + " megnézte, mi van " + targetPlayer.getName() + " kezében.");
+  }
+
+  private String addLogWhenAPlayerShouldDiscardKiliByGuard(PlayCardRequestDto requestDto,
+      Player actualPlayer, Player targetPlayer, Game game) {
+    String namedCard = requestDto.getAdditionalInfo().getNamedCard();
+    return game.addLog(actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
+        + " kezében " + namedCard + " van. Így igaz. "
+        + targetPlayer.getName() + " eldobta a lapját és ahelyett, hogy kiesett volna,"
+        + " húzott egy új lapot.");
   }
 
   private String addLogWhenAPlayerUseGuardSuccessfully(PlayCardRequestDto requestDto,
