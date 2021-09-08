@@ -325,7 +325,8 @@ class GameServiceImplUnitTest {
   @Test
   void createGameThrowsGameExceptionIfThereIsInvalidCustomCardInTheCustomCardNameList() {
     createGameDto = initCreateGameDto(getPlayerNamesOf(2), false);
-    createGameDto.setCustomCardNames(List.of(INVALID_CUSTOM_CARD_NAME));
+    List<String> customCardNames = List.of(INVALID_CUSTOM_CARD_NAME);
+    createGameDto.setCustomCardNames(customCardNames);
 
     when(customCardService.findAll()).thenReturn(customCards);
 
@@ -333,7 +334,7 @@ class GameServiceImplUnitTest {
 
     verify(customCardService).findAll();
 
-    assertEquals(INVALID_CUSTOM_CARD_ERROR_MESSAGE, exception.getMessage());
+    assertEquals(INVALID_CUSTOM_CARD_ERROR_MESSAGE + customCardNames, exception.getMessage());
   }
 
   @Test
@@ -1481,7 +1482,6 @@ class GameServiceImplUnitTest {
     verify(random, times(times)).nextInt(anyInt());
     verify(customCardService, times(2)).findAll();
     verify(gameRepository).save(any());
-    verify(playerRepository).saveAll(any());
   }
 
   private void verifyCardPlayingCommonInvocations(String uuid) {
