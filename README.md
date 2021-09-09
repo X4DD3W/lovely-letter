@@ -9,9 +9,9 @@ Lovely Letter is a home project based on popular card game, [Love Letter](https:
 
 On your turn, you draw the top card from the deck, choose one of the two cards in your hand to discard it face up in front of you and then apply any effect on the card you discarded.
 
-A round ends if the deck is empty at the end of a turn or if all players but one are out of the round.
+A round ends if the deck is empty at the end of any player's turn or if all players but one are out of the round.
 
-You win the game if you collect a tokens based on the number of players
+You win the game if you collect a number of tokens based on the number of players.
 
 For detailed rules, see there: [HU](https://tarsasjatekok.com/files/common/2/2e/2e5/2e5de231fca31ad30447dccbc4b675b0/ll-rules-hungarian.pdf), [EN](https://images.zmangames.com/filer_public/5b/6c/5b6c17d7-7e0e-4b70-a311-9a6c32066010/ll-rulebook.pdf).
 
