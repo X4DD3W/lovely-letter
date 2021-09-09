@@ -39,21 +39,6 @@ public class MainController {
   private final CustomCardService customCardService;
   private final GameService gameService;
 
-  // TODO tesztelni/javítani:
-  //  ? minden service-re unit tesztet írni
-  //  ? Hibernate OneToMany (gameId-val összekapcsolás refactor)
-  //  ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
-
-  // TODO feature:
-  //  ! CustomCard.class: CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.)
-  //  ~ "Furcsa alakok" és logikájuk
-  //      + Kili
-  //      ! Vándorszínész
-  //      ! Dalnok
-  //      ! Orvosdoktor
-  //  ! "A káosz egy létra" és logikájuk (Paplovag, Sámán, Mágus, Druida)
-  //  ! Slf4j logolás (FE teszteléshez)
-
   @GetMapping("/cards/original")
   public List<CardResponseDto> getOriginalCards() {
     return originalCardService.getAllCards();
