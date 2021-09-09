@@ -12,6 +12,7 @@ import hu.xaddew.lovelyletter.dto.PlayerAndPlayedCardsDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
+import hu.xaddew.lovelyletter.exception.ErrorType;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.CustomCard;
@@ -103,30 +104,31 @@ public class GameServiceImpl implements GameService {
   @Override
   public CreatedGameResponseDto createGame(CreateGameDto createGameDto) {
     if (createGameDto == null) {
-      throw new GameException(MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE);
+      throw new GameException(MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
     }
 
     boolean isGame2019Version = createGameDto.getIs2019Version();
     if (isGame2019Version) {
       if (isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(createGameDto)) {
-        throw new GameException(PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE);
+        throw new GameException(PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
       }
     } else {
       if (isGivenNumberOfPlayersOutOfAllowedRangeInClassicVersion(createGameDto)) {
-        throw new GameException(PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE);
+        throw new GameException(PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
       }
     }
 
     if (isThereAreDuplicatedNamesInGivenPlayerNames(createGameDto)) {
-      throw new GameException(PLAYER_NAME_ERROR_MESSAGE);
+      throw new GameException(PLAYER_NAME_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
     }
 
     if (isThereAreReservedNameInGivenPlayerNames(createGameDto)) {
-      throw new GameException(RESERVED_NAMES_ERROR_MESSAGE + reservedNames);
+      throw new GameException(RESERVED_NAMES_ERROR_MESSAGE + reservedNames, ErrorType.BAD_REQUEST);
     }
 
     if (isThereInvalidCustomCardInTheList(createGameDto.getCustomCardNames())) {
-      throw new GameException(INVALID_CUSTOM_CARD_ERROR_MESSAGE + createGameDto.getCustomCardNames());
+      throw new GameException(INVALID_CUSTOM_CARD_ERROR_MESSAGE + createGameDto.getCustomCardNames(),
+          ErrorType.BAD_REQUEST);
     }
 
     CreatedGameResponseDto responseDto = new CreatedGameResponseDto();
@@ -225,7 +227,7 @@ public class GameServiceImpl implements GameService {
           .filter(player -> !player.getIsInPlay())
           .forEach(player -> addPlayedCardsToDtoList(player, playedCardsByPlayersOutOfGame));
       statusDto.setPlayedCardsByPlayersOutOfGame(playedCardsByPlayersOutOfGame);
-    } else throw new GameException(NO_GAME_FOUND_WITH_GIVEN_UUID_ERROR_MESSAGE + gameUuid);
+    } else throw new GameException(NO_GAME_FOUND_WITH_GIVEN_UUID_ERROR_MESSAGE + gameUuid, ErrorType.NOT_FOUND);
 
     return statusDto;
   }
@@ -240,7 +242,7 @@ public class GameServiceImpl implements GameService {
         if (actualPlayer.getName().equals(game.getActualPlayer())) {
           if (hasPlayerTheCardSheOrHeWantToPlay(actualPlayer, requestDto.getCardName())) {
             if (isCountessWithKingOrPrince(actualPlayer) && !requestDto.getCardName().equals(COUNTESS)) {
-              throw new GameException(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE);
+              throw new GameException(COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE, ErrorType.CONFLICT);
             }
             if (requestDto.getCardName().matches(KING  + "|" + BARON + "|" + PRIEST + "|" + GUARD + "|" + PRINCE)) {
               if (isNotThereOtherTargetablePlayer(actualPlayer, game)) {
@@ -271,12 +273,12 @@ public class GameServiceImpl implements GameService {
                               responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
                               setNextPlayerInOrder(actualPlayer, game);
                               gameRepository.saveAndFlush(game);
-                            } else throw new GameException(PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE);
-                          } else throw new GameException(PLAYER_IS_ALREADY_OUT_OF_ROUND_ERROR_MESSAGE);
-                        } else throw new GameException(PLAYER_SELF_TARGETING_ERROR_MESSAGE);
+                            } else throw new GameException(PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+                          } else throw new GameException(PLAYER_IS_ALREADY_OUT_OF_ROUND_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+                        } else throw new GameException(PLAYER_SELF_TARGETING_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
                       }
-                    } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE);
-                  } else throw new GameException(PLAYER_NOT_SELECTED_ERROR_MESSAGE);
+                    } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE, ErrorType.NOT_FOUND);
+                  } else throw new GameException(PLAYER_NOT_SELECTED_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
               }
             } else {
               Player targetPlayer = new Player();
@@ -284,10 +286,10 @@ public class GameServiceImpl implements GameService {
               setNextPlayerInOrder(actualPlayer, game);
               gameRepository.saveAndFlush(game);
             }
-          } else throw new GameException(HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE);
-        } else throw new GameException(NOT_YOUR_TURN_ERROR_MESSAGE + actualPlayer.getName() + ".");
-      } else throw new GameException(NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE);
-    } else throw new GameException(NO_PLAYER_FOUND_WITH_GIVEN_UUID + requestDto.getPlayerUuid());
+          } else throw new GameException(HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+        } else throw new GameException(NOT_YOUR_TURN_ERROR_MESSAGE + actualPlayer.getName() + ".", ErrorType.BAD_REQUEST);
+      } else throw new GameException(NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE, ErrorType.NOT_FOUND);
+    } else throw new GameException(NO_PLAYER_FOUND_WITH_GIVEN_UUID + requestDto.getPlayerUuid(), ErrorType.NOT_FOUND);
     return responseDto;
   }
 
@@ -309,7 +311,7 @@ public class GameServiceImpl implements GameService {
         knownInfosDto.setOtherPlayers(getOtherPlayersAndNumberOfLettersByPlayerUuidAndGame(playerUuid, game));
       }
 
-    } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE);
+    } else throw new GameException(PLAYER_NOT_FOUND_ERROR_MESSAGE, ErrorType.NOT_FOUND);
     return knownInfosDto;
   }
 
@@ -321,7 +323,7 @@ public class GameServiceImpl implements GameService {
   @Override
   public ResponseDto putBackCards(PutBackCardsRequestDto requestDto) {
     if (requestDto == null) {
-      throw new GameException(MISSING_PUT_BACK_A_CARD_REQUEST_ERROR_MESSAGE);
+      throw new GameException(MISSING_PUT_BACK_A_CARD_REQUEST_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
     }
     ResponseDto responseDto = new ResponseDto();
     Player actualPlayer = playerService.findByUuid(requestDto.getPlayerUuid());
@@ -345,11 +347,11 @@ public class GameServiceImpl implements GameService {
               game.setIsTurnOfChancellorActive(false);
               setNextPlayerInOrder(actualPlayer, game);
               gameRepository.saveAndFlush(game);
-            } else throw new GameException("Hiba történt a kártyák visszatételekor.");
-          } else throw new GameException(HAVE_NO_CARDS_WHAT_WANT_TO_PUT_BACK_ERROR_MESSAGE);
-        } else throw new GameException(NOT_YOUR_TURN_ERROR_MESSAGE + actualPlayer.getName() + ".");
-      } else throw new GameException(NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE);
-    } else throw new GameException(NO_PLAYER_FOUND_WITH_GIVEN_UUID + requestDto.getPlayerUuid());
+            } else throw new GameException("Hiba történt a kártyák visszatételekor.", ErrorType.INTERNAL_SERVER_ERROR);
+          } else throw new GameException(HAVE_NO_CARDS_WHAT_WANT_TO_PUT_BACK_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+        } else throw new GameException(NOT_YOUR_TURN_ERROR_MESSAGE + actualPlayer.getName() + ".", ErrorType.BAD_REQUEST);
+      } else throw new GameException(NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE, ErrorType.NOT_FOUND);
+    } else throw new GameException(NO_PLAYER_FOUND_WITH_GIVEN_UUID + requestDto.getPlayerUuid(), ErrorType.NOT_FOUND);
 
     return responseDto;
   }
@@ -491,7 +493,7 @@ public class GameServiceImpl implements GameService {
           game.setActualPlayer(nextActualPlayer.getName());
           game.addLog(ACTUAL_PLAYER_IS + game.getActualPlayer());
           drawCard(nextActualPlayer, game);
-        } else throw new GameException("A játékossorrend rosszul került beállításra.");
+        } else throw new GameException("A játékossorrend rosszul került beállításra.", ErrorType.INTERNAL_SERVER_ERROR);
       }
     }
   }
@@ -646,7 +648,7 @@ public class GameServiceImpl implements GameService {
     Card cardToDiscard;
 
     if (requestDto.getCardName().equals(GUARD) && info.getNamedCard().equals(GUARD)) {
-      throw new GameException(GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE);
+      throw new GameException(GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
     }
 
     switch (cardNameWantToPlayOut) {
@@ -749,7 +751,7 @@ public class GameServiceImpl implements GameService {
         }
         break;
       default:
-        throw new GameException("Played card is none of the predefined ones.");
+        throw new GameException("Played card is none of the predefined ones.", ErrorType.INTERNAL_SERVER_ERROR);
     }
 
     return responseDto;

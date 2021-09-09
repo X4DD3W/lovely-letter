@@ -1,12 +1,8 @@
 package hu.xaddew.lovelyletter.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+public class GameException extends BaseServiceException {
 
-@ResponseStatus(code = HttpStatus.BAD_REQUEST)
-public class GameException extends RuntimeException {
-
-  public GameException(String message) {
-    super(message);
+  public GameException(String message, ErrorType errorType) {
+    super(message, errorType);
   }
 }
