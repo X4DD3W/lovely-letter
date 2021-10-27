@@ -539,7 +539,6 @@ public class GameServiceImpl implements GameService {
           .is2PlayerPublic(newReleaseCard.getIs2PlayerPublic())
           .isAtAPlayer(newReleaseCard.getIsAtAPlayer())
           .build();
-      cardService.save(card);
       deck.add(card);
     }
     return deck;
@@ -558,7 +557,6 @@ public class GameServiceImpl implements GameService {
           .is2PlayerPublic(originalCard.getIs2PlayerPublic())
           .isAtAPlayer(originalCard.getIsAtAPlayer())
           .build();
-      cardService.save(card);
       deck.add(card);
     }
     return deck;
