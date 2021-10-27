@@ -9,10 +9,6 @@ public class BaseServiceException extends RuntimeException {
 
   private final ErrorType errorType;
 
-  public BaseServiceException(String message) {
-    this(message, ErrorType.INTERNAL_SERVER_ERROR);
-  }
-
   public BaseServiceException(String message, ErrorType errorType) {
     super(message);
     this.errorType = errorType;
