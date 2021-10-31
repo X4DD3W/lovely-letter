@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllowCrossOriginPort4200
 @DefaultApiErrorResponses
 @RequestMapping("/rules")
-@Tag(name = "Játékszabállyal kapcsolatos végpontok")
+@Tag(name = "Rules")
 @RequiredArgsConstructor
 public class RuleController {
 

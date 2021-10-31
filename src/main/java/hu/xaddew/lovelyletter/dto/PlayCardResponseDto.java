@@ -6,13 +6,13 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Schema(description = "Kártyával végzett művelet válasz adatmodell")
+@Schema(description = "Kártya kijátszása válasz adatmodell")
 public class PlayCardResponseDto {
 
-  @Schema(description = "Titkos információ a műveletet követően")
+  @Schema(description = "Titkos információ a kártyakijátszást követően")
   private String hiddenMessage;
 
-  @Schema(description = "Nyilvános eseménybejegyzés a műveletet követően")
+  @Schema(description = "Nyilvános eseménybejegyzés a kártyakijátszást követően")
   private String lastLog;
 
   public PlayCardResponseDto() {

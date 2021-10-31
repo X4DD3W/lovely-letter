@@ -12,7 +12,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Kártya kijátszása adatmodell")
+@Schema(description = "Kártya kijátszása kérés adatmodell")
 public class PlayCardRequestDto {
 
   @Schema(description = "Játékos uuid")

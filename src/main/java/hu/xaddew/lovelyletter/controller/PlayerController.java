@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllowCrossOriginPort4200
 @DefaultApiErrorResponses
 @RequestMapping("/player")
-@Tag(name = "Játékosokkal kapcsolatos végpontok")
+@Tag(name = "Player")
 @RequiredArgsConstructor
 public class PlayerController {
 

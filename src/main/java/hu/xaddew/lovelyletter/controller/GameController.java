@@ -5,8 +5,8 @@ import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
-import hu.xaddew.lovelyletter.dto.PutBackCardResponseDto;
-import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
+import hu.xaddew.lovelyletter.dto.ReturnCardResponseDto;
+import hu.xaddew.lovelyletter.dto.ReturnCardsRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.service.GameService;
 import hu.xaddew.lovelyletter.util.AllowCrossOriginPort4200;
@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllowCrossOriginPort4200
 @DefaultApiErrorResponses
 @RequestMapping("/game")
-@Tag(name = "Játékkal kapcsolatos végpontok")
+@Tag(name = "Game")
 @RequiredArgsConstructor
 public class GameController {
 
@@ -76,12 +76,12 @@ public class GameController {
 
   @PostMapping("/put-back-cards")
   @Operation(summary = "Kártya visszatétele a húzópakliba")
-  @ApiResponse(responseCode = "200", description = "Kártyakivisszatételt követő log",
-      content = @Content(schema = @Schema(implementation = PutBackCardResponseDto.class)))
-  public PutBackCardResponseDto putBackCardsWithChancellor(
+  @ApiResponse(responseCode = "200", description = "Kártyavisszatételt követő log",
+      content = @Content(schema = @Schema(implementation = ReturnCardResponseDto.class)))
+  public ReturnCardResponseDto returnCardsToDrawDeckWithChancellor(
       @Parameter(description = "Kártya visszatétele a húzópakliba adatmodell", required = true)
-      @RequestBody PutBackCardsRequestDto requestDto) {
-    return gameService.putBackCards(requestDto);
+      @RequestBody ReturnCardsRequestDto requestDto) {
+    return gameService.returnCardsToDrawDeck(requestDto);
   }
 
 }

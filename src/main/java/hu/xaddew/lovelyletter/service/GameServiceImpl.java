@@ -9,8 +9,8 @@ import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerAndPlayedCardsDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
-import hu.xaddew.lovelyletter.dto.PutBackCardResponseDto;
-import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
+import hu.xaddew.lovelyletter.dto.ReturnCardResponseDto;
+import hu.xaddew.lovelyletter.dto.ReturnCardsRequestDto;
 import hu.xaddew.lovelyletter.enums.ErrorMessage;
 import hu.xaddew.lovelyletter.enums.ErrorType;
 import hu.xaddew.lovelyletter.enums.GameLog;
@@ -206,60 +206,19 @@ public class GameServiceImpl implements GameService {
   public PlayCardResponseDto playCard(PlayCardRequestDto requestDto) {
     PlayCardResponseDto responseDto = new PlayCardResponseDto();
     Player actualPlayer = playerService.findByUuid(requestDto.getPlayerUuid());
+
     if (actualPlayer != null) {
       Game game = findGameByPlayerUuid(actualPlayer.getUuid());
       if (game != null) {
-        if (actualPlayer.getName().equals(game.getActualPlayer())) {
-          if (hasPlayerTheCardSheOrHeWantToPlay(actualPlayer, requestDto.getCardName())) {
-            if (isCountessWithKingOrPrince(actualPlayer) && !requestDto.getCardName().equals(COUNTESS)) {
-              throw new GameException(ErrorMessage.COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE, ErrorType.CONFLICT);
-            }
-            if (requestDto.getCardName().matches(KING  + "|" + BARON + "|" + PRIEST + "|" + GUARD + "|" + PRINCE)) {
-              if (isNotThereOtherTargetablePlayer(actualPlayer, game)) {
-                Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
-                if (requestDto.getCardName().matches(KING  + "|" + BARON + "|" + PRIEST + "|" + GUARD)) {
-                  actualPlayer.discard(cardWantToPlayOut);
-                  responseDto.setLastLog(addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(actualPlayer, cardWantToPlayOut, game));
-                } else {
-                  playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
-                }
-                setNextPlayerInOrder(actualPlayer, game);
-                gameRepository.saveAndFlush(game);
-              } else {
-                  if (requestDto.getAdditionalInfo() != null) {
-                    Player targetPlayer = game.getPlayersInGame().stream()
-                        .filter(p -> p.getName().equals(requestDto.getAdditionalInfo().getTargetPlayer()))
-                        .findFirst().orElse(null);
-                    if (targetPlayer != null) {
-                      if (targetPlayer.getName().equals(actualPlayer.getName()) && requestDto.getCardName().matches(PRINCE)) {
-                        Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
-                        playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
-                        setNextPlayerInOrder(actualPlayer, game);
-                        gameRepository.saveAndFlush(game);
-                      } else {
-                        if (!targetPlayer.getName().equals(actualPlayer.getName())) {
-                          if (isPlayerInPlay(targetPlayer)) {
-                            if (!isTargetPlayerLastCardHandmaid(targetPlayer)) {
-                              responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
-                              setNextPlayerInOrder(actualPlayer, game);
-                              gameRepository.saveAndFlush(game);
-                            } else throw new GameException(ErrorMessage.PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
-                          } else throw new GameException(ErrorMessage.PLAYER_IS_ALREADY_OUT_OF_ROUND_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
-                        } else throw new GameException(ErrorMessage.PLAYER_SELF_TARGETING_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
-                      }
-                    } else throw new GameException(ErrorMessage.PLAYER_NOT_FOUND_ERROR_MESSAGE, ErrorType.NOT_FOUND);
-                  } else throw new GameException(ErrorMessage.PLAYER_NOT_SELECTED_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
-              }
-            } else {
-              Player targetPlayer = new Player();
-              responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
-              setNextPlayerInOrder(actualPlayer, game);
-              gameRepository.saveAndFlush(game);
-            }
+        if (isActualPlayerTryToPlayOutCard(actualPlayer, game)) {
+          if (hasPlayerTheCardWhatPlayerWantsToPlayOut(actualPlayer, requestDto.getCardName())) {
+            checkIfPlayerWantsToPlayOutCountessWhileThereIsKingOrPrinceInTheirHandToo(actualPlayer, requestDto);
+            responseDto = processCardEffectDependsOnTheCardName(requestDto, responseDto, actualPlayer, game);
           } else throw new GameException(ErrorMessage.HAVE_NO_CARD_WHAT_WANT_TO_PLAY_OUT_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
         } else throw new GameException(ErrorMessage.NOT_YOUR_TURN_ERROR_MESSAGE, actualPlayer.getName() + ".", ErrorType.BAD_REQUEST);
       } else throw new GameException(ErrorMessage.NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE, ErrorType.NOT_FOUND);
     } else throw new GameException(ErrorMessage.NO_PLAYER_FOUND_WITH_GIVEN_UUID_ERROR_MESSAGE, requestDto.getPlayerUuid(), ErrorType.NOT_FOUND);
+
     return responseDto;
   }
 
@@ -269,39 +228,46 @@ public class GameServiceImpl implements GameService {
   }
 
   @Override
-  public PutBackCardResponseDto putBackCards(PutBackCardsRequestDto requestDto) {
+  public ReturnCardResponseDto returnCardsToDrawDeck(ReturnCardsRequestDto requestDto) {
     if (requestDto == null) {
       throw new GameException(ErrorMessage.MISSING_PUT_BACK_A_CARD_REQUEST_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
     }
-    PutBackCardResponseDto responseDto = new PutBackCardResponseDto();
+
+    ReturnCardResponseDto responseDto = new ReturnCardResponseDto();
     Player actualPlayer = playerService.findByUuid(requestDto.getPlayerUuid());
+
     if (actualPlayer != null) {
       Game game = findGameByPlayerUuid(actualPlayer.getUuid());
       if (game != null) {
-        if (actualPlayer.getName().equals(game.getActualPlayer())) {
-          if (hasPlayerTheCardsSheOrHeWantToPutBack(actualPlayer, requestDto.getCardsToPutBack())) {
-            List<Card> cardsWantToPutBack = new ArrayList<>();
-            requestDto.getCardsToPutBack().forEach(cardName -> {
-              Card cardWantToPutBack = cardService.getCardAtPlayerByCardName(actualPlayer, cardName);
-              cardsWantToPutBack.add(cardWantToPutBack);
-              actualPlayer.getCardsInHand().remove(cardWantToPutBack);
-              cardWantToPutBack.setIsAtAPlayer(false);
-              game.getDrawDeck().add(cardWantToPutBack);
-
-            });
-            if (!cardsWantToPutBack.contains(null) && cardsWantToPutBack.size() == requestDto
-                .getCardsToPutBack().size() && actualPlayer.hasOnlyOneCardInHand()) {
-              responseDto.setLastLog(addLogWhenAPlayerUseChancellorToPutBackCards(actualPlayer, requestDto.getCardsToPutBack().size(), game));
-              game.setIsTurnOfChancellorActive(false);
-              setNextPlayerInOrder(actualPlayer, game);
-              gameRepository.saveAndFlush(game);
-            } else throw new GameException(ErrorMessage.PUT_BACK_CARDS_GENERAL_ERROR_MESSAGE, ErrorType.INTERNAL_SERVER_ERROR);
+        if (isActualPlayerTryToPlayOutCard(actualPlayer, game)) {
+          if (hasPlayerTheCardsWhatPlayerWantsToReturn(actualPlayer, requestDto.getCardsToReturn())) {
+            processCardReturning(requestDto, responseDto, actualPlayer, game);
           } else throw new GameException(ErrorMessage.HAVE_NO_CARDS_WHAT_WANT_TO_PUT_BACK_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
         } else throw new GameException(ErrorMessage.NOT_YOUR_TURN_ERROR_MESSAGE, actualPlayer.getName() + ".", ErrorType.BAD_REQUEST);
       } else throw new GameException(ErrorMessage.NO_GAME_FOUND_WITH_GIVEN_PLAYER_ERROR_MESSAGE, ErrorType.NOT_FOUND);
     } else throw new GameException(ErrorMessage.NO_PLAYER_FOUND_WITH_GIVEN_UUID_ERROR_MESSAGE, requestDto.getPlayerUuid(), ErrorType.NOT_FOUND);
 
     return responseDto;
+  }
+
+  private void processCardReturning(ReturnCardsRequestDto requestDto, ReturnCardResponseDto responseDto,
+      Player actualPlayer, Game game) {
+    List<Card> cardsWantToReturn = new ArrayList<>();
+    requestDto.getCardsToReturn().forEach(cardName -> {
+      Card cardWantToReturn = cardService.getCardAtPlayerByCardName(actualPlayer, cardName);
+      cardsWantToReturn.add(cardWantToReturn);
+      actualPlayer.getCardsInHand().remove(cardWantToReturn);
+      cardWantToReturn.setIsAtAPlayer(false);
+      game.getDrawDeck().add(cardWantToReturn);
+    });
+    if (!cardsWantToReturn.contains(null) && cardsWantToReturn.size() == requestDto
+        .getCardsToReturn().size() && actualPlayer.hasOnlyOneCardInHand()) {
+      responseDto.setLastLog(addLogWhenAPlayerUseChancellorToReturnCards(
+          actualPlayer, requestDto.getCardsToReturn().size(), game));
+      game.setIsTurnOfChancellorActive(false);
+      setNextPlayerInOrder(actualPlayer, game);
+      gameRepository.saveAndFlush(game);
+    } else throw new GameException(ErrorMessage.PUT_BACK_CARDS_GENERAL_ERROR_MESSAGE, ErrorType.INTERNAL_SERVER_ERROR);
   }
 
   @Override
@@ -374,20 +340,6 @@ public class GameServiceImpl implements GameService {
     }
   }
 
-  private boolean isNotThereOtherTargetablePlayer(Player actualPlayer, Game game) {
-    List<Player> targetablePlayers = game.getActivePlayers();
-    targetablePlayers = targetablePlayers.stream()
-        .filter(player -> {
-          if (player.getPlayedCards().isEmpty()) {
-            return true;
-          }
-          return !player.lastPlayedCard().getCardName().equals(HANDMAID);
-        })
-        .collect(Collectors.toList());
-    targetablePlayers.remove(actualPlayer);
-    return targetablePlayers.isEmpty();
-  }
-
   private void setNextPlayerInOrder(Player actualPlayer, Game game) {
     if (isRoundOverBecauseThereIsOnlyOneActivePlayer(game)) {
       log.info("Round is over: there is only one player left.");
@@ -395,27 +347,12 @@ public class GameServiceImpl implements GameService {
       log.info("Round is over: the draw deck is empty.");
     } else {
       List<Player> activePlayers = game.getActivePlayers();
-
       Player nextActualPlayer;
 
       if (game.isTurnOfChancellorActive()) {
         game.addLog(GameLog.ACTUAL_PLAYER_IS + actualPlayer.getName() + GameLog.PLAYER_CHOOSES_FROM_THE_CARDS_DRAWN_BY_CHANCELLOR);
       } else {
-        if (actualPlayer.getOrderNumber() == game.getPlayersInGame().size()) {
-          nextActualPlayer = activePlayers.stream()
-              .min(Comparator.comparing(Player::getOrderNumber)).orElse(null);
-        } else {
-          nextActualPlayer = activePlayers.stream()
-              .filter(player -> player.getOrderNumber() > actualPlayer.getOrderNumber())
-              .min(Comparator.comparingInt(Player::getOrderNumber)).orElse(null);
-        }
-
-        if (nextActualPlayer == null && game.getActivePlayers().size() >= 2) {
-          nextActualPlayer = activePlayers.stream()
-              .filter(player -> player.getOrderNumber() > 0)
-              .min(Comparator.comparingInt(Player::getOrderNumber)).orElse(null);
-        }
-
+        nextActualPlayer = setNextPlayer(actualPlayer, game, activePlayers);
         if (nextActualPlayer != null) {
           game.setActualPlayer(nextActualPlayer.getName());
           game.addLog(GameLog.ACTUAL_PLAYER_IS + game.getActualPlayer());
@@ -423,6 +360,27 @@ public class GameServiceImpl implements GameService {
         } else throw new GameException(ErrorMessage.PLAYER_ORDER_ERROR_MESSAGE, ErrorType.INTERNAL_SERVER_ERROR);
       }
     }
+  }
+
+  private Player setNextPlayer(Player actualPlayer, Game game, List<Player> activePlayers) {
+    Player nextActualPlayer;
+
+    if (actualPlayer.getOrderNumber() == game.getPlayersInGame().size()) {
+      nextActualPlayer = activePlayers.stream()
+          .min(Comparator.comparing(Player::getOrderNumber)).orElse(null);
+    } else {
+      nextActualPlayer = activePlayers.stream()
+          .filter(player -> player.getOrderNumber() > actualPlayer.getOrderNumber())
+          .min(Comparator.comparingInt(Player::getOrderNumber)).orElse(null);
+    }
+
+    if (nextActualPlayer == null && game.getActivePlayers().size() >= 2) {
+      nextActualPlayer = activePlayers.stream()
+          .filter(player -> player.getOrderNumber() > 0)
+          .min(Comparator.comparingInt(Player::getOrderNumber)).orElse(null);
+    }
+
+    return nextActualPlayer;
   }
 
   private void initDeckAndPutAsideCards(Game game, boolean is2019Version, List<String> customCardNames) {
@@ -545,11 +503,112 @@ public class GameServiceImpl implements GameService {
     game.addLog(GameLog.ACTUAL_PLAYER_IS + game.getActualPlayer());
   }
 
-  private boolean hasPlayerTheCardSheOrHeWantToPlay(Player player, String cardName) {
+  private boolean isActualPlayerTryToPlayOutCard(Player actualPlayer, Game game) {
+    return actualPlayer.getName().equals(game.getActualPlayer());
+  }
+
+  private boolean hasPlayerTheCardWhatPlayerWantsToPlayOut(Player player, String cardName) {
     return player.getCardsInHand().stream()
         .map(Card::getCardName)
         .collect(Collectors.toList())
         .contains(cardName);
+  }
+
+  private void checkIfPlayerWantsToPlayOutCountessWhileThereIsKingOrPrinceInTheirHandToo(
+      Player actualPlayer, PlayCardRequestDto requestDto) {
+    if (isCountessWithKingOrPrince(actualPlayer) && !requestDto.getCardName().equals(COUNTESS)) {
+      throw new GameException(ErrorMessage.COUNTESS_WITH_KING_OR_PRINCE_ERROR_MESSAGE,
+          ErrorType.CONFLICT);
+    }
+  }
+
+  private PlayCardResponseDto processCardEffectDependsOnTheCardName(PlayCardRequestDto requestDto,
+      PlayCardResponseDto responseDto, Player actualPlayer, Game game) {
+    if (playedCardNameIsInTheGivenList(requestDto, KING, BARON, PRIEST, GUARD, PRINCE)) {
+      if (isNotThereOtherTargetablePlayer(actualPlayer, game)) {
+        performCardEffectOnActivePlayer(requestDto, responseDto, actualPlayer, game);
+      } else {
+        responseDto = performCardEffectOnTargetedPlayer(requestDto, responseDto, actualPlayer, game);
+      }
+    } else {
+      Player targetPlayer = new Player();
+      responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
+      setNextPlayerInOrder(actualPlayer, game);
+      gameRepository.saveAndFlush(game);
+    }
+    return responseDto;
+  }
+
+  private boolean playedCardNameIsInTheGivenList(PlayCardRequestDto requestDto, String... cardNames) {
+    return requestDto.getCardName().matches(String.join("|", cardNames));
+  }
+
+  private boolean isNotThereOtherTargetablePlayer(Player actualPlayer, Game game) {
+    List<Player> targetablePlayers = game.getActivePlayers();
+    targetablePlayers = targetablePlayers.stream()
+        .filter(player -> {
+          if (player.getPlayedCards().isEmpty()) {
+            return true;
+          }
+          return !player.lastPlayedCard().getCardName().equals(HANDMAID);
+        })
+        .collect(Collectors.toList());
+    targetablePlayers.remove(actualPlayer);
+    return targetablePlayers.isEmpty();
+  }
+
+  private void performCardEffectOnActivePlayer(PlayCardRequestDto requestDto, PlayCardResponseDto responseDto,
+      Player actualPlayer, Game game) {
+    Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
+    if (playedCardNameIsInTheGivenList(requestDto, KING, BARON, PRIEST, GUARD)) {
+      actualPlayer.discard(cardWantToPlayOut);
+      responseDto.setLastLog(addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(
+          actualPlayer, cardWantToPlayOut, game));
+    } else {
+      playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
+    }
+    setNextPlayerInOrder(actualPlayer, game);
+    gameRepository.saveAndFlush(game);
+  }
+
+  private PlayCardResponseDto performCardEffectOnTargetedPlayer(PlayCardRequestDto requestDto,
+      PlayCardResponseDto responseDto, Player actualPlayer, Game game) {
+    if (requestDto.getAdditionalInfo() != null) {
+      Player targetPlayer = game.getPlayersInGame().stream()
+          .filter(p -> p.getName().equals(requestDto.getAdditionalInfo().getTargetPlayer()))
+          .findFirst().orElse(null);
+      if (targetPlayer != null) {
+        if (targetPlayer.getName().equals(actualPlayer.getName()) && requestDto.getCardName().matches(PRINCE)) {
+          performCardEffectOnTargetedPlayerWhoIsTheActualPlayer(requestDto, responseDto, actualPlayer, game);
+        } else {
+          responseDto = performCardEffectOnTargetedPlayerWhoIsNotTheActualPlayer(requestDto, actualPlayer, game, targetPlayer);
+        }
+      } else throw new GameException(ErrorMessage.PLAYER_NOT_FOUND_ERROR_MESSAGE, ErrorType.NOT_FOUND);
+    } else throw new GameException(ErrorMessage.PLAYER_NOT_SELECTED_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+    return responseDto;
+  }
+
+  private void performCardEffectOnTargetedPlayerWhoIsTheActualPlayer(PlayCardRequestDto requestDto, PlayCardResponseDto responseDto,
+      Player actualPlayer, Game game) {
+    Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
+    playOutPrince(actualPlayer, cardWantToPlayOut, responseDto, game);
+    setNextPlayerInOrder(actualPlayer, game);
+    gameRepository.saveAndFlush(game);
+  }
+
+  private PlayCardResponseDto performCardEffectOnTargetedPlayerWhoIsNotTheActualPlayer(PlayCardRequestDto requestDto,
+      Player actualPlayer, Game game, Player targetPlayer) {
+    PlayCardResponseDto responseDto;
+    if (!targetPlayer.getName().equals(actualPlayer.getName())) {
+      if (isPlayerInPlay(targetPlayer)) {
+        if (!isTargetPlayerLastCardHandmaid(targetPlayer)) {
+          responseDto = processAdditionalInfo(actualPlayer, targetPlayer, game, requestDto);
+          setNextPlayerInOrder(actualPlayer, game);
+          gameRepository.saveAndFlush(game);
+        } else throw new GameException(ErrorMessage.PLAYER_PROTECTED_BY_HANDMAID_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+      } else throw new GameException(ErrorMessage.PLAYER_IS_ALREADY_OUT_OF_ROUND_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+    } else throw new GameException(ErrorMessage.PLAYER_SELF_TARGETING_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+    return responseDto;
   }
 
   private boolean isPlayerInPlay(Player player) {
@@ -570,116 +629,173 @@ public class GameServiceImpl implements GameService {
     Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
     String cardNameWantToPlayOut = cardWantToPlayOut.getCardName();
     AdditionalInfoDto info = requestDto.getAdditionalInfo();
-    Card cardToDiscard;
 
-    if (requestDto.getCardName().equals(GUARD) && info.getNamedCard().equals(GUARD)) {
-      throw new GameException(ErrorMessage.GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
-    }
+    checkIfPlayerWantsToTargetAGuardWithGuard(requestDto, info);
 
     switch (cardNameWantToPlayOut) {
       case PRINCESS:
         actualPlayer.discard(cardWantToPlayOut);
-        actualPlayer.setIsInPlay(false);
-        responseDto.setLastLog(addLogWhenAPlayerMustDiscardPrincess(actualPlayer, game));
+        processCardNamedPrincess(actualPlayer, game, responseDto);
         break;
       case COUNTESS:
       case HANDMAID:
       case SPY:
       case KILI:
         actualPlayer.discard(cardWantToPlayOut);
-        responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(actualPlayer, cardNameWantToPlayOut, game));
+        processCardWithPassiveEffect(actualPlayer, game, responseDto, cardNameWantToPlayOut);
         break;
       case KING:
         actualPlayer.discard(cardWantToPlayOut);
-        Card actualPlayersCardInHand = actualPlayer.cardInHand();
-        Card targetPlayersCardInHand = targetPlayer.cardInHand();
-        actualPlayer.getCardsInHand().remove(actualPlayersCardInHand);
-        actualPlayer.getCardsInHand().add(targetPlayersCardInHand);
-        targetPlayer.getCardsInHand().remove(targetPlayersCardInHand);
-        targetPlayer.getCardsInHand().add(actualPlayersCardInHand);
-        responseDto.setLastLog(addLogWhenAPlayerUseKing(actualPlayer, targetPlayer, game));
+        processCardNamedKing(actualPlayer, targetPlayer, game, responseDto);
         break;
       case CHANCELLOR:
         actualPlayer.discard(cardWantToPlayOut);
-        if (game.getAvailableCards().isEmpty()) {
-          responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawZeroCard(actualPlayer, game));
-          break;
-        }
-        List<Card> drawnCardsByChancellor = drawCardsBecauseOfChancellor(actualPlayer, game);
-        game.setIsTurnOfChancellorActive(true);
-        responseDto.setHiddenMessage(GameLog.CARDS_DRAWN_BY_CHANCELLOR + drawnCardsByChancellor.stream()
-            .map(Card::getCardName).collect(Collectors.joining(", ")) + ".");
-        responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(actualPlayer, game, drawnCardsByChancellor.size()));
+        processCardNamedChancellor(actualPlayer, game, responseDto);
         break;
       case PRINCE:
         actualPlayer.discard(cardWantToPlayOut);
-        cardToDiscard = targetPlayer.cardInHand();
-        targetPlayer.discard(cardToDiscard);
-        if (cardToDiscard.getCardName().equals(PRINCESS)) {
-          targetPlayer.setIsInPlay(false);
-          responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, game));
-        } else {
-          if (game.getAvailableCards().isEmpty()) {
-            drawThePutAsideCard(targetPlayer, game);
-          } else {
-            drawCard(targetPlayer, game);
-          }
-          responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(actualPlayer, targetPlayer, cardToDiscard, game));
-        }
+        processCardNamedPrince(actualPlayer, targetPlayer, game, responseDto);
         break;
       case BARON:
-        String cardNameOfActualPlayerToHiddenLog = cardNameInHandOf(actualPlayer);
-        String cardNameOfTargetPlayerToHiddenLog = cardNameInHandOf(targetPlayer);
         actualPlayer.discard(cardWantToPlayOut);
-        if (cardValueInHandOf(targetPlayer) < cardValueInHandOf(actualPlayer)) {
-          cardToDiscard = targetPlayer.cardInHand();
-          targetPlayer.discard(cardToDiscard);
-          if (cardToDiscard.getCardName().equals(KILI)) {
-            drawCard(targetPlayer, game);
-            responseDto.setLastLog(addLogWhenAPlayerShouldDiscardKiliByBaron(targetPlayer, cardToDiscard, actualPlayer, game));
-          } else {
-            targetPlayer.setIsInPlay(false);
-            responseDto.setLastLog(addLogWhenAPlayerUseBaronSuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
-          }
-        } else if (cardValueInHandOf(targetPlayer) > cardValueInHandOf(actualPlayer)) {
-          cardToDiscard = actualPlayer.cardInHand();
-          actualPlayer.discard(cardToDiscard);
-          actualPlayer.setIsInPlay(false);
-          responseDto.setLastLog(addLogWhenAPlayerUseBaronUnsuccessful(targetPlayer, cardToDiscard, actualPlayer, game));
-        } else {
-          responseDto.setLastLog(addLogWhenAPlayerUseBaronAndItsDraw(targetPlayer, actualPlayer, game));
-        }
-        game.addHiddenLog(actualPlayer.getName() + " (" + cardNameOfActualPlayerToHiddenLog + ")"
-            + " és " + targetPlayer.getName() + " (" + cardNameOfTargetPlayerToHiddenLog + ")" +
-            " összehasonlították a lapjaikat.");
+        processCardNamedBaron(actualPlayer, targetPlayer, game, responseDto);
         break;
       case PRIEST:
         actualPlayer.discard(cardWantToPlayOut);
-        responseDto.setHiddenMessage(targetPlayer.getName() + " kezében " + cardNameInHandOf(targetPlayer) + " van.");
-        responseDto.setLastLog(addLogWhenAPlayerUsePriest(actualPlayer, targetPlayer, game));
+        processCardNamedPriest(actualPlayer, targetPlayer, game, responseDto);
         break;
       case GUARD:
         actualPlayer.discard(cardWantToPlayOut);
-        if (cardNameInHandOf(targetPlayer).equals(info.getNamedCard())) {
-          cardToDiscard = targetPlayer.cardInHand();
-          targetPlayer.discard(cardToDiscard);
-          if (cardToDiscard.getCardName().equals(KILI)) {
-            drawCard(targetPlayer, game);
-            responseDto.setLastLog(addLogWhenAPlayerShouldDiscardKiliByGuard(requestDto, actualPlayer, targetPlayer, game));
-          } else {
-            targetPlayer.setIsInPlay(false);
-            responseDto.setLastLog(addLogWhenAPlayerUseGuardSuccessfully(requestDto, actualPlayer, targetPlayer, game));
-          }
-        } else {
-          responseDto.setLastLog(
-              addLogWhenAPlayerUseGuardUnsuccessfully(requestDto, actualPlayer, targetPlayer, game));
-        }
+        processCardNamedGuard(actualPlayer, targetPlayer, game, requestDto, responseDto, info);
         break;
       default:
-        throw new GameException(ErrorMessage.PLAYED_CARD_IS_NOT_PREDEFINED_ONES_ERROR_MESSAGE, ErrorType.INTERNAL_SERVER_ERROR);
+        throw new GameException(ErrorMessage.PLAYED_CARD_IS_NOT_PREDEFINED_ONES_ERROR_MESSAGE,
+            ErrorType.INTERNAL_SERVER_ERROR);
     }
 
     return responseDto;
+  }
+
+  private void checkIfPlayerWantsToTargetAGuardWithGuard(PlayCardRequestDto requestDto, AdditionalInfoDto info) {
+    if (requestDto.getCardName().equals(GUARD) && info.getNamedCard().equals(GUARD)) {
+      throw new GameException(ErrorMessage.GUARD_IS_NOT_TARGETED_WITH_GUARD_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+    }
+  }
+
+  private void processCardNamedPrincess(Player actualPlayer, Game game, PlayCardResponseDto responseDto) {
+    actualPlayer.setIsInPlay(false);
+    responseDto.setLastLog(addLogWhenAPlayerMustDiscardPrincess(actualPlayer, game));
+  }
+
+  private void processCardWithPassiveEffect(Player actualPlayer, Game game, PlayCardResponseDto responseDto, String cardNameWantToPlayOut) {
+    responseDto.setLastLog(addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpyOrKili(actualPlayer, cardNameWantToPlayOut, game));
+  }
+
+  private void processCardNamedKing(Player actualPlayer, Player targetPlayer, Game game,
+      PlayCardResponseDto responseDto) {
+    Card actualPlayersCardInHand = actualPlayer.cardInHand();
+    Card targetPlayersCardInHand = targetPlayer.cardInHand();
+    actualPlayer.getCardsInHand().remove(actualPlayersCardInHand);
+    actualPlayer.getCardsInHand().add(targetPlayersCardInHand);
+    targetPlayer.getCardsInHand().remove(targetPlayersCardInHand);
+    targetPlayer.getCardsInHand().add(actualPlayersCardInHand);
+    responseDto.setLastLog(addLogWhenAPlayerUseKing(actualPlayer, targetPlayer, game));
+  }
+
+  private void processCardNamedChancellor(Player actualPlayer, Game game, PlayCardResponseDto responseDto) {
+    if (game.getAvailableCards().isEmpty()) {
+      responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawZeroCard(actualPlayer, game));
+      return;
+    }
+
+    List<Card> drawnCardsByChancellor = drawCardsBecauseOfChancellor(actualPlayer, game);
+    game.setIsTurnOfChancellorActive(true);
+    responseDto.setHiddenMessage(GameLog.CARDS_DRAWN_BY_CHANCELLOR + drawnCardsByChancellor.stream()
+        .map(Card::getCardName).collect(Collectors.joining(", ")) + ".");
+    responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(actualPlayer, game, drawnCardsByChancellor.size()));
+  }
+
+  private void processCardNamedPrince(Player actualPlayer, Player targetPlayer, Game game,
+      PlayCardResponseDto responseDto) {
+    Card cardToDiscard;
+    cardToDiscard = targetPlayer.cardInHand();
+    targetPlayer.discard(cardToDiscard);
+
+    if (cardToDiscard.getCardName().equals(PRINCESS)) {
+      targetPlayer.setIsInPlay(false);
+      responseDto.setLastLog(addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(
+          actualPlayer, targetPlayer, game));
+    } else {
+      if (game.getAvailableCards().isEmpty()) {
+        drawThePutAsideCard(targetPlayer, game);
+      } else {
+        drawCard(targetPlayer, game);
+      }
+      responseDto.setLastLog(addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(
+          actualPlayer, targetPlayer, cardToDiscard, game));
+    }
+  }
+
+  private void processCardNamedBaron(Player actualPlayer, Player targetPlayer, Game game,
+      PlayCardResponseDto responseDto) {
+    Card cardToDiscard;
+    String cardNameOfActualPlayerToHiddenLog = cardNameInHandOf(actualPlayer);
+    String cardNameOfTargetPlayerToHiddenLog = cardNameInHandOf(targetPlayer);
+
+    if (cardValueInHandOf(targetPlayer) < cardValueInHandOf(actualPlayer)) {
+      cardToDiscard = targetPlayer.cardInHand();
+      targetPlayer.discard(cardToDiscard);
+      if (cardToDiscard.getCardName().equals(KILI)) {
+        drawCard(targetPlayer, game);
+        responseDto.setLastLog(addLogWhenAPlayerShouldDiscardKiliByBaron(targetPlayer, cardToDiscard,
+            actualPlayer, game));
+      } else {
+        targetPlayer.setIsInPlay(false);
+        responseDto.setLastLog(addLogWhenAPlayerUseBaronSuccessful(targetPlayer, cardToDiscard,
+            actualPlayer, game));
+      }
+    } else if (cardValueInHandOf(targetPlayer) > cardValueInHandOf(actualPlayer)) {
+      cardToDiscard = actualPlayer.cardInHand();
+      actualPlayer.discard(cardToDiscard);
+      actualPlayer.setIsInPlay(false);
+      responseDto.setLastLog(addLogWhenAPlayerUseBaronUnsuccessful(targetPlayer, cardToDiscard,
+          actualPlayer, game));
+    } else {
+      responseDto.setLastLog(addLogWhenAPlayerUseBaronAndItsDraw(targetPlayer, actualPlayer, game));
+    }
+
+    game.addHiddenLog(actualPlayer.getName() + " (" + cardNameOfActualPlayerToHiddenLog + ")"
+        + " és " + targetPlayer.getName() + " (" + cardNameOfTargetPlayerToHiddenLog + ")" +
+        " összehasonlították a lapjaikat.");
+  }
+
+  private void processCardNamedPriest(Player actualPlayer, Player targetPlayer, Game game,
+      PlayCardResponseDto responseDto) {
+    responseDto.setHiddenMessage(
+        targetPlayer.getName() + " kezében " + cardNameInHandOf(targetPlayer) + " van.");
+    responseDto.setLastLog(addLogWhenAPlayerUsePriest(actualPlayer, targetPlayer, game));
+  }
+
+  private void processCardNamedGuard(Player actualPlayer, Player targetPlayer, Game game,
+      PlayCardRequestDto requestDto, PlayCardResponseDto responseDto, AdditionalInfoDto info) {
+    Card cardToDiscard;
+
+    if (cardNameInHandOf(targetPlayer).equals(info.getNamedCard())) {
+      cardToDiscard = targetPlayer.cardInHand();
+      targetPlayer.discard(cardToDiscard);
+      if (cardToDiscard.getCardName().equals(KILI)) {
+        drawCard(targetPlayer, game);
+        responseDto.setLastLog(addLogWhenAPlayerShouldDiscardKiliByGuard(requestDto, actualPlayer,
+            targetPlayer, game));
+      } else {
+        targetPlayer.setIsInPlay(false);
+        responseDto.setLastLog(addLogWhenAPlayerUseGuardSuccessfully(requestDto, actualPlayer,
+            targetPlayer, game));
+      }
+    } else {
+      responseDto.setLastLog(
+          addLogWhenAPlayerUseGuardUnsuccessfully(requestDto, actualPlayer, targetPlayer, game));
+    }
   }
 
   private boolean isCountessWithKingOrPrince(Player player) {
@@ -743,7 +859,7 @@ public class GameServiceImpl implements GameService {
             + " lapból egyet meg kell tartania, a többit pedig visszatennie a pakli aljára.");
   }
 
-  private String addLogWhenAPlayerUseChancellorToPutBackCards(Player actualPlayer, int numberOfCards, Game game) {
+  private String addLogWhenAPlayerUseChancellorToReturnCards(Player actualPlayer, int numberOfCards, Game game) {
     return game.addLog(actualPlayer.getName() + ", miután Kancellárral húzott " + numberOfCards
         + " lapot, visszatett ugyanennyit a pakliba.");
   }
@@ -772,7 +888,7 @@ public class GameServiceImpl implements GameService {
         + " lapját, ami egy " + cardToDiscard.getCardName() + " volt.");
   }
 
-  private String addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpy(Player actualPlayer,
+  private String addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpyOrKili(Player actualPlayer,
       String cardName, Game game) {
     return game.addLog(actualPlayer.getName() + " kijátszott lapja egy " + cardName + " volt.");
   }
@@ -984,10 +1100,10 @@ public class GameServiceImpl implements GameService {
     return isGameOver;
   }
 
-  private boolean hasPlayerTheCardsSheOrHeWantToPutBack(Player player, List<String> cardsToPutBack) {
+  private boolean hasPlayerTheCardsWhatPlayerWantsToReturn(Player player, List<String> cardsToReturn) {
     return player.getCardsInHand().stream()
         .map(Card::getCardName)
         .collect(Collectors.toList())
-        .containsAll(cardsToPutBack);
+        .containsAll(cardsToReturn);
   }
 }

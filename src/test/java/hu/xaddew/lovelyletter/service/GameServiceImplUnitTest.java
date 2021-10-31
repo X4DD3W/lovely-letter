@@ -55,7 +55,7 @@ import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
-import hu.xaddew.lovelyletter.dto.PutBackCardResponseDto;
+import hu.xaddew.lovelyletter.dto.ReturnCardResponseDto;
 import hu.xaddew.lovelyletter.enums.ErrorMessage;
 import hu.xaddew.lovelyletter.enums.GameLog;
 import hu.xaddew.lovelyletter.exception.GameException;
@@ -131,7 +131,7 @@ class GameServiceImplUnitTest {
   private List<String> playerNames;
   private GameException exception;
   private PlayCardResponseDto playCardResponseDto;
-  private PutBackCardResponseDto putBackCardResponseDto;
+  private ReturnCardResponseDto returnCardResponseDto;
   private String generatedLog;
 
   @BeforeEach
