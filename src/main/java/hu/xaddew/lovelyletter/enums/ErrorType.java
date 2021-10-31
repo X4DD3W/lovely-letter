@@ -1,4 +1,4 @@
-package hu.xaddew.lovelyletter.exception;
+package hu.xaddew.lovelyletter.enums;
 
 import lombok.Getter;
 

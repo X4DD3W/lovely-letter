@@ -1,5 +1,7 @@
 package hu.xaddew.lovelyletter.exception;
 
+import hu.xaddew.lovelyletter.enums.ErrorMessage;
+import hu.xaddew.lovelyletter.enums.ErrorType;
 import lombok.Getter;
 
 @Getter

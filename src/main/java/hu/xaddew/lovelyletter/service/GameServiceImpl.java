@@ -11,8 +11,9 @@ import hu.xaddew.lovelyletter.dto.PlayerAndPlayedCardsDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
-import hu.xaddew.lovelyletter.exception.ErrorMessage;
-import hu.xaddew.lovelyletter.exception.ErrorType;
+import hu.xaddew.lovelyletter.enums.ErrorMessage;
+import hu.xaddew.lovelyletter.enums.ErrorType;
+import hu.xaddew.lovelyletter.enums.GameLog;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.CustomCard;
@@ -43,20 +44,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class GameServiceImpl implements GameService {
-
-  public static final String ACTUAL_PLAYER_IS = "Soron lévő játékos: ";
-  public static final String GAME_IS_CREATED_UUID = "Játék létrehozva. Uuid: ";
-  public static final String PLAYERS_ARE = "Játékosok: ";
-  public static final String COMPARE_CARD_IN_HAND_WITH = " Báróval összehasonlította a kézben lévő lapját ";
-  public static final String ROUND_IS_OVER_ONLY_ONE_PLAYER_LEFT = "A forduló véget ért, mert csak egy játékos maradt bent.";
-  public static final String ROUND_IS_OVER_DRAW_DECK_IS_EMPTY = "A forduló véget ért, mert elfogyott a húzópakli.";
-  public static final String WON_THE_ROUND = " nyerte a fordulót!";
-  public static final String GAME_IS_OVER_STATUS_MESSAGE = "A játék véget ért, mivel valaki elég szerelmes levelet gyűjtött össze!";
-  public static final String NEW_ROUND_BEGINS_STATUS_MESSAGE = "Új forduló kezdődik. ";
-  public static final String CONGRATULATE = "Gratulálunk, ";
-  public static final String GAME_IS_CLOSED_DUE_TO_INACTIVITY_LOG = "Inaktivitás miatt a játék lezárásra került ekkor: ";
-  public static final String PLAYER_CHOOSES_FROM_THE_CARDS_DRAWN_BY_CHANCELLOR = ", aki éppen a Kancellár által húzott lapokból választ...";
-  public static final String CARDS_DRAWN_BY_CHANCELLOR = "A Kancellárral húzott lap(ok): ";
 
   public static final String PRINCESS = "Hercegnő";
   public static final String COUNTESS = "Grófnő";
@@ -322,7 +309,7 @@ public class GameServiceImpl implements GameService {
   public void closeOpenButInactiveGames(LocalDateTime modifyDate) {
     List<Game> games = gameRepository.findAllByIsGameOverFalseAndModifyDateGreaterThan(modifyDate);
     games.forEach(game -> {
-      game.addLog(GAME_IS_CLOSED_DUE_TO_INACTIVITY_LOG + LocalDateTime.now());
+      game.addLog(GameLog.GAME_IS_CLOSED_DUE_TO_INACTIVITY.toString() + LocalDateTime.now());
       game.setIsGameOver(true);
     });
     log.info("Number of closed games: {}", games.size());
@@ -412,7 +399,7 @@ public class GameServiceImpl implements GameService {
       Player nextActualPlayer;
 
       if (game.isTurnOfChancellorActive()) {
-        game.addLog(ACTUAL_PLAYER_IS + actualPlayer.getName() + PLAYER_CHOOSES_FROM_THE_CARDS_DRAWN_BY_CHANCELLOR);
+        game.addLog(GameLog.ACTUAL_PLAYER_IS + actualPlayer.getName() + GameLog.PLAYER_CHOOSES_FROM_THE_CARDS_DRAWN_BY_CHANCELLOR);
       } else {
         if (actualPlayer.getOrderNumber() == game.getPlayersInGame().size()) {
           nextActualPlayer = activePlayers.stream()
@@ -431,7 +418,7 @@ public class GameServiceImpl implements GameService {
 
         if (nextActualPlayer != null) {
           game.setActualPlayer(nextActualPlayer.getName());
-          game.addLog(ACTUAL_PLAYER_IS + game.getActualPlayer());
+          game.addLog(GameLog.ACTUAL_PLAYER_IS + game.getActualPlayer());
           drawCard(nextActualPlayer, game);
         } else throw new GameException(ErrorMessage.PLAYER_ORDER_ERROR_MESSAGE, ErrorType.INTERNAL_SERVER_ERROR);
       }
@@ -552,10 +539,10 @@ public class GameServiceImpl implements GameService {
   }
 
   private void addGameCreationLogs(Game game) {
-    game.addLog(GAME_IS_CREATED_UUID + game.getUuid());
-    game.addLog(PLAYERS_ARE + game.getPlayersInGame().stream().map(Player::getName)
+    game.addLog(GameLog.GAME_IS_CREATED_UUID + game.getUuid());
+    game.addLog(GameLog.PLAYERS_ARE + game.getPlayersInGame().stream().map(Player::getName)
         .collect(Collectors.joining(", ")));
-    game.addLog(ACTUAL_PLAYER_IS + game.getActualPlayer());
+    game.addLog(GameLog.ACTUAL_PLAYER_IS + game.getActualPlayer());
   }
 
   private boolean hasPlayerTheCardSheOrHeWantToPlay(Player player, String cardName) {
@@ -620,7 +607,7 @@ public class GameServiceImpl implements GameService {
         }
         List<Card> drawnCardsByChancellor = drawCardsBecauseOfChancellor(actualPlayer, game);
         game.setIsTurnOfChancellorActive(true);
-        responseDto.setMessage(CARDS_DRAWN_BY_CHANCELLOR + drawnCardsByChancellor.stream()
+        responseDto.setMessage(GameLog.CARDS_DRAWN_BY_CHANCELLOR + drawnCardsByChancellor.stream()
             .map(Card::getCardName).collect(Collectors.joining(", ")) + ".");
         responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(actualPlayer, game, drawnCardsByChancellor.size()));
         break;
@@ -792,7 +779,7 @@ public class GameServiceImpl implements GameService {
 
   private String addLogWhenAPlayerShouldDiscardKiliByBaron(Player targetPlayer, Card cardToDiscard,
       Player actualPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
+    return game.addLog(actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
         + " kézben lévő lapjával. " + targetPlayer.getName()
         + " kézben lévő lapja " + cardToDiscard.getCardName()
         + " volt, aki megmentett gazdáját a kiesétől ("
@@ -802,7 +789,7 @@ public class GameServiceImpl implements GameService {
   private String addLogWhenAPlayerUseBaronSuccessful(Player targetPlayer,
       Card cardToDiscard, Player actualPlayer, Game game) {
     return game.addLog(
-        actualPlayer.getName() + COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
+        actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
             + " kézben lévő lapjával. " + targetPlayer.getName()
             + " kiesett a játékból, kézben lévő lapját ("
             + cardToDiscard.getCardName() + ") pedig eldobta.");
@@ -811,7 +798,7 @@ public class GameServiceImpl implements GameService {
   private String addLogWhenAPlayerUseBaronUnsuccessful(Player targetPlayer,
       Card cardToDiscard, Player actualPlayer, Game game) {
     return game.addLog(
-        actualPlayer.getName() + COMPARE_CARD_IN_HAND_WITH + targetPlayer
+        actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer
             .getName()
             + " kézben lévő lapjával. " + actualPlayer.getName()
             + " kiesett a játékból, kézben lévő lapját ("
@@ -821,7 +808,7 @@ public class GameServiceImpl implements GameService {
   private String addLogWhenAPlayerUseBaronAndItsDraw(Player targetPlayer, Player actualPlayer,
       Game game) {
     return game.addLog(
-        actualPlayer.getName() + COMPARE_CARD_IN_HAND_WITH + targetPlayer
+        actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer
             .getName()
             + " kézben lévő lapjával. A lapok értéke azonos volt, így senki sem esett ki a játékból.");
   }
@@ -865,8 +852,8 @@ public class GameServiceImpl implements GameService {
 
     if (activePlayers.size() == 1) {
       Player winner = activePlayers.get(0);
-      game.addLog(ROUND_IS_OVER_ONLY_ONE_PLAYER_LEFT);
-      game.addLog(winner.getName() + WON_THE_ROUND);
+      game.addLog(GameLog.ROUND_IS_OVER_ONLY_ONE_PLAYER_LEFT.toString());
+      game.addLog(winner.getName() + GameLog.WON_THE_ROUND);
       winner.addOneLetter();
 
       giveAdditionalLoveLetterIfOnlyOneSpyIsActive(game);
@@ -895,10 +882,10 @@ public class GameServiceImpl implements GameService {
           .map(Entry::getKey)
           .collect(Collectors.toList());
 
-      game.addLog(ROUND_IS_OVER_DRAW_DECK_IS_EMPTY);
+      game.addLog(GameLog.ROUND_IS_OVER_DRAW_DECK_IS_EMPTY.toString());
       game.addLog(winners.stream()
           .map(Player::getName)
-          .collect(Collectors.joining(" és ")) + WON_THE_ROUND);
+          .collect(Collectors.joining(" és ")) + GameLog.WON_THE_ROUND);
 
       winners.forEach(Player::addOneLetter);
 
@@ -933,7 +920,8 @@ public class GameServiceImpl implements GameService {
     } else {
       resetPlayers(game.getPlayersInGame());
       resetGame(game);
-      game.addLog(NEW_ROUND_BEGINS_STATUS_MESSAGE + ACTUAL_PLAYER_IS + game.getActualPlayer());
+      game.addLog(GameLog.NEW_ROUND_BEGINS_STATUS_MESSAGE.toString() + GameLog.ACTUAL_PLAYER_IS
+          + game.getActualPlayer());
     }
     gameRepository.save(game);
   }
@@ -988,7 +976,7 @@ public class GameServiceImpl implements GameService {
     }
 
     if (!winners.isEmpty()) {
-      game.addLog(GAME_IS_OVER_STATUS_MESSAGE + " " + CONGRATULATE + winners.stream()
+      game.addLog(GameLog.GAME_IS_OVER_STATUS_MESSAGE + " " + GameLog.CONGRATULATE + winners.stream()
           .map(Player::getName)
           .collect(Collectors.joining(" és ")) + "!");
       isGameOver = true;

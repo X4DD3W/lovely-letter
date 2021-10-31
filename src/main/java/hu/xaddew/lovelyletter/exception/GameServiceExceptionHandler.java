@@ -1,5 +1,6 @@
 package hu.xaddew.lovelyletter.exception;
 
+import hu.xaddew.lovelyletter.enums.ErrorType;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;

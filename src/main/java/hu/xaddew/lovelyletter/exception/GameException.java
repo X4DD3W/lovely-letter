@@ -1,5 +1,8 @@
 package hu.xaddew.lovelyletter.exception;
 
+import hu.xaddew.lovelyletter.enums.ErrorMessage;
+import hu.xaddew.lovelyletter.enums.ErrorType;
+
 public class GameException extends BaseServiceException {
 
   public GameException(ErrorMessage errorMessage, ErrorType errorType) {

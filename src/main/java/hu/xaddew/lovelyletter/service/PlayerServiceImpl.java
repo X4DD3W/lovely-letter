@@ -2,8 +2,8 @@ package hu.xaddew.lovelyletter.service;
 
 import hu.xaddew.lovelyletter.dto.PlayerAndNumberOfLettersDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
-import hu.xaddew.lovelyletter.exception.ErrorMessage;
-import hu.xaddew.lovelyletter.exception.ErrorType;
+import hu.xaddew.lovelyletter.enums.ErrorMessage;
+import hu.xaddew.lovelyletter.enums.ErrorType;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Game;
 import hu.xaddew.lovelyletter.model.Player;

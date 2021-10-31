@@ -9,9 +9,7 @@ import static hu.xaddew.lovelyletter.service.GameServiceImpl.KING;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PRIEST;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PRINCE;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.PRINCESS;
-import static hu.xaddew.lovelyletter.service.GameServiceImpl.ROUND_IS_OVER_DRAW_DECK_IS_EMPTY;
 import static hu.xaddew.lovelyletter.service.GameServiceImpl.SPY;
-import static hu.xaddew.lovelyletter.service.GameServiceImpl.WON_THE_ROUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -58,7 +56,8 @@ import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
 import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardResponseDto;
-import hu.xaddew.lovelyletter.exception.ErrorMessage;
+import hu.xaddew.lovelyletter.enums.ErrorMessage;
+import hu.xaddew.lovelyletter.enums.GameLog;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.CustomCard;
@@ -644,8 +643,8 @@ class GameServiceImplUnitTest {
     assertNotNull(playCardResponseDto);
     assertEquals(generatedLog, playCardResponseDto.getLastLog());
     assertTrue(game.getLog().contains(generatedLog));
-    assertTrue(game.getLog().contains("2. " + ROUND_IS_OVER_DRAW_DECK_IS_EMPTY));
-    assertTrue(game.getLog().contains("3. " + player.getName() + WON_THE_ROUND));
+    assertTrue(game.getLog().contains("2. " + GameLog.ROUND_IS_OVER_DRAW_DECK_IS_EMPTY));
+    assertTrue(game.getLog().contains("3. " + player.getName() + GameLog.WON_THE_ROUND));
     assertFalse(game.getIsGameOver());
   }
 
