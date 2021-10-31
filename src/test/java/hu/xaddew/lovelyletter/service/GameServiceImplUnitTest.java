@@ -67,6 +67,7 @@ import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
 import hu.xaddew.lovelyletter.service.impl.CardServiceImpl;
+import hu.xaddew.lovelyletter.service.impl.GameLogServiceImpl;
 import hu.xaddew.lovelyletter.service.impl.GameServiceImpl;
 import hu.xaddew.lovelyletter.service.impl.OriginalCardServiceImpl;
 import hu.xaddew.lovelyletter.service.impl.PlayerServiceImpl;
@@ -91,6 +92,9 @@ class GameServiceImplUnitTest {
 
   @Spy
   private final ModelMapper modelMapper = new ModelMapper();
+
+  @Spy
+  private final GameLogService gameLogService = new GameLogServiceImpl();
 
   @Mock
   private Random random;

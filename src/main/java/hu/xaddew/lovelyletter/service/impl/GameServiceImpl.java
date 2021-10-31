@@ -295,8 +295,6 @@ public class GameServiceImpl implements GameService {
     gameRepository.deleteAllByIsGameOverTrueAndModifyDateGreaterThan(modifyDate);
   }
 
-
-
   private boolean isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(CreateGameDto createGameDto) {
     int number = createGameDto.getPlayerNames().size();
     return number != 2 && number != 3 && number != 4 && number != 5 && number != 6;

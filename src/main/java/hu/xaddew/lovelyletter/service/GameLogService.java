@@ -19,7 +19,8 @@ public interface GameLogService {
   String addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(Player actualPlayer, Game game,
       int numberOfDrawnCards);
 
-  String addLogWhenAPlayerUseChancellorToReturnCards(Player actualPlayer, int numberOfCards, Game game);
+  String addLogWhenAPlayerUseChancellorToReturnCards(Player actualPlayer, int numberOfCards,
+      Game game);
 
   String addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(Player actualPlayer,
       Game game);

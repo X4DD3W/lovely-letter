@@ -13,8 +13,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class GameLogServiceImpl implements GameLogService {
 
-
-
   @Override
   public String addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(Player actualPlayer,
       Card cardWantToPlayOut, Game game) {
@@ -60,7 +58,8 @@ public class GameLogServiceImpl implements GameLogService {
   @Override
   public String addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(Player actualPlayer,
       Game game) {
-    return game.addLog(actualPlayer.getName() + " Herceggel eldobta a Hercegnőt, így kiesett a játékból.");
+    return game.addLog(
+        actualPlayer.getName() + " Herceggel eldobta a Hercegnőt, így kiesett a játékból.");
   }
 
   @Override
@@ -94,11 +93,12 @@ public class GameLogServiceImpl implements GameLogService {
   @Override
   public String addLogWhenAPlayerShouldDiscardKiliByBaron(Player targetPlayer, Card cardToDiscard,
       Player actualPlayer, Game game) {
-    return game.addLog(actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
-        + " kézben lévő lapjával. " + targetPlayer.getName()
-        + " kézben lévő lapja " + cardToDiscard.getCardName()
-        + " volt, aki megmentett gazdáját a kiesétől ("
-        + targetPlayer.getName() + " húzott egy új lapot).");
+    return game.addLog(
+        actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
+            + " kézben lévő lapjával. " + targetPlayer.getName()
+            + " kézben lévő lapja " + cardToDiscard.getCardName()
+            + " volt, aki megmentett gazdáját a kiesétől ("
+            + targetPlayer.getName() + " húzott egy új lapot).");
   }
 
   @Override
@@ -141,10 +141,11 @@ public class GameLogServiceImpl implements GameLogService {
   public String addLogWhenAPlayerShouldDiscardKiliByGuard(PlayCardRequestDto requestDto,
       Player actualPlayer, Player targetPlayer, Game game) {
     String namedCard = requestDto.getAdditionalInfo().getNamedCard();
-    return game.addLog(actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
-        + " kezében " + namedCard + " van. Így igaz. "
-        + targetPlayer.getName() + " eldobta a lapját és ahelyett, hogy kiesett volna,"
-        + " húzott egy új lapot.");
+    return game.addLog(
+        actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
+            + " kezében " + namedCard + " van. Így igaz. "
+            + targetPlayer.getName() + " eldobta a lapját és ahelyett, hogy kiesett volna,"
+            + " húzott egy új lapot.");
   }
 
   @Override
