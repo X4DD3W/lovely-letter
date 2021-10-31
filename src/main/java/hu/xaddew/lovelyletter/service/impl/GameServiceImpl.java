@@ -324,7 +324,7 @@ public class GameServiceImpl implements GameService {
     dto.setPlayerName(player.getName());
     dto.setPlayedCards(
         player.getPlayedCards().stream()
-            .map(card -> card.getCardValue() + " - " + card.getCardName() + " (" + card.getQuantity() + ")")
+            .map(card -> card.getValue() + " - " + card.getName() + " (" + card.getQuantity() + ")")
             .collect(Collectors.toList()));
     dtoList.add(dto);
   }
@@ -333,7 +333,7 @@ public class GameServiceImpl implements GameService {
     player.discard(cardWantToPlayOut);
     Card cardToDiscard = player.cardInHand();
     player.discard(cardToDiscard);
-    if (cardToDiscard.getCardName().equals(PRINCESS)) {
+    if (cardToDiscard.getName().equals(PRINCESS)) {
       player.setIsInPlay(false);
       responseDto.setLastLog(logService.addLogIfAPlayerMustDiscardPrincessBecauseOfHerOrHisOwnPrince(player, game));
     } else {
@@ -421,9 +421,9 @@ public class GameServiceImpl implements GameService {
     List<Card> deck = new LinkedList<>();
     for (NewReleaseCard newReleaseCard : newReleaseCards) {
       Card card = Card.builder()
-          .cardName(newReleaseCard.getCardName())
-          .cardNameEnglish(newReleaseCard.getCardNameEnglish())
-          .cardValue(newReleaseCard.getCardValue())
+          .name(newReleaseCard.getCardName())
+          .nameEnglish(newReleaseCard.getCardNameEnglish())
+          .value(newReleaseCard.getCardValue())
           .quantity(newReleaseCard.getQuantity())
           .description(newReleaseCard.getDescription())
           .isPutAside(newReleaseCard.getIsPutAside())
@@ -439,9 +439,9 @@ public class GameServiceImpl implements GameService {
     List<Card> deck = new LinkedList<>();
     for (OriginalCard originalCard : originalCards) {
       Card card = Card.builder()
-          .cardName(originalCard.getCardName())
-          .cardNameEnglish(originalCard.getCardNameEnglish())
-          .cardValue(originalCard.getCardValue())
+          .name(originalCard.getCardName())
+          .nameEnglish(originalCard.getCardNameEnglish())
+          .value(originalCard.getCardValue())
           .quantity(originalCard.getQuantity())
           .description(originalCard.getDescription())
           .isPutAside(originalCard.getIsPutAside())
@@ -515,7 +515,7 @@ public class GameServiceImpl implements GameService {
 
   private boolean hasPlayerTheCardWhatPlayerWantsToPlayOut(Player player, String cardName) {
     return player.getCardsInHand().stream()
-        .map(Card::getCardName)
+        .map(Card::getName)
         .collect(Collectors.toList())
         .contains(cardName);
   }
@@ -556,7 +556,7 @@ public class GameServiceImpl implements GameService {
           if (player.getPlayedCards().isEmpty()) {
             return true;
           }
-          return !player.lastPlayedCard().getCardName().equals(HANDMAID);
+          return !player.lastPlayedCard().getName().equals(HANDMAID);
         })
         .collect(Collectors.toList());
     targetablePlayers.remove(actualPlayer);
@@ -625,7 +625,7 @@ public class GameServiceImpl implements GameService {
     if (targetPlayer.getPlayedCards().isEmpty()) {
       return false;
     } else {
-      return targetPlayer.lastPlayedCard().getCardName().equals(HANDMAID);
+      return targetPlayer.lastPlayedCard().getName().equals(HANDMAID);
     }
   }
 
@@ -633,7 +633,7 @@ public class GameServiceImpl implements GameService {
       Game game, PlayCardRequestDto requestDto) {
     PlayCardResponseDto responseDto = new PlayCardResponseDto();
     Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
-    String cardNameWantToPlayOut = cardWantToPlayOut.getCardName();
+    String cardNameWantToPlayOut = cardWantToPlayOut.getName();
     AdditionalInfoDto info = requestDto.getAdditionalInfo();
 
     checkIfPlayerWantsToTargetAGuardWithGuard(requestDto, info);
@@ -717,7 +717,7 @@ public class GameServiceImpl implements GameService {
     List<Card> drawnCardsByChancellor = drawCardsBecauseOfChancellor(actualPlayer, game);
     game.setIsTurnOfChancellorActive(true);
     responseDto.setHiddenMessage(GameLog.CARDS_DRAWN_BY_CHANCELLOR + drawnCardsByChancellor.stream()
-        .map(Card::getCardName).collect(Collectors.joining(", ")) + ".");
+        .map(Card::getName).collect(Collectors.joining(", ")) + ".");
     responseDto.setLastLog(logService.addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(actualPlayer, game, drawnCardsByChancellor.size()));
   }
 
@@ -727,7 +727,7 @@ public class GameServiceImpl implements GameService {
     cardToDiscard = targetPlayer.cardInHand();
     targetPlayer.discard(cardToDiscard);
 
-    if (cardToDiscard.getCardName().equals(PRINCESS)) {
+    if (cardToDiscard.getName().equals(PRINCESS)) {
       targetPlayer.setIsInPlay(false);
       responseDto.setLastLog(logService.addLogIfAPlayerMustDiscardPrincessBecauseOfAnotherPlayersPrince(
           actualPlayer, targetPlayer, game));
@@ -751,7 +751,7 @@ public class GameServiceImpl implements GameService {
     if (cardValueInHandOf(targetPlayer) < cardValueInHandOf(actualPlayer)) {
       cardToDiscard = targetPlayer.cardInHand();
       targetPlayer.discard(cardToDiscard);
-      if (cardToDiscard.getCardName().equals(KILI)) {
+      if (cardToDiscard.getName().equals(KILI)) {
         drawCard(targetPlayer, game);
         responseDto.setLastLog(logService.addLogWhenAPlayerShouldDiscardKiliByBaron(targetPlayer, cardToDiscard,
             actualPlayer, game));
@@ -789,7 +789,7 @@ public class GameServiceImpl implements GameService {
     if (cardNameInHandOf(targetPlayer).equals(info.getNamedCard())) {
       cardToDiscard = targetPlayer.cardInHand();
       targetPlayer.discard(cardToDiscard);
-      if (cardToDiscard.getCardName().equals(KILI)) {
+      if (cardToDiscard.getName().equals(KILI)) {
         drawCard(targetPlayer, game);
         responseDto.setLastLog(logService.addLogWhenAPlayerShouldDiscardKiliByGuard(requestDto, actualPlayer,
             targetPlayer, game));
@@ -805,7 +805,7 @@ public class GameServiceImpl implements GameService {
   }
 
   private boolean isCountessWithKingOrPrince(Player player) {
-    String nameOfCards = player.getCardsInHand().stream().map(Card::getCardName).collect(Collectors.joining(" "));
+    String nameOfCards = player.getCardsInHand().stream().map(Card::getName).collect(Collectors.joining(" "));
     String otherCardName = nameOfCards.replace(COUNTESS, "").trim();
     return otherCardName.equals(PRINCE) || otherCardName.equals(KING);
   }
@@ -828,11 +828,11 @@ public class GameServiceImpl implements GameService {
   }
 
   private Integer cardValueInHandOf(Player player) {
-    return player.cardInHand().getCardValue();
+    return player.cardInHand().getValue();
   }
 
   private String cardNameInHandOf(Player player) {
-    return player.cardInHand().getCardName();
+    return player.cardInHand().getName();
   }
 
   private boolean isRoundOverBecauseThereIsOnlyOneActivePlayer(Game game) {
@@ -895,7 +895,7 @@ public class GameServiceImpl implements GameService {
     game.getPlayersInGame().stream()
         .filter(Player::getIsInPlay)
         .filter(player -> player.getPlayedCards().stream()
-            .map(Card::getCardName)
+            .map(Card::getName)
             .collect(Collectors.joining())
             .contains(SPY))
         .forEach(playersWhoPlayedSpyAndAreInPlay::add);
@@ -977,7 +977,7 @@ public class GameServiceImpl implements GameService {
 
   private boolean hasPlayerTheCardsWhatPlayerWantsToReturn(Player player, List<String> cardsToReturn) {
     return player.getCardsInHand().stream()
-        .map(Card::getCardName)
+        .map(Card::getName)
         .collect(Collectors.toList())
         .containsAll(cardsToReturn);
   }

@@ -63,7 +63,7 @@ public class LLTestUtils {
     for (int i = 1; i <= numberOfPlayers; i++) {
       List<Card> cardsInHand = new ArrayList<>();
       Card starterCardInHand = new Card(GUARD);
-      starterCardInHand.setCardValue(1);
+      starterCardInHand.setValue(1);
       cardsInHand.add(starterCardInHand);
       players.add(Player.builder()
           .id((long) i)
@@ -135,8 +135,8 @@ public class LLTestUtils {
     for (int i = 1; i <= numberOfCards; i++) {
       cards.add(Card.builder()
           .id((long) i)
-          .cardName(CARD_NAME + i)
-          .cardValue(numberOfCards - i)
+          .name(CARD_NAME + i)
+          .value(numberOfCards - i)
           .quantity(i)
           .description(CARD_DESCRIPTION + i)
           .is2PlayerPublic(false)

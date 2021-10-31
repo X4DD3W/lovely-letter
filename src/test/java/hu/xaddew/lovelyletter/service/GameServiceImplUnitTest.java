@@ -642,7 +642,7 @@ class GameServiceImplUnitTest {
     playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
-        + otherCardAtActualPlayer.getCardName() + " volt.";
+        + otherCardAtActualPlayer.getName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(gameRepository).save(game);
@@ -674,7 +674,7 @@ class GameServiceImplUnitTest {
     playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
-        + otherCardAtActualPlayer.getCardName() + " volt.";
+        + otherCardAtActualPlayer.getName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(gameRepository).saveAndFlush(game);
@@ -703,7 +703,7 @@ class GameServiceImplUnitTest {
     playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
-        + otherCardAtActualPlayer.getCardName() + " volt.";
+        + otherCardAtActualPlayer.getName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(gameRepository).saveAndFlush(game);
@@ -917,7 +917,7 @@ class GameServiceImplUnitTest {
     playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy " +
-        otherCardAtActualPlayer.getCardName() + " volt.";
+        otherCardAtActualPlayer.getName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
@@ -985,7 +985,7 @@ class GameServiceImplUnitTest {
     playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobatta " + targetPlayer.getName()
-        + " lapját, ami egy " + cardAtTargetPlayer.getCardName() + " volt.";
+        + " lapját, ami egy " + cardAtTargetPlayer.getName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
@@ -1021,7 +1021,7 @@ class GameServiceImplUnitTest {
     playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobatta " + targetPlayer.getName()
-        + " lapját, ami egy " + cardAtTargetPlayer.getCardName() + " volt.";
+        + " lapját, ami egy " + cardAtTargetPlayer.getName() + " volt.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
@@ -1058,7 +1058,7 @@ class GameServiceImplUnitTest {
     generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
         targetPlayer.getName() + " kézben lévő lapjával. " + targetPlayer.getName()
         + " kiesett a játékból, kézben lévő lapját ("
-        + cardAtTargetPlayer.getCardName() + ") pedig eldobta.";
+        + cardAtTargetPlayer.getName() + ") pedig eldobta.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(cardService).getCardAtPlayerByCardName(player, BARON);
@@ -1095,7 +1095,7 @@ class GameServiceImplUnitTest {
     generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
         targetPlayer.getName() + " kézben lévő lapjával. " + player.getName()
         + " kiesett a játékból, kézben lévő lapját ("
-        + otherCardAtActualPlayer.getCardName() + ") pedig eldobta.";
+        + otherCardAtActualPlayer.getName() + ") pedig eldobta.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
     verify(cardService).getCardAtPlayerByCardName(player, BARON);
@@ -1200,7 +1200,7 @@ class GameServiceImplUnitTest {
 
     generatedLog =
         "1. " + player.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
-            + " kezében " + cardAtTargetPlayer.getCardName() + " van. Így igaz. "
+            + " kezében " + cardAtTargetPlayer.getName() + " van. Így igaz. "
             + targetPlayer.getName() + " kiesett a játékból.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
@@ -1343,7 +1343,7 @@ class GameServiceImplUnitTest {
 
     assertNotNull(playCardResponseDto);
     assertEquals(generatedLog, playCardResponseDto.getLastLog());
-    assertTrue(playCardResponseDto.getHiddenMessage().contains(drawnByChancellor.getCardName()));
+    assertTrue(playCardResponseDto.getHiddenMessage().contains(drawnByChancellor.getName()));
     assertTrue(game.getLog().contains(generatedLog));
     assertTrue(game.getIsTurnOfChancellorActive());
   }
@@ -1391,8 +1391,8 @@ class GameServiceImplUnitTest {
 
     assertNotNull(playCardResponseDto);
     assertEquals(generatedLog, playCardResponseDto.getLastLog());
-    assertTrue(playCardResponseDto.getHiddenMessage().contains(drawnByChancellor.getCardName()));
-    assertTrue(playCardResponseDto.getHiddenMessage().contains(drawnByChancellor2.getCardName()));
+    assertTrue(playCardResponseDto.getHiddenMessage().contains(drawnByChancellor.getName()));
+    assertTrue(playCardResponseDto.getHiddenMessage().contains(drawnByChancellor2.getName()));
     assertTrue(game.getLog().contains(generatedLog));
     assertTrue(game.getIsTurnOfChancellorActive());
   }
@@ -1414,21 +1414,21 @@ class GameServiceImplUnitTest {
     cardAtTargetPlayer = targetPlayer.cardInHand();
 
     infoDto.setTargetPlayer(targetPlayer.getName());
-    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardToPlayOut.getCardName(), infoDto);
+    playCardRequestDto = new PlayCardRequestDto(player.getUuid(), cardToPlayOut.getName(), infoDto);
 
     when(playerService.findByUuid(player.getUuid())).thenReturn(player);
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
-    when(cardService.getCardAtPlayerByCardName(player, cardToPlayOut.getCardName())).thenReturn(cardToPlayOut);
+    when(cardService.getCardAtPlayerByCardName(player, cardToPlayOut.getName())).thenReturn(cardToPlayOut);
 
     playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
         targetPlayer.getName() + " kézben lévő lapjával. " + targetPlayer.getName()
         + " kiesett a játékból, kézben lévő lapját ("
-        + cardAtTargetPlayer.getCardName() + ") pedig eldobta.";
+        + cardAtTargetPlayer.getName() + ") pedig eldobta.";
 
     verifyCardPlayingCommonInvocations(player.getUuid());
-    verify(cardService).getCardAtPlayerByCardName(player, cardToPlayOut.getCardName());
+    verify(cardService).getCardAtPlayerByCardName(player, cardToPlayOut.getName());
     verify(gameRepository).saveAndFlush(game);
 
     assertNotNull(playCardResponseDto);

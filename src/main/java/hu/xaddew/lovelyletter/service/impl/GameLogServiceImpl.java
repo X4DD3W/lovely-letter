@@ -17,7 +17,7 @@ public class GameLogServiceImpl implements GameLogService {
   public String addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(Player actualPlayer,
       Card cardWantToPlayOut, Game game) {
     return game.addLog(
-        actualPlayer.getName() + " kijátszott lapja egy " + cardWantToPlayOut.getCardName()
+        actualPlayer.getName() + " kijátszott lapja egy " + cardWantToPlayOut.getName()
             + " volt, de megcélozható játékos híján nem történt semmi.");
   }
 
@@ -67,7 +67,7 @@ public class GameLogServiceImpl implements GameLogService {
       Card cardToDiscard, Game game) {
     return game.addLog(
         actualPlayer.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
-            + cardToDiscard.getCardName() + " volt.");
+            + cardToDiscard.getName() + " volt.");
   }
 
   @Override
@@ -81,7 +81,7 @@ public class GameLogServiceImpl implements GameLogService {
   public String addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(
       Player actualPlayer, Player targetPlayer, Card cardToDiscard, Game game) {
     return game.addLog(actualPlayer.getName() + " Herceggel eldobatta " + targetPlayer.getName()
-        + " lapját, ami egy " + cardToDiscard.getCardName() + " volt.");
+        + " lapját, ami egy " + cardToDiscard.getName() + " volt.");
   }
 
   @Override
@@ -96,7 +96,7 @@ public class GameLogServiceImpl implements GameLogService {
     return game.addLog(
         actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
             + " kézben lévő lapjával. " + targetPlayer.getName()
-            + " kézben lévő lapja " + cardToDiscard.getCardName()
+            + " kézben lévő lapja " + cardToDiscard.getName()
             + " volt, aki megmentett gazdáját a kiesétől ("
             + targetPlayer.getName() + " húzott egy új lapot).");
   }
@@ -108,7 +108,7 @@ public class GameLogServiceImpl implements GameLogService {
         actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
             + " kézben lévő lapjával. " + targetPlayer.getName()
             + " kiesett a játékból, kézben lévő lapját ("
-            + cardToDiscard.getCardName() + ") pedig eldobta.");
+            + cardToDiscard.getName() + ") pedig eldobta.");
   }
 
   @Override
@@ -119,7 +119,7 @@ public class GameLogServiceImpl implements GameLogService {
             .getName()
             + " kézben lévő lapjával. " + actualPlayer.getName()
             + " kiesett a játékból, kézben lévő lapját ("
-            + cardToDiscard.getCardName() + ") pedig eldobta.");
+            + cardToDiscard.getName() + ") pedig eldobta.");
   }
 
   @Override

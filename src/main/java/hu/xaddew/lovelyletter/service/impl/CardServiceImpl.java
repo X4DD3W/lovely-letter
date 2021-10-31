@@ -21,7 +21,7 @@ public class CardServiceImpl implements CardService {
   @Override
   public Card getCardAtPlayerByCardName(Player actualPlayer, String cardName) {
     return actualPlayer.getCardsInHand().stream()
-        .filter(card -> card.getCardName().equals(cardName))
+        .filter(card -> card.getName().equals(cardName))
         .findFirst().orElse(null);
   }
 }

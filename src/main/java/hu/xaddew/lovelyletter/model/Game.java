@@ -55,6 +55,7 @@ public class Game {
 
   private Boolean isGameOver;
 
+  @Column(name = "is_2019_version")
   private Boolean is2019Version;
 
   @JsonIgnore

@@ -43,10 +43,10 @@ public class Card {
   @ManyToMany(cascade = CascadeType.ALL)
   private List<Player> inPlayedArea;
 
-  private String cardName;
+  private String name;
 
-  private String cardNameEnglish;
-  private Integer cardValue;
+  private String nameEnglish;
+  private Integer value;
   private Integer quantity;
   private String description;
 
@@ -61,12 +61,12 @@ public class Card {
   @Column(name = "is_at_a_player")
   private Boolean isAtAPlayer;
 
-  public Card(String cardName) {
-    this.cardName = cardName;
+  public Card(String name) {
+    this.name = name;
   }
 
-  public Card(String cardName, Integer cardValue) {
-    this.cardName = cardName;
-    this.cardValue = cardValue;
+  public Card(String name, Integer value) {
+    this.name = name;
+    this.value = value;
   }
 }
