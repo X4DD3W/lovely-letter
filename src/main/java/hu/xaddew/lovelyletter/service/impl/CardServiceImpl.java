@@ -1,8 +1,9 @@
-package hu.xaddew.lovelyletter.service;
+package hu.xaddew.lovelyletter.service.impl;
 
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.CardRepository;
+import hu.xaddew.lovelyletter.service.CardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

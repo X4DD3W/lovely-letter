@@ -14,6 +14,7 @@ import static util.LLTestUtils.NUMBER_OF_PRE_GENERATED_ORIGINAL_CARDS;
 import hu.xaddew.lovelyletter.dto.CardResponseDto;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.repository.OriginalCardRepository;
+import hu.xaddew.lovelyletter.service.impl.OriginalCardServiceImpl;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;

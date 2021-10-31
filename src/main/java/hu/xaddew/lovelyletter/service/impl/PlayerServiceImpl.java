@@ -1,4 +1,4 @@
-package hu.xaddew.lovelyletter.service;
+package hu.xaddew.lovelyletter.service.impl;
 
 import hu.xaddew.lovelyletter.dto.PlayerAndNumberOfLettersDto;
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
@@ -8,6 +8,7 @@ import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Game;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.PlayerRepository;
+import hu.xaddew.lovelyletter.service.PlayerService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

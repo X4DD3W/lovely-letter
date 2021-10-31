@@ -1,8 +1,9 @@
-package hu.xaddew.lovelyletter.service;
+package hu.xaddew.lovelyletter.service.impl;
 
 import hu.xaddew.lovelyletter.dto.CardResponseDto;
-import hu.xaddew.lovelyletter.model.CustomCard;
-import hu.xaddew.lovelyletter.repository.CustomCardRepository;
+import hu.xaddew.lovelyletter.model.OriginalCard;
+import hu.xaddew.lovelyletter.repository.OriginalCardRepository;
+import hu.xaddew.lovelyletter.service.OriginalCardService;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -14,20 +15,20 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class CustomCardServiceImpl implements CustomCardService {
+public class OriginalCardServiceImpl implements OriginalCardService {
 
   private final ModelMapper modelMapper;
-  private final CustomCardRepository customCardRepository;
+  private final OriginalCardRepository originalCardRepository;
 
   @Override
-  public List<CustomCard> findAll() {
-    return customCardRepository.findAll();
+  public List<OriginalCard> findAll() {
+    return originalCardRepository.findAll();
   }
 
   @Override
   public List<CardResponseDto> getAllCards() {
     Set<String> set = new HashSet<>();
-    List<CustomCard> distinctCards = customCardRepository.findAll()
+    List<OriginalCard> distinctCards = originalCardRepository.findAll()
         .stream()
         .filter(e -> set.add(e.getCardName()))
         .collect(Collectors.toList());

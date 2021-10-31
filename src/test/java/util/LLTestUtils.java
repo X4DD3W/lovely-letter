@@ -1,6 +1,6 @@
 package util;
 
-import static hu.xaddew.lovelyletter.service.GameServiceImpl.GUARD;
+import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.GUARD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import hu.xaddew.lovelyletter.dto.CreateGameDto;

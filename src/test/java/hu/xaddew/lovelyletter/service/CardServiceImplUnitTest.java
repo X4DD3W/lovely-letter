@@ -7,6 +7,7 @@ import static util.LLTestUtils.initCards;
 
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.Player;
+import hu.xaddew.lovelyletter.service.impl.CardServiceImpl;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
