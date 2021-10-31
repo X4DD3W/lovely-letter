@@ -1,4 +1,4 @@
-INSERT INTO original_cards (card_name, card_name_english, card_value, quantity, description, is_put_aside, is_2p_public, is_at_a_player)
+INSERT INTO original_card (card_name, card_name_english, card_value, quantity, description, is_put_aside, is_2p_public, is_at_a_player)
 VALUES ('Hercegnő', 'Princess', 8, 1, 'Ha bármilyen okból kijátszod vagy eldobod ezt a kártyát, kiesel a körből.', false, false, false),
        ('Grófnő', 'Countess', 7, 1, 'Ha ez a kártya a Királlyal vagy Herceggel egyszerre van a kezedben, el kell dobnod ezt a lapot.', false, false, false),
        ('Király', 'King', 6, 1, 'Cserélj kártyát egy általad választott játékossal!', false, false, false),
@@ -16,7 +16,7 @@ VALUES ('Hercegnő', 'Princess', 8, 1, 'Ha bármilyen okból kijátszod vagy eld
        ('Őr', 'Guard', 1, 5, 'Válassz egy játékost és nevezz meg egy kártyát (kivéve az Őrt). Ha ez a karakter van a kezében, kiesik a körből.', false, false, false),
        ('Őr', 'Guard', 1, 5, 'Válassz egy játékost és nevezz meg egy kártyát (kivéve az Őrt). Ha ez a karakter van a kezében, kiesik a körből.', false, false, false);
 
-INSERT INTO new_release_cards (card_name, card_name_english, card_value, quantity, description, is_put_aside, is_2p_public, is_at_a_player)
+INSERT INTO new_release_card (card_name, card_name_english, card_value, quantity, description, is_put_aside, is_2p_public, is_at_a_player)
 VALUES ('Hercegnő', 'Princess', 9, 1, 'Ha bármilyen okból kijátszod vagy eldobod ezt a kártyát, kiesel a körből.', false, false, false),
        ('Grófnő', 'Countess', 8, 1, 'Ha ez a kártya a Királlyal vagy Herceggel egyszerre van a kezedben, el kell dobnod ezt a lapot.', false, false, false),
        ('Király', 'King', 7, 1, 'Cserélj kártyát egy általad választott játékossal!', false, false, false),
@@ -39,5 +39,5 @@ VALUES ('Hercegnő', 'Princess', 9, 1, 'Ha bármilyen okból kijátszod vagy eld
        ('Kém', 'Spy', 0, 2, 'Ha egyedüliként maradsz bent a kör végén, aki Kémet játszott ki vagy dobott el, kapsz 1 szerelmeslevelet.', false, false, false),
        ('Kém', 'Spy', 0, 2, 'Ha egyedüliként maradsz bent a kör végén, aki Kémet játszott ki vagy dobott el, kapsz 1 szerelmeslevelet.', false, false, false);
 
-INSERT INTO custom_cards (card_name, card_name_english, card_value, quantity, description, is_put_aside, is_2p_public, is_at_a_player)
+INSERT INTO custom_card (card_name, card_name_english, card_value, quantity, description, is_put_aside, is_2p_public, is_at_a_player)
 VALUES ('Kili', 'Kili', 3, 1, 'Ha ezzel a lappal esnél ki, nem esel ki. Húzz egy másik lapot...', false, false, false);

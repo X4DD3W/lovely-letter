@@ -19,7 +19,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "original_cards")
+@Table(name = "original_card")
 public class OriginalCard {
 
   @Id

@@ -29,7 +29,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Builder
 @AllArgsConstructor
 @Entity
-@Table(name = "games")
+@Table(name = "game")
 @EntityListeners(AuditingEntityListener.class)
 public class Game {
 

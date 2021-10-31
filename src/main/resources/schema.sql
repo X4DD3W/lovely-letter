@@ -1,22 +1,22 @@
 DROP TABLE IF EXISTS game_log;
 DROP TABLE IF EXISTS game_hidden_log;
-DROP TABLE IF EXISTS games_draw_deck;
+DROP TABLE IF EXISTS game_draw_deck;
 
-DROP TABLE IF EXISTS players_cards_in_hand;
-DROP TABLE IF EXISTS players_played_cards;
+DROP TABLE IF EXISTS player_cards_in_hand;
+DROP TABLE IF EXISTS player_played_cards;
 
-DROP TABLE IF EXISTS cards_game;
+DROP TABLE IF EXISTS card_game;
 DROP TABLE IF EXISTS cards_in_played_area;
 DROP TABLE IF EXISTS cards_in_players_hand;
 
-DROP TABLE IF EXISTS cards;
-DROP TABLE IF EXISTS original_cards;
-DROP TABLE IF EXISTS new_release_cards;
-DROP TABLE IF EXISTS custom_cards;
-DROP TABLE IF EXISTS players;
-DROP TABLE IF EXISTS games;
+DROP TABLE IF EXISTS card;
+DROP TABLE IF EXISTS original_card;
+DROP TABLE IF EXISTS new_release_card;
+DROP TABLE IF EXISTS custom_card;
+DROP TABLE IF EXISTS player;
+DROP TABLE IF EXISTS game;
 
-CREATE TABLE original_cards
+CREATE TABLE original_card
 (
     id          bigint auto_increment primary key,
     card_name   varchar(255) null,
@@ -29,7 +29,7 @@ CREATE TABLE original_cards
     is_at_a_player bit(1)
 );
 
-CREATE TABLE cards
+CREATE TABLE card
 (
     id          bigint auto_increment primary key,
     card_name   varchar(255) null,
@@ -42,7 +42,7 @@ CREATE TABLE cards
     is_at_a_player bit(1)
 );
 
-CREATE TABLE new_release_cards
+CREATE TABLE new_release_card
 (
     id          bigint auto_increment primary key,
     card_name   varchar(255) null,
@@ -55,7 +55,7 @@ CREATE TABLE new_release_cards
     is_at_a_player bit(1)
 );
 
-CREATE TABLE custom_cards
+CREATE TABLE custom_card
 (
     id          bigint auto_increment primary key,
     card_name   varchar(255) null,
@@ -68,7 +68,7 @@ CREATE TABLE custom_cards
     is_at_a_player bit(1)
 );
 
-CREATE TABLE players
+CREATE TABLE player
 (
     id      bigint auto_increment primary key,
     uuid    varchar(255) null,
@@ -78,7 +78,7 @@ CREATE TABLE players
     order_number int null
 );
 
-CREATE TABLE games
+CREATE TABLE game
 (
     id              bigint auto_increment primary key,
     uuid            varchar(255) null,

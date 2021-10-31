@@ -19,7 +19,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "custom_cards")
+@Table(name = "custom_card")
 public class CustomCard {
 
   @Id
