@@ -10,13 +10,13 @@ import lombok.Setter;
 public class PlayCardResponseDto {
 
   @Schema(description = "Titkos információ a műveletet követően")
-  private String message;
+  private String hiddenMessage;
 
   @Schema(description = "Nyilvános eseménybejegyzés a műveletet követően")
   private String lastLog;
 
   public PlayCardResponseDto() {
-    this.message = "";
+    this.hiddenMessage = "";
     this.lastLog = "";
   }
 }

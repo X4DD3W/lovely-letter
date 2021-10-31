@@ -20,8 +20,8 @@ public enum GameLog {
 
   private final String logText;
 
-  GameLog(String log) {
-    this.logText = log;
+  GameLog(String logText) {
+    this.logText = logText;
   }
 
   @Override

@@ -607,7 +607,7 @@ public class GameServiceImpl implements GameService {
         }
         List<Card> drawnCardsByChancellor = drawCardsBecauseOfChancellor(actualPlayer, game);
         game.setIsTurnOfChancellorActive(true);
-        responseDto.setMessage(GameLog.CARDS_DRAWN_BY_CHANCELLOR + drawnCardsByChancellor.stream()
+        responseDto.setHiddenMessage(GameLog.CARDS_DRAWN_BY_CHANCELLOR + drawnCardsByChancellor.stream()
             .map(Card::getCardName).collect(Collectors.joining(", ")) + ".");
         responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(actualPlayer, game, drawnCardsByChancellor.size()));
         break;
@@ -655,7 +655,7 @@ public class GameServiceImpl implements GameService {
         break;
       case PRIEST:
         actualPlayer.discard(cardWantToPlayOut);
-        responseDto.setMessage(targetPlayer.getName() + " kezében " + cardNameInHandOf(targetPlayer) + " van.");
+        responseDto.setHiddenMessage(targetPlayer.getName() + " kezében " + cardNameInHandOf(targetPlayer) + " van.");
         responseDto.setLastLog(addLogWhenAPlayerUsePriest(actualPlayer, targetPlayer, game));
         break;
       case GUARD:

@@ -1335,7 +1335,7 @@ class GameServiceImplUnitTest {
 
     assertNotNull(playCardResponseDto);
     assertEquals(generatedLog, playCardResponseDto.getLastLog());
-    assertTrue(playCardResponseDto.getMessage().contains(drawnByChancellor.getCardName()));
+    assertTrue(playCardResponseDto.getHiddenMessage().contains(drawnByChancellor.getCardName()));
     assertTrue(game.getLog().contains(generatedLog));
     assertTrue(game.getIsTurnOfChancellorActive());
   }
@@ -1383,8 +1383,8 @@ class GameServiceImplUnitTest {
 
     assertNotNull(playCardResponseDto);
     assertEquals(generatedLog, playCardResponseDto.getLastLog());
-    assertTrue(playCardResponseDto.getMessage().contains(drawnByChancellor.getCardName()));
-    assertTrue(playCardResponseDto.getMessage().contains(drawnByChancellor2.getCardName()));
+    assertTrue(playCardResponseDto.getHiddenMessage().contains(drawnByChancellor.getCardName()));
+    assertTrue(playCardResponseDto.getHiddenMessage().contains(drawnByChancellor2.getCardName()));
     assertTrue(game.getLog().contains(generatedLog));
     assertTrue(game.getIsTurnOfChancellorActive());
   }
