@@ -55,9 +55,9 @@ import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
-import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
-import hu.xaddew.lovelyletter.dto.ResponseDto;
+import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
+import hu.xaddew.lovelyletter.dto.PutBackCardResponseDto;
 import hu.xaddew.lovelyletter.exception.ErrorMessage;
 import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Card;
@@ -67,7 +67,6 @@ import hu.xaddew.lovelyletter.model.NewReleaseCard;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
-import hu.xaddew.lovelyletter.repository.PlayerRepository;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -111,9 +110,6 @@ class GameServiceImplUnitTest {
   @Mock
   private GameRepository gameRepository;
 
-  @Mock
-  private PlayerRepository playerRepository;
-
   @InjectMocks
   private GameServiceImpl gameService;
 
@@ -135,7 +131,8 @@ class GameServiceImplUnitTest {
   private CreatedGameResponseDto createdGameResponseDto;
   private List<String> playerNames;
   private GameException exception;
-  private ResponseDto responseDto;
+  private PlayCardResponseDto playCardResponseDto;
+  private PutBackCardResponseDto putBackCardResponseDto;
   private String generatedLog;
 
   @BeforeEach
@@ -220,25 +217,6 @@ class GameServiceImplUnitTest {
   @Test
   void getGameStatusThrowsGameException() {
     assertThrows(GameException.class, () -> gameService.getGameStatus(INVALID_UUID));
-  }
-
-  @Test
-  void getAllInfosByPlayerUuid() {
-    String playerUuid = UUID + FIRST_INDEX;
-    when(playerRepository.findByUuid(playerUuid)).thenReturn(players.get(FIRST_INDEX));
-    when(gameRepository.findGameByPlayerUuid(playerUuid)).thenReturn(games.get(FIRST_INDEX));
-
-    PlayerKnownInfosDto playerKnownInfosDto = gameService.getAllInfosByPlayerUuid(playerUuid);
-
-    verify(playerRepository).findByUuid(playerUuid);
-    verify(gameRepository).findGameByPlayerUuid(playerUuid);
-
-    assertNotNull(playerKnownInfosDto);
-  }
-
-  @Test
-  void getAllInfosByPlayerUuidThrowsGameException() {
-    assertThrows(GameException.class, () -> gameService.getAllInfosByPlayerUuid(INVALID_UUID));
   }
 
   @Test
@@ -593,7 +571,7 @@ class GameServiceImplUnitTest {
     when(cardService.getCardAtPlayerByCardName(player, playCardRequestDto.getCardName()))
         .thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " kijátszott lapja egy " + cardName + " volt,"
         + " de megcélozható játékos híján nem történt semmi.";
@@ -622,7 +600,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, playCardRequestDto.getCardName())).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a Hercegnőt, így kiesett a játékból.";
 
@@ -654,7 +632,7 @@ class GameServiceImplUnitTest {
     when(cardService.getCardAtPlayerByCardName(player, playCardRequestDto.getCardName()))
         .thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
         + otherCardAtActualPlayer.getCardName() + " volt.";
@@ -663,8 +641,8 @@ class GameServiceImplUnitTest {
     verify(gameRepository).save(game);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
+    assertNotNull(playCardResponseDto);
+    assertEquals(generatedLog, playCardResponseDto.getLastLog());
     assertTrue(game.getLog().contains(generatedLog));
     assertTrue(game.getLog().contains("2. " + ROUND_IS_OVER_DRAW_DECK_IS_EMPTY));
     assertTrue(game.getLog().contains("3. " + player.getName() + WON_THE_ROUND));
@@ -686,7 +664,7 @@ class GameServiceImplUnitTest {
     when(cardService.getCardAtPlayerByCardName(player, playCardRequestDto.getCardName()))
         .thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
         + otherCardAtActualPlayer.getCardName() + " volt.";
@@ -715,7 +693,7 @@ class GameServiceImplUnitTest {
     when(cardService.getCardAtPlayerByCardName(player, playCardRequestDto.getCardName()))
         .thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
         + otherCardAtActualPlayer.getCardName() + " volt.";
@@ -842,7 +820,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, PRINCESS)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " eldobta a Hercegnőt, így kiesett a játékból.";
 
@@ -867,7 +845,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, cardName)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " kijátszott lapja egy " + cardName + " volt.";
 
@@ -897,7 +875,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, KING)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog =
         "1. " + player.getName() + " kijátszott egy Királyt, ő és " + targetPlayer.getName()
@@ -929,7 +907,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, PRINCE)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy " +
         otherCardAtActualPlayer.getCardName() + " volt.";
@@ -963,7 +941,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, PRINCE)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobatta " + targetPlayer.getName()
         + " lapját, ami egy Hercegnő volt, így " + targetPlayer.getName() + " kiesett a játékból.";
@@ -997,7 +975,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, PRINCE)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobatta " + targetPlayer.getName()
         + " lapját, ami egy " + cardAtTargetPlayer.getCardName() + " volt.";
@@ -1033,7 +1011,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, PRINCE)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Herceggel eldobatta " + targetPlayer.getName()
         + " lapját, ami egy " + cardAtTargetPlayer.getCardName() + " volt.";
@@ -1042,8 +1020,8 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, PRINCE);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
+    assertNotNull(playCardResponseDto);
+    assertEquals(generatedLog, playCardResponseDto.getLastLog());
     assertTrue(game.getLog().contains(generatedLog));
     assertEquals(1, targetPlayer.getNumberOfLetters());
   }
@@ -1068,7 +1046,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, BARON)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
         targetPlayer.getName() + " kézben lévő lapjával. " + targetPlayer.getName()
@@ -1105,7 +1083,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, BARON)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
         targetPlayer.getName() + " kézben lévő lapjával. " + player.getName()
@@ -1142,7 +1120,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, BARON)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
         targetPlayer.getName() + " kézben lévő lapjával. "
@@ -1177,7 +1155,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, PRIEST)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog =
         "1. " + player.getName() + " megnézte, mi van " + targetPlayer.getName() + " kezében.";
@@ -1211,7 +1189,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, GUARD)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog =
         "1. " + player.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
@@ -1248,7 +1226,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, GUARD)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog =
         "1. " + player.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
@@ -1307,7 +1285,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, CHANCELLOR)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName()
         + " kijátszott egy Kancellárt, de mivel a húzópakli üres volt, a kártyának nincsen hatása.";
@@ -1316,8 +1294,8 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, CHANCELLOR);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
+    assertNotNull(playCardResponseDto);
+    assertEquals(generatedLog, playCardResponseDto.getLastLog());
     assertTrue(game.getLog().contains(generatedLog));
   }
 
@@ -1346,7 +1324,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, CHANCELLOR)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName()
         + " kijátszott egy Kancellárt, amivel felhúzta a pakli felső 1 lapját. A kezében lévő 2"
@@ -1356,9 +1334,9 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, CHANCELLOR);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(responseDto.getMessage().contains(drawnByChancellor.getCardName()));
+    assertNotNull(playCardResponseDto);
+    assertEquals(generatedLog, playCardResponseDto.getLastLog());
+    assertTrue(playCardResponseDto.getMessage().contains(drawnByChancellor.getCardName()));
     assertTrue(game.getLog().contains(generatedLog));
     assertTrue(game.getIsTurnOfChancellorActive());
   }
@@ -1394,7 +1372,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, CHANCELLOR)).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName()
         + " kijátszott egy Kancellárt, amivel felhúzta a pakli felső 2 lapját. A kezében lévő 3"
@@ -1404,10 +1382,10 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, CHANCELLOR);
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
-    assertTrue(responseDto.getMessage().contains(drawnByChancellor.getCardName()));
-    assertTrue(responseDto.getMessage().contains(drawnByChancellor2.getCardName()));
+    assertNotNull(playCardResponseDto);
+    assertEquals(generatedLog, playCardResponseDto.getLastLog());
+    assertTrue(playCardResponseDto.getMessage().contains(drawnByChancellor.getCardName()));
+    assertTrue(playCardResponseDto.getMessage().contains(drawnByChancellor2.getCardName()));
     assertTrue(game.getLog().contains(generatedLog));
     assertTrue(game.getIsTurnOfChancellorActive());
   }
@@ -1435,7 +1413,7 @@ class GameServiceImplUnitTest {
     when(gameRepository.findGameByPlayerUuid(player.getUuid())).thenReturn(game);
     when(cardService.getCardAtPlayerByCardName(player, cardToPlayOut.getCardName())).thenReturn(cardToPlayOut);
 
-    responseDto = gameService.playCard(playCardRequestDto);
+    playCardResponseDto = gameService.playCard(playCardRequestDto);
 
     generatedLog = "1. " + player.getName() + " Báróval összehasonlította a kézben lévő lapját " +
         targetPlayer.getName() + " kézben lévő lapjával. " + targetPlayer.getName()
@@ -1446,8 +1424,8 @@ class GameServiceImplUnitTest {
     verify(cardService).getCardAtPlayerByCardName(player, cardToPlayOut.getCardName());
     verify(gameRepository).saveAndFlush(game);
 
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
+    assertNotNull(playCardResponseDto);
+    assertEquals(generatedLog, playCardResponseDto.getLastLog());
     assertTrue(game.getLog().contains(generatedLog));
   }
 
@@ -1463,8 +1441,8 @@ class GameServiceImplUnitTest {
   }
 
   private void assertCardPlayingCommonAssertions() {
-    assertNotNull(responseDto);
-    assertEquals(generatedLog, responseDto.getLastLog());
+    assertNotNull(playCardResponseDto);
+    assertEquals(generatedLog, playCardResponseDto.getLastLog());
     assertTrue(game.getLog().contains(generatedLog));
     assertTrue(player.getPlayedCards().contains(cardToPlayOut));
   }

@@ -5,8 +5,8 @@ import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
-import hu.xaddew.lovelyletter.dto.ResponseDto;
-import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
+import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
+import hu.xaddew.lovelyletter.dto.PutBackCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
 import hu.xaddew.lovelyletter.model.Game;
 import java.time.LocalDateTime;
@@ -22,15 +22,13 @@ public interface GameService {
 
   GameStatusDto getGameStatus(String gameUuid);
 
-  ResponseDto playCard(PlayCardRequestDto requestDto);
-
-  PlayerKnownInfosDto getAllInfosByPlayerUuid(String playerUuid);
+  PlayCardResponseDto playCard(PlayCardRequestDto requestDto);
 
   Game findGameByPlayerUuid(String playerUuid);
 
-  ResponseDto putBackCards(PutBackCardsRequestDto requestDto);
+  PutBackCardResponseDto putBackCards(PutBackCardsRequestDto requestDto);
 
-  void closeOpenGamesInactiveFor(LocalDateTime modifyDate);
+  void closeOpenButInactiveGames(LocalDateTime modifyDate);
 
-  void deleteClosedGamesOlderThan(LocalDateTime modifyDate);
+  void deleteClosedGamesOlderThanAllowed(LocalDateTime modifyDate);
 }

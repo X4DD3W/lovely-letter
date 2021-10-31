@@ -6,11 +6,10 @@ import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
-import hu.xaddew.lovelyletter.dto.ResponseDto;
-import hu.xaddew.lovelyletter.dto.PlayerAndNumberOfLettersDto;
+import hu.xaddew.lovelyletter.dto.PlayCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PlayerAndPlayedCardsDto;
-import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.dto.PlayerUuidDto;
+import hu.xaddew.lovelyletter.dto.PutBackCardResponseDto;
 import hu.xaddew.lovelyletter.dto.PutBackCardsRequestDto;
 import hu.xaddew.lovelyletter.exception.ErrorMessage;
 import hu.xaddew.lovelyletter.exception.ErrorType;
@@ -22,7 +21,6 @@ import hu.xaddew.lovelyletter.model.NewReleaseCard;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
-import hu.xaddew.lovelyletter.repository.PlayerRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,6 +54,9 @@ public class GameServiceImpl implements GameService {
   public static final String GAME_IS_OVER_STATUS_MESSAGE = "A játék véget ért, mivel valaki elég szerelmes levelet gyűjtött össze!";
   public static final String NEW_ROUND_BEGINS_STATUS_MESSAGE = "Új forduló kezdődik. ";
   public static final String CONGRATULATE = "Gratulálunk, ";
+  public static final String GAME_IS_CLOSED_DUE_TO_INACTIVITY_LOG = "Inaktivitás miatt a játék lezárásra került ekkor: ";
+  public static final String PLAYER_CHOOSES_FROM_THE_CARDS_DRAWN_BY_CHANCELLOR = ", aki éppen a Kancellár által húzott lapokból választ...";
+  public static final String CARDS_DRAWN_BY_CHANCELLOR = "A Kancellárral húzott lap(ok): ";
 
   public static final String PRINCESS = "Hercegnő";
   public static final String COUNTESS = "Grófnő";
@@ -82,7 +83,6 @@ public class GameServiceImpl implements GameService {
   private final CustomCardService customCardService;
   private final PlayerService playerService;
   private final GameRepository gameRepository;
-  private final PlayerRepository playerRepository;
 
   @Override
   public CreatedGameResponseDto createGame(CreateGameDto createGameDto) {
@@ -216,8 +216,8 @@ public class GameServiceImpl implements GameService {
   }
 
   @Override
-  public ResponseDto playCard(PlayCardRequestDto requestDto) {
-    ResponseDto responseDto = new ResponseDto();
+  public PlayCardResponseDto playCard(PlayCardRequestDto requestDto) {
+    PlayCardResponseDto responseDto = new PlayCardResponseDto();
     Player actualPlayer = playerService.findByUuid(requestDto.getPlayerUuid());
     if (actualPlayer != null) {
       Game game = findGameByPlayerUuid(actualPlayer.getUuid());
@@ -277,38 +277,16 @@ public class GameServiceImpl implements GameService {
   }
 
   @Override
-  public PlayerKnownInfosDto getAllInfosByPlayerUuid(String playerUuid) {
-    Player player = playerRepository.findByUuid(playerUuid);
-    PlayerKnownInfosDto knownInfosDto = new PlayerKnownInfosDto();
-    if (player != null) {
-      knownInfosDto.setMyName(player.getName());
-      knownInfosDto.setNumberOfLetters(player.getNumberOfLetters());
-      knownInfosDto.setCardsInHand(player.getCardsInHand());
-      knownInfosDto.setPlayedCards(player.getPlayedCards());
-
-      Game game = findGameByPlayerUuid(playerUuid);
-      if (game != null) {
-        knownInfosDto.setGameLogsAboutMe(getGameLogsByPlayerName(player.getName(), game));
-        knownInfosDto.setGameHiddenLogsAboutMe(getGameHiddenLogsByPlayerName(player.getName(), game));
-        knownInfosDto.setAllGameLogs(game.getLog());
-        knownInfosDto.setOtherPlayers(getOtherPlayersAndNumberOfLettersByPlayerUuidAndGame(playerUuid, game));
-      }
-
-    } else throw new GameException(ErrorMessage.PLAYER_NOT_FOUND_ERROR_MESSAGE, ErrorType.NOT_FOUND);
-    return knownInfosDto;
-  }
-
-  @Override
   public Game findGameByPlayerUuid(String playerUuid) {
     return gameRepository.findGameByPlayerUuid(playerUuid);
   }
 
   @Override
-  public ResponseDto putBackCards(PutBackCardsRequestDto requestDto) {
+  public PutBackCardResponseDto putBackCards(PutBackCardsRequestDto requestDto) {
     if (requestDto == null) {
       throw new GameException(ErrorMessage.MISSING_PUT_BACK_A_CARD_REQUEST_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
     }
-    ResponseDto responseDto = new ResponseDto();
+    PutBackCardResponseDto responseDto = new PutBackCardResponseDto();
     Player actualPlayer = playerService.findByUuid(requestDto.getPlayerUuid());
     if (actualPlayer != null) {
       Game game = findGameByPlayerUuid(actualPlayer.getUuid());
@@ -341,10 +319,10 @@ public class GameServiceImpl implements GameService {
 
   @Override
   @Transactional
-  public void closeOpenGamesInactiveFor(LocalDateTime modifyDate) {
+  public void closeOpenButInactiveGames(LocalDateTime modifyDate) {
     List<Game> games = gameRepository.findAllByIsGameOverFalseAndModifyDateGreaterThan(modifyDate);
     games.forEach(game -> {
-      game.addLog("Game is closed because of inactivity.");
+      game.addLog(GAME_IS_CLOSED_DUE_TO_INACTIVITY_LOG + LocalDateTime.now());
       game.setIsGameOver(true);
     });
     log.info("Number of closed games: {}", games.size());
@@ -352,17 +330,11 @@ public class GameServiceImpl implements GameService {
 
   @Override
   @Transactional
-  public void deleteClosedGamesOlderThan(LocalDateTime modifyDate) {
+  public void deleteClosedGamesOlderThanAllowed(LocalDateTime modifyDate) {
     gameRepository.deleteAllByIsGameOverTrueAndModifyDateGreaterThan(modifyDate);
   }
 
-  public List<String> getGameLogsByPlayerName(String name, Game game) {
-    return game.getLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
-  }
 
-  public List<String> getGameHiddenLogsByPlayerName(String name, Game game) {
-    return game.getHiddenLog().stream().filter(log -> log.contains(name)).collect(Collectors.toList());
-  }
 
   private boolean isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(CreateGameDto createGameDto) {
     int number = createGameDto.getPlayerNames().size();
@@ -398,7 +370,7 @@ public class GameServiceImpl implements GameService {
     dtoList.add(dto);
   }
 
-  private void playOutPrince(Player player, Card cardWantToPlayOut, ResponseDto responseDto, Game game) {
+  private void playOutPrince(Player player, Card cardWantToPlayOut, PlayCardResponseDto responseDto, Game game) {
     player.discard(cardWantToPlayOut);
     Card cardToDiscard = player.cardInHand();
     player.discard(cardToDiscard);
@@ -429,21 +401,6 @@ public class GameServiceImpl implements GameService {
     return targetablePlayers.isEmpty();
   }
 
-  private List<PlayerAndNumberOfLettersDto> getOtherPlayersAndNumberOfLettersByPlayerUuidAndGame(String uuid, Game game) {
-    List<PlayerAndNumberOfLettersDto> dtoList = new ArrayList<>();
-
-    game.getPlayersInGame().stream()
-        .filter(player -> !player.getUuid().equals(uuid))
-        .forEach(player -> {
-          PlayerAndNumberOfLettersDto dto = new PlayerAndNumberOfLettersDto();
-          dto.setPlayerName(player.getName());
-          dto.setNumberOfLetters(player.getNumberOfLetters());
-          dtoList.add(dto);
-        });
-
-    return dtoList;
-  }
-
   private void setNextPlayerInOrder(Player actualPlayer, Game game) {
     if (isRoundOverBecauseThereIsOnlyOneActivePlayer(game)) {
       log.info("Round is over: there is only one player left.");
@@ -455,7 +412,7 @@ public class GameServiceImpl implements GameService {
       Player nextActualPlayer;
 
       if (game.isTurnOfChancellorActive()) {
-        game.addLog(ACTUAL_PLAYER_IS + actualPlayer.getName() + ", aki éppen a Kancellár által húzott lapokból választ...");
+        game.addLog(ACTUAL_PLAYER_IS + actualPlayer.getName() + PLAYER_CHOOSES_FROM_THE_CARDS_DRAWN_BY_CHANCELLOR);
       } else {
         if (actualPlayer.getOrderNumber() == game.getPlayersInGame().size()) {
           nextActualPlayer = activePlayers.stream()
@@ -620,9 +577,9 @@ public class GameServiceImpl implements GameService {
     }
   }
 
-  private ResponseDto processAdditionalInfo(Player actualPlayer, Player targetPlayer,
+  private PlayCardResponseDto processAdditionalInfo(Player actualPlayer, Player targetPlayer,
       Game game, PlayCardRequestDto requestDto) {
-    ResponseDto responseDto = new ResponseDto();
+    PlayCardResponseDto responseDto = new PlayCardResponseDto();
     Card cardWantToPlayOut = cardService.getCardAtPlayerByCardName(actualPlayer, requestDto.getCardName());
     String cardNameWantToPlayOut = cardWantToPlayOut.getCardName();
     AdditionalInfoDto info = requestDto.getAdditionalInfo();
@@ -663,7 +620,7 @@ public class GameServiceImpl implements GameService {
         }
         List<Card> drawnCardsByChancellor = drawCardsBecauseOfChancellor(actualPlayer, game);
         game.setIsTurnOfChancellorActive(true);
-        responseDto.setMessage("A Kancellárral húzott lap(ok): " + drawnCardsByChancellor.stream()
+        responseDto.setMessage(CARDS_DRAWN_BY_CHANCELLOR + drawnCardsByChancellor.stream()
             .map(Card::getCardName).collect(Collectors.joining(", ")) + ".");
         responseDto.setLastLog(addLogWhenAPlayerUseChancellorToDrawOneOrTwoCards(actualPlayer, game, drawnCardsByChancellor.size()));
         break;

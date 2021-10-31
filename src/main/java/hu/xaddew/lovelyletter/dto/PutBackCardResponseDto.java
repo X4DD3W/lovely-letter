@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Schema(description = "Kártyával végzett művelet válasz adatmodell")
-public class ResponseDto {
+public class PutBackCardResponseDto {
 
   @Schema(description = "Titkos információ a műveletet követően")
   private String message;
@@ -15,8 +15,9 @@ public class ResponseDto {
   @Schema(description = "Nyilvános eseménybejegyzés a műveletet követően")
   private String lastLog;
 
-  public ResponseDto() {
+  public PutBackCardResponseDto() {
     this.message = "";
     this.lastLog = "";
   }
+
 }
