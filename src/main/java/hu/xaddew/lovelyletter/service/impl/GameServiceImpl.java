@@ -159,6 +159,8 @@ public class GameServiceImpl implements GameService {
   }
 
   @Override
+  // TODO ez kellhet?!
+  @Transactional
   public List<GodModeDto> getAllGamesWithSecretInfos() {
     List<Game> games = gameRepository.findAll();
     List<GodModeDto> godModeDtoList = new ArrayList<>();

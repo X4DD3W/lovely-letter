@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -34,39 +34,46 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Game {
 
   @Id
+  @Column(name = "game_id")
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  private String uuid;
-
-  @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "game")
   private List<Card> drawDeck;
 
-  @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "game")
   private List<Player> playersInGame;
 
-  private String actualPlayer;
-
   @ElementCollection()
+  @CollectionTable(name = "game_logs")
   private List<String> log;
 
   @ElementCollection()
+  @CollectionTable(name = "game_hidden_logs")
   private List<String> hiddenLog;
 
+  @Column(name = "uuid")
+  private String uuid;
+
+  @Column(name = "actual_player")
+  private String actualPlayer;
+
+  @Column(name = "is_game_over")
   private Boolean isGameOver;
 
   @Column(name = "is_2019_version")
   private Boolean is2019Version;
 
   @JsonIgnore
+  @Column(name = "is_turn_of_chancellor_active")
   private Boolean isTurnOfChancellorActive;
 
-  @Column(name = "create_date", insertable = false, updatable = false)
   @CreatedDate
+  @Column(name = "create_date", insertable = false, updatable = false)
   private LocalDateTime createDate;
 
-  @Column(name = "modify_date")
   @LastModifiedDate
+  @Column(name = "modify_date")
   private LocalDateTime modifyDate;
 
   public Game() {

@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -26,29 +28,44 @@ import lombok.Setter;
 public class Player {
 
   @Id
+  @Column(name = "player_id")
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @Column(name = "uuid")
   private String uuid;
 
+  @Column(name = "name")
   private String name;
 
   @JsonIgnore
-  @ManyToOne(cascade = CascadeType.ALL)
+  @ManyToOne
+  @JoinColumn(name="game_id", nullable = false)
   private Game game;
 
   @ManyToMany
+  @JoinTable(
+      name = "player_cards_in_hand",
+      joinColumns = @JoinColumn(name = "player_id"),
+      inverseJoinColumns = @JoinColumn(name = "card_id"))
   private List<Card> cardsInHand;
 
   @ManyToMany
+  @JoinTable(
+      name = "player_played_cards",
+      joinColumns = @JoinColumn(name = "player_id"),
+      inverseJoinColumns = @JoinColumn(name = "card_id"))
   private List<Card> playedCards;
 
+  @Column(name = "number_of_letters")
   private Integer numberOfLetters;
 
   @JsonIgnore
+  @Column(name = "is_in_play")
   private Boolean isInPlay;
 
   @JsonIgnore
+  @Column(name = "order_number")
   private Integer orderNumber;
 
   public Player() {
