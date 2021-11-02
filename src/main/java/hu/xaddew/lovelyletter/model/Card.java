@@ -32,19 +32,6 @@ public class Card {
   @JsonIgnore
   private Long id;
 
-  @JsonIgnore
-  @ManyToOne
-  @JoinColumn(name="game_id", nullable = false)
-  private Game game;
-
-  @JsonIgnore
-  @ManyToMany(mappedBy = "cardsInHand")
-  private List<Player> inPlayersHand;
-
-  @JsonIgnore
-  @ManyToMany(mappedBy = "playedCards")
-  private List<Player> inPlayedArea;
-
   @Column(name = "name")
   private String name;
 
@@ -71,6 +58,19 @@ public class Card {
   @JsonIgnore
   @Column(name = "is_at_a_player")
   private Boolean isAtAPlayer;
+
+  @JsonIgnore
+  @ManyToOne
+  @JoinColumn(name="game_id", nullable = false)
+  private Game game;
+
+  @JsonIgnore
+  @ManyToMany(mappedBy = "cardsInHand")
+  private List<Player> inPlayersHand;
+
+  @JsonIgnore
+  @ManyToMany(mappedBy = "playedCards")
+  private List<Player> inPlayedArea;
 
   public Card(String name) {
     this.name = name;

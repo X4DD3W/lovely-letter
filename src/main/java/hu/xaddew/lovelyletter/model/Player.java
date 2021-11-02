@@ -38,6 +38,17 @@ public class Player {
   @Column(name = "name")
   private String name;
 
+  @Column(name = "number_of_letters")
+  private Integer numberOfLetters;
+
+  @JsonIgnore
+  @Column(name = "is_in_play")
+  private Boolean isInPlay;
+
+  @JsonIgnore
+  @Column(name = "order_number")
+  private Integer orderNumber;
+
   @JsonIgnore
   @ManyToOne
   @JoinColumn(name="game_id", nullable = false)
@@ -56,17 +67,6 @@ public class Player {
       joinColumns = @JoinColumn(name = "player_id"),
       inverseJoinColumns = @JoinColumn(name = "card_id"))
   private List<Card> playedCards;
-
-  @Column(name = "number_of_letters")
-  private Integer numberOfLetters;
-
-  @JsonIgnore
-  @Column(name = "is_in_play")
-  private Boolean isInPlay;
-
-  @JsonIgnore
-  @Column(name = "order_number")
-  private Integer orderNumber;
 
   public Player() {
     this.id = null;
