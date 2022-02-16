@@ -12,13 +12,13 @@ import lombok.Setter;
 public class CardResponseDto {
 
   @Schema(description = "Kártya neve")
-  private String cardName;
+  private String name;
 
   @Schema(description = "Kártya neve angolul")
-  private String cardNameEnglish;
+  private String nameEnglish;
 
   @Schema(description = "Kártya értéke")
-  private Integer cardValue;
+  private Integer value;
 
   @Schema(description = "Kártya darabszáma a pakliban")
   private Integer quantity;

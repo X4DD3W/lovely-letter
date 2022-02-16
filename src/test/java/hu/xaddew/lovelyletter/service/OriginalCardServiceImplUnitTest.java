@@ -80,8 +80,8 @@ class OriginalCardServiceImplUnitTest {
   private void assertGeneratedValuesAreEquals(int numberOfCards, List<CardResponseDto> resultCards) {
     for (int i = 1; i <= numberOfCards ; i++) {
       CardResponseDto actualCard = resultCards.get(i - 1);
-      assertEquals(CARD_NAME + i, actualCard.getCardName());
-      assertEquals(numberOfCards - i, actualCard.getCardValue());
+      assertEquals(CARD_NAME + i, actualCard.getName());
+      assertEquals(numberOfCards - i, actualCard.getValue());
       assertEquals(i, actualCard.getQuantity());
       assertEquals(CARD_DESCRIPTION + i, actualCard.getDescription());
     }
