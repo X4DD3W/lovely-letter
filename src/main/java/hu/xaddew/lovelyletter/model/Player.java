@@ -51,7 +51,7 @@ public class Player {
 
   @JsonIgnore
   @ManyToOne
-  @JoinColumn(name="game_id", nullable = false)
+  @JoinColumn(name = "game_id", nullable = false)
   private Game game;
 
   @ManyToMany

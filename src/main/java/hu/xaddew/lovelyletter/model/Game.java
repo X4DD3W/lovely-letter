@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -38,17 +39,17 @@ public class Game {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @OneToMany(mappedBy = "game")
+  @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Card> drawDeck;
 
-  @OneToMany(mappedBy = "game")
+  @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Player> playersInGame;
 
-  @ElementCollection()
+  @ElementCollection
   @CollectionTable(name = "game_logs")
   private List<String> log;
 
-  @ElementCollection()
+  @ElementCollection
   @CollectionTable(name = "game_hidden_logs")
   private List<String> hiddenLog;
 

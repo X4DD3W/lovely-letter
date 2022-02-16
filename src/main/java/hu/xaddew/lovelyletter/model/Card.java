@@ -61,7 +61,7 @@ public class Card {
 
   @JsonIgnore
   @ManyToOne
-  @JoinColumn(name="game_id", nullable = false)
+  @JoinColumn(name = "game_id", nullable = false)
   private Game game;
 
   @JsonIgnore
