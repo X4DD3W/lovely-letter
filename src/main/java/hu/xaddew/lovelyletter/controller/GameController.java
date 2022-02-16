@@ -39,7 +39,7 @@ public class GameController {
 
   @PostMapping("/create")
   @Operation(summary = "Új játék létrehozása")
-  @ApiResponse(responseCode = "200", description = "Sikeres játék létrehozás!",
+  @ApiResponse(responseCode = "200", description = "Létrehozott játék uuid-ja és a játékosok adatai.",
       content = @Content(schema = @Schema(implementation = CreatedGameResponseDto.class)))
   public CreatedGameResponseDto createGame(
       @Parameter(description = "Játék létrehozása adatmodell", required = true)
@@ -56,7 +56,7 @@ public class GameController {
   }
 
   @GetMapping("/get-status/{gameUuid}")
-  @Operation(summary = "Játék státuszának lekérdezése gameUuid alapján")
+  @Operation(summary = "Játék státuszának lekérdezése uuid alapján")
   @ApiResponse(responseCode = "200", description = "Játék státusza",
       content = @Content(schema = @Schema(implementation = GameStatusDto.class)))
   public GameStatusDto getGameStatus(

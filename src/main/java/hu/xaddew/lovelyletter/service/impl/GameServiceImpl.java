@@ -159,8 +159,6 @@ public class GameServiceImpl implements GameService {
   }
 
   @Override
-  // TODO ez kellhet?!
-  @Transactional
   public List<GodModeDto> getAllGamesWithSecretInfos() {
     List<Game> games = gameRepository.findAll();
     List<GodModeDto> godModeDtoList = new ArrayList<>();
@@ -350,9 +348,9 @@ public class GameServiceImpl implements GameService {
 
   private void setNextPlayerInOrder(Player actualPlayer, Game game) {
     if (isRoundOverBecauseThereIsOnlyOneActivePlayer(game)) {
-      log.info("Round is over: there is only one player left.");
+      log.info("Round is over: there is only one player left. Game uuid: {}", game.getUuid());
     } else if (isRoundOverBecauseDrawDeckIsEmptyAndThereAreAtLeastTwoActivePlayer(game)) {
-      log.info("Round is over: the draw deck is empty.");
+      log.info("Round is over: the draw deck is empty. Game uuid: {}", game.getUuid());
     } else {
       List<Player> activePlayers = game.getActivePlayers();
       Player nextActualPlayer;
