@@ -48,7 +48,7 @@ import static util.LLTestUtils.initTestPlayer;
 import static util.LLTestUtils.assertGeneratedValuesOfGamesAreEquals;
 
 import hu.xaddew.lovelyletter.dto.AdditionalInfoDto;
-import hu.xaddew.lovelyletter.dto.CreateGameDto;
+import hu.xaddew.lovelyletter.dto.CreateGameRequestDto;
 import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
@@ -132,7 +132,7 @@ class GameServiceImplUnitTest {
   private List<OriginalCard> originalCards;
   private List<CustomCard> customCards;
   private List<NewReleaseCard> newReleaseCards;
-  private CreateGameDto createGameDto;
+  private CreateGameRequestDto createGameDto;
   private PlayCardRequestDto playCardRequestDto;
   private List<GodModeDto> godModeDtoList;
   private CreatedGameResponseDto createdGameResponseDto;

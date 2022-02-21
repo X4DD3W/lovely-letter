@@ -3,7 +3,7 @@ package util;
 import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.GUARD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import hu.xaddew.lovelyletter.dto.CreateGameDto;
+import hu.xaddew.lovelyletter.dto.CreateGameRequestDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
 import hu.xaddew.lovelyletter.model.Card;
 import hu.xaddew.lovelyletter.model.CustomCard;
@@ -160,11 +160,11 @@ public class LLTestUtils {
         .build();
   }
 
-  public static CreateGameDto initCreateGameDto(List<String> playerNames, boolean is2019Version) {
-    CreateGameDto createGameDto = new CreateGameDto();
-    createGameDto.setPlayerNames(playerNames);
-    createGameDto.setIs2019Version(is2019Version);
-    return createGameDto;
+  public static CreateGameRequestDto initCreateGameDto(List<String> playerNames, boolean is2019Version) {
+    CreateGameRequestDto createGameRequestDto = new CreateGameRequestDto();
+    createGameRequestDto.setPlayerNames(playerNames);
+    createGameRequestDto.setIs2019Version(is2019Version);
+    return createGameRequestDto;
   }
 
   public static void assertGeneratedValuesOfGamesAreEquals(int numberOfPreGeneratedGames, List<GodModeDto> godModeDtoList) {

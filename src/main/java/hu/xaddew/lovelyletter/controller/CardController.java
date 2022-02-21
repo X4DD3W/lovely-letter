@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllowCrossOriginPort4200
 @DefaultApiErrorResponses
 @RequestMapping("/card")
-@Tag(name = "Cards")
+@Tag(name = "Kártyák")
 @RequiredArgsConstructor
 public class CardController {
 

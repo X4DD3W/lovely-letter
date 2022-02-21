@@ -1,6 +1,6 @@
 package hu.xaddew.lovelyletter.controller;
 
-import hu.xaddew.lovelyletter.dto.CreateGameDto;
+import hu.xaddew.lovelyletter.dto.CreateGameRequestDto;
 import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllowCrossOriginPort4200
 @DefaultApiErrorResponses
 @RequestMapping("/game")
-@Tag(name = "Game")
+@Tag(name = "Játékok")
 @RequiredArgsConstructor
 public class GameController {
 
@@ -43,12 +43,12 @@ public class GameController {
       content = @Content(schema = @Schema(implementation = CreatedGameResponseDto.class)))
   public CreatedGameResponseDto createGame(
       @Parameter(description = "Játék létrehozása adatmodell", required = true)
-      @RequestBody CreateGameDto createGameDto) {
+      @RequestBody CreateGameRequestDto createGameDto) {
     return gameService.createGame(createGameDto);
   }
 
   @GetMapping("/god-mode")
-  @Operation(summary = "Játékadatok lekérdezése god-módban")
+  @Operation(summary = "Minden játékadat lekérdezése (rejtett információkkal együtt)")
   @ApiResponse(responseCode = "200", description = "Játékadatok listája",
       content = @Content(array = @ArraySchema(schema = @Schema(implementation = GodModeDto.class))))
   public List<GodModeDto> getAllGames() {
@@ -56,7 +56,7 @@ public class GameController {
   }
 
   @GetMapping("/get-status/{gameUuid}")
-  @Operation(summary = "Játék státuszának lekérdezése uuid alapján")
+  @Operation(summary = "Játék státuszának lekérdezése gameUuid alapján")
   @ApiResponse(responseCode = "200", description = "Játék státusza",
       content = @Content(schema = @Schema(implementation = GameStatusDto.class)))
   public GameStatusDto getGameStatus(

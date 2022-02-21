@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Schema(description = "Játék létrehozás válasz adatmodell")
+@Schema(description = "Játék létrehozása válasz adatmodell")
 public class CreatedGameResponseDto {
 
   @Schema(description = "Játék uuid")

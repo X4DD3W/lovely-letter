@@ -1,7 +1,7 @@
 package hu.xaddew.lovelyletter.service.impl;
 
 import hu.xaddew.lovelyletter.dto.AdditionalInfoDto;
-import hu.xaddew.lovelyletter.dto.CreateGameDto;
+import hu.xaddew.lovelyletter.dto.CreateGameRequestDto;
 import hu.xaddew.lovelyletter.dto.CreatedGameResponseDto;
 import hu.xaddew.lovelyletter.dto.GameStatusDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
@@ -80,7 +80,7 @@ public class GameServiceImpl implements GameService {
   private final GameRepository gameRepository;
 
   @Override
-  public CreatedGameResponseDto createGame(CreateGameDto createGameDto) {
+  public CreatedGameResponseDto createGame(CreateGameRequestDto createGameDto) {
     if (createGameDto == null) {
       throw new GameException(ErrorMessage.MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
     }
@@ -100,7 +100,7 @@ public class GameServiceImpl implements GameService {
       throw new GameException(ErrorMessage.PLAYER_NAME_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
     }
 
-    if (isThereAreReservedNameInGivenPlayerNames(createGameDto)) {
+    if (isThereReservedNameInGivenPlayerNames(createGameDto)) {
       throw new GameException(ErrorMessage.RESERVED_NAMES_ERROR_MESSAGE, reservedNames.toString(), ErrorType.BAD_REQUEST);
     }
 
@@ -295,22 +295,22 @@ public class GameServiceImpl implements GameService {
     gameRepository.deleteAllByIsGameOverTrueAndModifyDateGreaterThan(modifyDate);
   }
 
-  private boolean isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(CreateGameDto createGameDto) {
+  private boolean isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(CreateGameRequestDto createGameDto) {
     int number = createGameDto.getPlayerNames().size();
     return number != 2 && number != 3 && number != 4 && number != 5 && number != 6;
   }
 
-  private boolean isGivenNumberOfPlayersOutOfAllowedRangeInClassicVersion(CreateGameDto createGameDto) {
+  private boolean isGivenNumberOfPlayersOutOfAllowedRangeInClassicVersion(CreateGameRequestDto createGameDto) {
     int number = createGameDto.getPlayerNames().size();
     return number != 2 && number != 3 && number != 4;
   }
 
-  private boolean isThereAreDuplicatedNamesInGivenPlayerNames(CreateGameDto createGameDto) {
+  private boolean isThereAreDuplicatedNamesInGivenPlayerNames(CreateGameRequestDto createGameDto) {
     return createGameDto.getPlayerNames().stream().distinct()
         .count() != createGameDto.getPlayerNames().size();
   }
 
-  private boolean isThereAreReservedNameInGivenPlayerNames(CreateGameDto createGameDto) {
+  private boolean isThereReservedNameInGivenPlayerNames(CreateGameRequestDto createGameDto) {
     return !Collections.disjoint(reservedNames, createGameDto.getPlayerNames());
   }
 

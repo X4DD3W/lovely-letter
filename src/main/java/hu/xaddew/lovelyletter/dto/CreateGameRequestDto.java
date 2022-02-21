@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Schema(description = "Játék létrehozása adatmodell")
-public class CreateGameDto {
+public class CreateGameRequestDto {
 
   @Schema(description = "Játékosok nevei")
   private List<String> playerNames;
