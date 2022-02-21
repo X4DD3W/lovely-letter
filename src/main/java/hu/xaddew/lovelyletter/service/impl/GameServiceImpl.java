@@ -80,82 +80,21 @@ public class GameServiceImpl implements GameService {
   private final GameRepository gameRepository;
 
   @Override
-  public CreatedGameResponseDto createGame(CreateGameRequestDto createGameDto) {
-    if (createGameDto == null) {
-      throw new GameException(ErrorMessage.MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
-    }
+  public CreatedGameResponseDto createGame(CreateGameRequestDto requestDto) {
+    validateRequestDto(requestDto);
 
-    boolean isGame2019Version = createGameDto.getIs2019Version();
-    if (isGame2019Version) {
-      if (isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(createGameDto)) {
-        throw new GameException(ErrorMessage.PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
-      }
-    } else {
-      if (isGivenNumberOfPlayersOutOfAllowedRangeInClassicVersion(createGameDto)) {
-        throw new GameException(ErrorMessage.PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
-      }
-    }
-
-    if (isThereAreDuplicatedNamesInGivenPlayerNames(createGameDto)) {
-      throw new GameException(ErrorMessage.PLAYER_NAME_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
-    }
-
-    if (isThereReservedNameInGivenPlayerNames(createGameDto)) {
-      throw new GameException(ErrorMessage.RESERVED_NAMES_ERROR_MESSAGE, reservedNames.toString(), ErrorType.BAD_REQUEST);
-    }
-
-    if (isThereInvalidCustomCardInTheList(createGameDto.getCustomCardNames())) {
-      throw new GameException(ErrorMessage.INVALID_CUSTOM_CARD_ERROR_MESSAGE, createGameDto.getCustomCardNames().toString(),
-          ErrorType.BAD_REQUEST);
-    }
-
-    CreatedGameResponseDto responseDto = new CreatedGameResponseDto();
     Game game = new Game();
-    List<PlayerUuidDto> playerUuidDtos = new ArrayList<>();
-    List<Player> players = new ArrayList<>();
-
-    game.setUuid(UUID.randomUUID().toString());
-
-    createGameDto.getPlayerNames().forEach(name -> {
-      PlayerUuidDto dto = new PlayerUuidDto();
-      dto.setName(name);
-      dto.setUuid(UUID.randomUUID().toString());
-      playerUuidDtos.add(dto);
-    });
-
-    List<Integer> orderNumbers = new ArrayList<>();
-    for (int i = 1; i <= createGameDto.getPlayerNames().size(); i++) {
-      orderNumbers.add(i);
-    }
-
-    playerUuidDtos.forEach(uuidDto -> {
-      Player player = new Player();
-      player.setUuid(uuidDto.getUuid());
-      player.setName(uuidDto.getName());
-      player.setGame(game);
-
-      randomIndex = random.nextInt(orderNumbers.size());
-      player.setOrderNumber(orderNumbers.get(randomIndex));
-      orderNumbers.remove(randomIndex);
-
-      players.add(player);
-    });
-
-    game.setPlayersInGame(players);
-    initDeckAndPutAsideCards(game, isGame2019Version, createGameDto.getCustomCardNames());
+    List<PlayerUuidDto> playerUuidDtos = setUpPlayers(requestDto, game);
+    initDeck(game, requestDto.getIs2019Version(), requestDto.getCustomCardNames());
+    putAsideCards(game);
     dealOneCardToAllPlayers(game);
     determineStartPlayer(game);
-
-    if (isGame2019Version) {
-      game.setIs2019Version(true);
-    }
-
+    game.setIs2019Version(requestDto.getIs2019Version());
     addGameCreationLogs(game);
     gameRepository.save(game);
 
-    responseDto.setGameUuid(game.getUuid());
-    responseDto.setPlayerUuidDtos(playerUuidDtos);
-    return responseDto;
+    return CreatedGameResponseDto.builder().gameUuid(game.getUuid()).playerUuidDtos(playerUuidDtos)
+        .build();
   }
 
   @Override
@@ -295,6 +234,44 @@ public class GameServiceImpl implements GameService {
     gameRepository.deleteAllByIsGameOverTrueAndModifyDateGreaterThan(modifyDate);
   }
 
+  private void validateRequestDto(CreateGameRequestDto requestDto) {
+    if (requestDto == null) {
+      throw new GameException(ErrorMessage.MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE,
+          ErrorType.BAD_REQUEST);
+    }
+
+    if (requestDto.getIs2019Version() != null) {
+      if (Boolean.TRUE.equals(requestDto.getIs2019Version())) {
+        if (isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(requestDto)) {
+          throw new GameException(ErrorMessage.PLAYER_NUMBER_IN_2019_VERSION_GAME_ERROR_MESSAGE,
+              ErrorType.BAD_REQUEST);
+        }
+      } else {
+        if (isGivenNumberOfPlayersOutOfAllowedRangeInClassicVersion(requestDto)) {
+          throw new GameException(ErrorMessage.PLAYER_NUMBER_IN_CLASSIC_GAME_ERROR_MESSAGE,
+              ErrorType.BAD_REQUEST);
+        }
+      }
+    } else {
+      throw new GameException(ErrorMessage.MISSING_GAME_CREATE_REQUEST_ERROR_MESSAGE,
+          ErrorType.BAD_REQUEST);
+    }
+
+    if (isThereAreDuplicatedNamesInGivenPlayerNames(requestDto)) {
+      throw new GameException(ErrorMessage.PLAYER_NAME_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
+    }
+
+    if (isThereReservedNameInGivenPlayerNames(requestDto)) {
+      throw new GameException(ErrorMessage.RESERVED_NAMES_ERROR_MESSAGE, reservedNames.toString(),
+          ErrorType.BAD_REQUEST);
+    }
+
+    if (isThereInvalidCustomCardInTheList(requestDto.getCustomCardNames())) {
+      throw new GameException(ErrorMessage.INVALID_CUSTOM_CARD_ERROR_MESSAGE,
+          requestDto.getCustomCardNames().toString(), ErrorType.BAD_REQUEST);
+    }
+  }
+
   private boolean isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(CreateGameRequestDto createGameDto) {
     int number = createGameDto.getPlayerNames().size();
     return number != 2 && number != 3 && number != 4 && number != 5 && number != 6;
@@ -317,6 +294,44 @@ public class GameServiceImpl implements GameService {
   private boolean isThereInvalidCustomCardInTheList(List<String> customCardNames) {
     List<CustomCard> customCards = customCardService.findAll();
     return !customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()).containsAll(customCardNames);
+  }
+
+  private List<PlayerUuidDto> setUpPlayers(CreateGameRequestDto requestDto, Game game) {
+    List<PlayerUuidDto> playerUuidDtos = setUpPlayerUuidDtoList(requestDto);
+    List<Player> players = new ArrayList<>();
+    List<Integer> orderNumbers = new ArrayList<>();
+
+    for (int i = 1; i <= requestDto.getPlayerNames().size(); i++) {
+      orderNumbers.add(i);
+    }
+
+    playerUuidDtos.forEach(uuidDto -> {
+      Player player = new Player();
+      player.setUuid(uuidDto.getUuid());
+      player.setName(uuidDto.getName());
+      player.setGame(game);
+
+      randomIndex = random.nextInt(orderNumbers.size());
+      player.setOrderNumber(orderNumbers.get(randomIndex));
+      orderNumbers.remove(randomIndex);
+
+      players.add(player);
+    });
+
+    game.setPlayersInGame(players);
+
+    return playerUuidDtos;
+  }
+
+  private List<PlayerUuidDto> setUpPlayerUuidDtoList(CreateGameRequestDto requestDto) {
+    List<PlayerUuidDto> playerUuidDtos = new ArrayList<>();
+    requestDto.getPlayerNames().forEach(name -> {
+      PlayerUuidDto dto = new PlayerUuidDto();
+      dto.setName(name);
+      dto.setUuid(UUID.randomUUID().toString());
+      playerUuidDtos.add(dto);
+    });
+    return playerUuidDtos;
   }
 
   private void addPlayedCardsToDtoList(Player player, List<PlayerAndPlayedCardsDto> dtoList) {
@@ -389,7 +404,7 @@ public class GameServiceImpl implements GameService {
     return nextActualPlayer;
   }
 
-  private void initDeckAndPutAsideCards(Game game, boolean is2019Version, List<String> customCardNames) {
+  private void initDeck(Game game, boolean is2019Version, List<String> customCardNames) {
     List<Card> drawDeck;
     List<CustomCard> customCardsInPlay = customCardService.findAll().stream()
         .filter(customCard -> customCardNames.contains(customCard.getCardName()))
@@ -410,7 +425,6 @@ public class GameServiceImpl implements GameService {
     }
     game.setDrawDeck(drawDeck);
     drawDeck.forEach(card -> card.setGame(game));
-    putAsideCards(game);
   }
 
   private <S, T> List<T> mapList(List<S> source, Class<T> targetClass) {

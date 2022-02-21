@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
@@ -79,7 +80,7 @@ public class Game {
 
   public Game() {
     this.id = null;
-    this.uuid = null;
+    this.uuid = UUID.randomUUID().toString();
     this.drawDeck = new LinkedList<>();
     this.playersInGame = new ArrayList<>();
     this.actualPlayer = null;
@@ -94,10 +95,6 @@ public class Game {
     String newLog = (this.log.size() + 1) + ". " + message;
     this.log.add(newLog);
     return newLog;
-  }
-
-  public String getLastLog() {
-    return this.log.isEmpty() ? "" : this.log.get(this.log.size() - 1);
   }
 
   public void addHiddenLog(String message) {
