@@ -75,7 +75,7 @@ public class Game {
   private LocalDateTime createDate;
 
   @LastModifiedDate
-  @Column(name = "modify_date")
+  @Column(name = "modify_date", insertable = false)
   private LocalDateTime modifyDate;
 
   public Game() {

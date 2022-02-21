@@ -67,8 +67,6 @@ public class GameServiceImpl implements GameService {
   public static final List<String> reservedNames = List.of(PRINCESS, COUNTESS, KING, CHANCELLOR,
       PRINCE, HANDMAID, BARON, PRIEST, GUARD, SPY, KILI);
 
-  private int randomIndex;
-
   private final Random random;
   private final ModelMapper modelMapper;
   private final CardService cardService;
@@ -78,6 +76,8 @@ public class GameServiceImpl implements GameService {
   private final PlayerService playerService;
   private final GameLogService logService;
   private final GameRepository gameRepository;
+
+  private int randomIndex;
 
   @Override
   public CreatedGameResponseDto createGame(CreateGameRequestDto requestDto) {
@@ -257,7 +257,7 @@ public class GameServiceImpl implements GameService {
           ErrorType.BAD_REQUEST);
     }
 
-    if (isThereAreDuplicatedNamesInGivenPlayerNames(requestDto)) {
+    if (isThereDuplicatedNamesInGivenPlayerNames(requestDto)) {
       throw new GameException(ErrorMessage.PLAYER_NAME_ERROR_MESSAGE, ErrorType.BAD_REQUEST);
     }
 
@@ -272,17 +272,19 @@ public class GameServiceImpl implements GameService {
     }
   }
 
-  private boolean isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(CreateGameRequestDto createGameDto) {
+  private boolean isGivenNumberOfPlayersOutOfAllowedRangeIn2019Version(
+      CreateGameRequestDto createGameDto) {
     int number = createGameDto.getPlayerNames().size();
     return number != 2 && number != 3 && number != 4 && number != 5 && number != 6;
   }
 
-  private boolean isGivenNumberOfPlayersOutOfAllowedRangeInClassicVersion(CreateGameRequestDto createGameDto) {
+  private boolean isGivenNumberOfPlayersOutOfAllowedRangeInClassicVersion(
+      CreateGameRequestDto createGameDto) {
     int number = createGameDto.getPlayerNames().size();
     return number != 2 && number != 3 && number != 4;
   }
 
-  private boolean isThereAreDuplicatedNamesInGivenPlayerNames(CreateGameRequestDto createGameDto) {
+  private boolean isThereDuplicatedNamesInGivenPlayerNames(CreateGameRequestDto createGameDto) {
     return createGameDto.getPlayerNames().stream().distinct()
         .count() != createGameDto.getPlayerNames().size();
   }
@@ -293,7 +295,8 @@ public class GameServiceImpl implements GameService {
 
   private boolean isThereInvalidCustomCardInTheList(List<String> customCardNames) {
     List<CustomCard> customCards = customCardService.findAll();
-    return !customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()).containsAll(customCardNames);
+    return !customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList())
+        .containsAll(customCardNames);
   }
 
   private List<PlayerUuidDto> setUpPlayers(Game game, CreateGameRequestDto requestDto) {
