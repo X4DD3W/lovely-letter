@@ -84,12 +84,12 @@ public class GameServiceImpl implements GameService {
     validateRequestDto(requestDto);
 
     Game game = new Game();
-    List<PlayerUuidDto> playerUuidDtos = setUpPlayers(requestDto, game);
-    initDeck(game, requestDto.getIs2019Version(), requestDto.getCustomCardNames());
+    game.setIs2019Version(requestDto.getIs2019Version());
+    List<PlayerUuidDto> playerUuidDtos = setUpPlayers(game, requestDto);
+    initDeck(game, requestDto);
     putAsideCards(game);
     dealOneCardToAllPlayers(game);
     determineStartPlayer(game);
-    game.setIs2019Version(requestDto.getIs2019Version());
     addGameCreationLogs(game);
     gameRepository.save(game);
 
@@ -296,7 +296,7 @@ public class GameServiceImpl implements GameService {
     return !customCards.stream().map(CustomCard::getCardName).collect(Collectors.toList()).containsAll(customCardNames);
   }
 
-  private List<PlayerUuidDto> setUpPlayers(CreateGameRequestDto requestDto, Game game) {
+  private List<PlayerUuidDto> setUpPlayers(Game game, CreateGameRequestDto requestDto) {
     List<PlayerUuidDto> playerUuidDtos = setUpPlayerUuidDtoList(requestDto);
     List<Player> players = new ArrayList<>();
     List<Integer> orderNumbers = new ArrayList<>();
@@ -404,13 +404,13 @@ public class GameServiceImpl implements GameService {
     return nextActualPlayer;
   }
 
-  private void initDeck(Game game, boolean is2019Version, List<String> customCardNames) {
+  private void initDeck(Game game, CreateGameRequestDto requestDto) {
     List<Card> drawDeck;
     List<CustomCard> customCardsInPlay = customCardService.findAll().stream()
-        .filter(customCard -> customCardNames.contains(customCard.getCardName()))
+        .filter(customCard -> requestDto.getCustomCardNames().contains(customCard.getCardName()))
         .collect(Collectors.toList());
 
-    if (is2019Version) {
+    if (Boolean.TRUE.equals(requestDto.getIs2019Version())) {
       List<NewReleaseCard> cardsFromDatabase = newReleaseCardService.findAll();
       if (!customCardsInPlay.isEmpty()) {
         cardsFromDatabase.addAll(mapList(customCardsInPlay, NewReleaseCard.class));
