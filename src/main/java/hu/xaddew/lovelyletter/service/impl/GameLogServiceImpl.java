@@ -13,6 +13,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class GameLogServiceImpl implements GameLogService {
 
+  private static final String HAS = " kezében ";
+  private static final String PLAYED_A_GUARD_AND_THINKS_THAT = " Őrt játszott ki. Szerinte ";
+  private static final String WAS = " volt.";
+  private static final String IN_HAND = " kézben lévő lapjával.";
+
   @Override
   public String addLogWhenAPlayerUseKingOrBaronOrPriestOrGuardWithoutEffect(Player actualPlayer,
       Card cardWantToPlayOut, Game game) {
@@ -67,7 +72,7 @@ public class GameLogServiceImpl implements GameLogService {
       Card cardToDiscard, Game game) {
     return game.addLog(
         actualPlayer.getName() + " Herceggel eldobta a saját kézben lévő lapját, ami egy "
-            + cardToDiscard.getName() + " volt.");
+            + cardToDiscard.getName() + WAS);
   }
 
   @Override
@@ -81,21 +86,21 @@ public class GameLogServiceImpl implements GameLogService {
   public String addLogIfAPlayerMustDiscardHisOrHerCardBecauseOfAnotherPlayersPrince(
       Player actualPlayer, Player targetPlayer, Card cardToDiscard, Game game) {
     return game.addLog(actualPlayer.getName() + " Herceggel eldobatta " + targetPlayer.getName()
-        + " lapját, ami egy " + cardToDiscard.getName() + " volt.");
+        + " lapját, ami egy " + cardToDiscard.getName() + WAS);
   }
 
   @Override
   public String addLogWhenAPlayerPlaysOutCountessOrHandmaidOrSpyOrKili(Player actualPlayer,
       String cardName, Game game) {
-    return game.addLog(actualPlayer.getName() + " kijátszott lapja egy " + cardName + " volt.");
+    return game.addLog(actualPlayer.getName() + " kijátszott lapja egy " + cardName + WAS);
   }
 
   @Override
   public String addLogWhenAPlayerShouldDiscardKiliByBaron(Player targetPlayer, Card cardToDiscard,
       Player actualPlayer, Game game) {
     return game.addLog(
-        actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
-            + " kézben lévő lapjával. " + targetPlayer.getName()
+        actualPlayer.getName() + GameLog.WITH_BARON_COMPARE_CARD + targetPlayer.getName()
+            + IN_HAND + " " + targetPlayer.getName()
             + " kézben lévő lapja " + cardToDiscard.getName()
             + " volt, aki megmentett gazdáját a kiesétől ("
             + targetPlayer.getName() + " húzott egy új lapot).");
@@ -105,8 +110,8 @@ public class GameLogServiceImpl implements GameLogService {
   public String addLogWhenAPlayerUseBaronSuccessful(Player targetPlayer, Card cardToDiscard,
       Player actualPlayer, Game game) {
     return game.addLog(
-        actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer.getName()
-            + " kézben lévő lapjával. " + targetPlayer.getName()
+        actualPlayer.getName() + GameLog.WITH_BARON_COMPARE_CARD + targetPlayer.getName()
+            + IN_HAND + " " + targetPlayer.getName()
             + " kiesett a játékból, kézben lévő lapját ("
             + cardToDiscard.getName() + ") pedig eldobta.");
   }
@@ -115,9 +120,9 @@ public class GameLogServiceImpl implements GameLogService {
   public String addLogWhenAPlayerUseBaronUnsuccessful(Player targetPlayer, Card cardToDiscard,
       Player actualPlayer, Game game) {
     return game.addLog(
-        actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer
+        actualPlayer.getName() + GameLog.WITH_BARON_COMPARE_CARD + targetPlayer
             .getName()
-            + " kézben lévő lapjával. " + actualPlayer.getName()
+            + IN_HAND + " " + actualPlayer.getName()
             + " kiesett a játékból, kézben lévő lapját ("
             + cardToDiscard.getName() + ") pedig eldobta.");
   }
@@ -126,7 +131,7 @@ public class GameLogServiceImpl implements GameLogService {
   public String addLogWhenAPlayerUseBaronAndItsDraw(Player targetPlayer, Player actualPlayer,
       Game game) {
     return game.addLog(
-        actualPlayer.getName() + GameLog.COMPARE_CARD_IN_HAND_WITH + targetPlayer
+        actualPlayer.getName() + GameLog.WITH_BARON_COMPARE_CARD + targetPlayer
             .getName()
             + " kézben lévő lapjával. A lapok értéke azonos volt, így senki sem esett ki a játékból.");
   }
@@ -142,8 +147,8 @@ public class GameLogServiceImpl implements GameLogService {
       Player actualPlayer, Player targetPlayer, Game game) {
     String namedCard = requestDto.getAdditionalInfo().getNamedCard();
     return game.addLog(
-        actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
-            + " kezében " + namedCard + " van. Így igaz. "
+        actualPlayer.getName() + PLAYED_A_GUARD_AND_THINKS_THAT + targetPlayer.getName()
+            + HAS + namedCard + " van. Így igaz. "
             + targetPlayer.getName() + " eldobta a lapját és ahelyett, hogy kiesett volna,"
             + " húzott egy új lapot.");
   }
@@ -153,8 +158,8 @@ public class GameLogServiceImpl implements GameLogService {
       Player actualPlayer, Player targetPlayer, Game game) {
     String namedCard = requestDto.getAdditionalInfo().getNamedCard();
     return game.addLog(
-        actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
-            + " kezében " + namedCard + " van. Így igaz. "
+        actualPlayer.getName() + PLAYED_A_GUARD_AND_THINKS_THAT + targetPlayer.getName()
+            + HAS + namedCard + " van. Így igaz. "
             + targetPlayer.getName() + " kiesett a játékból.");
   }
 
@@ -163,7 +168,7 @@ public class GameLogServiceImpl implements GameLogService {
       Player actualPlayer, Player targetPlayer, Game game) {
     String namedCard = requestDto.getAdditionalInfo().getNamedCard();
     return game.addLog(
-        actualPlayer.getName() + " Őrt játszott ki. Szerinte " + targetPlayer.getName()
-            + " kezében " + namedCard + " van. Nem talált.");
+        actualPlayer.getName() + PLAYED_A_GUARD_AND_THINKS_THAT + targetPlayer.getName()
+            + HAS + namedCard + " van. Nem talált.");
   }
 }

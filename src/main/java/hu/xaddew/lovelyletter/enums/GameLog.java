@@ -5,7 +5,7 @@ public enum GameLog {
   ACTUAL_PLAYER_IS("Soron lévő játékos: "),
   GAME_IS_CREATED_UUID("Játék létrehozva. Uuid: "),
   PLAYERS_ARE("Játékosok: "),
-  COMPARE_CARD_IN_HAND_WITH(" Báróval összehasonlította a kézben lévő lapját "),
+  WITH_BARON_COMPARE_CARD(" Báróval összehasonlította a kézben lévő lapját "),
   ROUND_IS_OVER_ONLY_ONE_PLAYER_LEFT("A forduló véget ért, mert csak egy játékos maradt bent."),
   ROUND_IS_OVER_DRAW_DECK_IS_EMPTY("A forduló véget ért, mert elfogyott a húzópakli."),
   WON_THE_ROUND(" nyerte a fordulót!"),
