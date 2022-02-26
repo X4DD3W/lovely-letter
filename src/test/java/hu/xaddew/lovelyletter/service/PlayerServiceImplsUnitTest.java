@@ -13,8 +13,8 @@ import static util.LLTestUtils.initGames;
 
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
 import hu.xaddew.lovelyletter.exception.GameException;
-import hu.xaddew.lovelyletter.model.Game;
-import hu.xaddew.lovelyletter.model.Player;
+import hu.xaddew.lovelyletter.domain.Game;
+import hu.xaddew.lovelyletter.domain.Player;
 import hu.xaddew.lovelyletter.repository.PlayerRepository;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;

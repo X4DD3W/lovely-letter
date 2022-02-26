@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static util.LLTestUtils.CARD_NAME;
 import static util.LLTestUtils.initCards;
 
-import hu.xaddew.lovelyletter.model.Card;
-import hu.xaddew.lovelyletter.model.Player;
+import hu.xaddew.lovelyletter.domain.Card;
+import hu.xaddew.lovelyletter.domain.Player;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

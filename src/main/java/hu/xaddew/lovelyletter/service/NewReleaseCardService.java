@@ -1,7 +1,7 @@
 package hu.xaddew.lovelyletter.service;
 
 import hu.xaddew.lovelyletter.dto.CardResponseDto;
-import hu.xaddew.lovelyletter.model.NewReleaseCard;
+import hu.xaddew.lovelyletter.domain.NewReleaseCard;
 import hu.xaddew.lovelyletter.repository.NewReleaseCardRepository;
 import java.util.ArrayList;
 import java.util.HashSet;

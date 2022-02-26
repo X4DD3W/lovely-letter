@@ -1,6 +1,6 @@
 package hu.xaddew.lovelyletter.repository;
 
-import hu.xaddew.lovelyletter.model.Game;
+import hu.xaddew.lovelyletter.domain.Game;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

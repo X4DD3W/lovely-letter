@@ -1,4 +1,4 @@
-package hu.xaddew.lovelyletter.model;
+package hu.xaddew.lovelyletter.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;

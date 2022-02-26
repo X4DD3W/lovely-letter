@@ -1,6 +1,6 @@
 package hu.xaddew.lovelyletter.repository;
 
-import hu.xaddew.lovelyletter.model.OriginalCard;
+import hu.xaddew.lovelyletter.domain.OriginalCard;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

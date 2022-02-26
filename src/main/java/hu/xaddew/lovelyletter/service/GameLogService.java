@@ -2,9 +2,9 @@ package hu.xaddew.lovelyletter.service;
 
 import hu.xaddew.lovelyletter.dto.PlayCardRequestDto;
 import hu.xaddew.lovelyletter.enums.GameLog;
-import hu.xaddew.lovelyletter.model.Card;
-import hu.xaddew.lovelyletter.model.Game;
-import hu.xaddew.lovelyletter.model.Player;
+import hu.xaddew.lovelyletter.domain.Card;
+import hu.xaddew.lovelyletter.domain.Game;
+import hu.xaddew.lovelyletter.domain.Player;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
