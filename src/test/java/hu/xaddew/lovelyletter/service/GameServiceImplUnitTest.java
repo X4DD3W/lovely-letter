@@ -66,7 +66,6 @@ import hu.xaddew.lovelyletter.model.NewReleaseCard;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
-import hu.xaddew.lovelyletter.service.impl.CardServiceImpl;
 import hu.xaddew.lovelyletter.service.impl.GameLogServiceImpl;
 import hu.xaddew.lovelyletter.service.impl.GameServiceImpl;
 import hu.xaddew.lovelyletter.service.impl.OriginalCardServiceImpl;
@@ -100,7 +99,7 @@ class GameServiceImplUnitTest {
   private Random random;
 
   @Mock
-  private CardServiceImpl cardService;
+  private CardService cardService;
 
   @Mock
   private OriginalCardServiceImpl originalCardService;
