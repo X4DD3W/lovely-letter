@@ -16,7 +16,6 @@ import hu.xaddew.lovelyletter.exception.GameException;
 import hu.xaddew.lovelyletter.model.Game;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.PlayerRepository;
-import hu.xaddew.lovelyletter.service.impl.PlayerServiceImpl;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,7 @@ class PlayerServiceImplsUnitTest {
   private PlayerRepository playerRepository;
 
   @InjectMocks
-  private PlayerServiceImpl playerService;
+  private PlayerService playerService;
 
   private Game game;
   private List<Game> games;
