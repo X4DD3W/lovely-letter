@@ -1,6 +1,6 @@
 package hu.xaddew.lovelyletter.dto;
 
-import hu.xaddew.lovelyletter.model.Card;
+import hu.xaddew.lovelyletter.domain.Card;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Getter;

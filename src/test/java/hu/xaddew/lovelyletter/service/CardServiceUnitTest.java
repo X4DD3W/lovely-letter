@@ -5,9 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static util.LLTestUtils.CARD_NAME;
 import static util.LLTestUtils.initCards;
 
-import hu.xaddew.lovelyletter.model.Card;
-import hu.xaddew.lovelyletter.model.Player;
-import hu.xaddew.lovelyletter.service.impl.CardServiceImpl;
+import hu.xaddew.lovelyletter.domain.Card;
+import hu.xaddew.lovelyletter.domain.Player;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,10 +14,10 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class CardServiceImplUnitTest {
+class CardServiceUnitTest {
 
   @InjectMocks
-  private CardServiceImpl cardService;
+  private CardService cardService;
 
   private static Card card;
   private static Player player;

@@ -1,16 +1,16 @@
 package util;
 
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.GUARD;
+import static hu.xaddew.lovelyletter.service.GameService.GUARD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import hu.xaddew.lovelyletter.dto.CreateGameRequestDto;
 import hu.xaddew.lovelyletter.dto.GodModeDto;
-import hu.xaddew.lovelyletter.model.Card;
-import hu.xaddew.lovelyletter.model.CustomCard;
-import hu.xaddew.lovelyletter.model.Game;
-import hu.xaddew.lovelyletter.model.NewReleaseCard;
-import hu.xaddew.lovelyletter.model.OriginalCard;
-import hu.xaddew.lovelyletter.model.Player;
+import hu.xaddew.lovelyletter.domain.Card;
+import hu.xaddew.lovelyletter.domain.CustomCard;
+import hu.xaddew.lovelyletter.domain.Game;
+import hu.xaddew.lovelyletter.domain.NewReleaseCard;
+import hu.xaddew.lovelyletter.domain.OriginalCard;
+import hu.xaddew.lovelyletter.domain.Player;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;

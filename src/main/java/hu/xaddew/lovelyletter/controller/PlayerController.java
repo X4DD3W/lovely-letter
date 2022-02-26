@@ -1,7 +1,7 @@
 package hu.xaddew.lovelyletter.controller;
 
 import hu.xaddew.lovelyletter.dto.PlayerKnownInfosDto;
-import hu.xaddew.lovelyletter.model.Game;
+import hu.xaddew.lovelyletter.domain.Game;
 import hu.xaddew.lovelyletter.service.GameService;
 import hu.xaddew.lovelyletter.service.PlayerService;
 import hu.xaddew.lovelyletter.util.AllowCrossOriginPort4200;
