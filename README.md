@@ -1,7 +1,7 @@
 # Lovely Letter
 
 ##### by [X4DD3W](https://github.com/X4DD3W)
-[![CircleCI](https://img.shields.io/circleci/build/gh/X4DD3W/lovely-letter?style=flat-square&token=0ffacb5c05e3af825d7e9b8e389def709a9069d4)](https://app.circleci.com/pipelines/github/X4DD3W/hodgepodge)
+[![CircleCI](https://img.shields.io/circleci/build/gh/X4DD3W/lovely-letter?style=flat-square&token=0ffacb5c05e3af825d7e9b8e389def709a9069d4)](https://app.circleci.com/pipelines/github/X4DD3W/lovely-letter)
 
 ## **Introduction**
 
