@@ -68,7 +68,6 @@ import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
 import hu.xaddew.lovelyletter.service.impl.GameLogServiceImpl;
 import hu.xaddew.lovelyletter.service.impl.GameServiceImpl;
-import hu.xaddew.lovelyletter.service.impl.OriginalCardServiceImpl;
 import hu.xaddew.lovelyletter.service.impl.PlayerServiceImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -102,7 +101,7 @@ class GameServiceImplUnitTest {
   private CardService cardService;
 
   @Mock
-  private OriginalCardServiceImpl originalCardService;
+  private OriginalCardService originalCardService;
 
   @Mock
   private NewReleaseCardService newReleaseCardService;
