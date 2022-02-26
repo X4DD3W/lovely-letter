@@ -1,15 +1,15 @@
 package hu.xaddew.lovelyletter.service;
 
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.BARON;
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.CHANCELLOR;
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.COUNTESS;
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.GUARD;
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.HANDMAID;
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.KING;
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.PRIEST;
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.PRINCE;
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.PRINCESS;
-import static hu.xaddew.lovelyletter.service.impl.GameServiceImpl.SPY;
+import static hu.xaddew.lovelyletter.service.GameService.BARON;
+import static hu.xaddew.lovelyletter.service.GameService.CHANCELLOR;
+import static hu.xaddew.lovelyletter.service.GameService.COUNTESS;
+import static hu.xaddew.lovelyletter.service.GameService.GUARD;
+import static hu.xaddew.lovelyletter.service.GameService.HANDMAID;
+import static hu.xaddew.lovelyletter.service.GameService.KING;
+import static hu.xaddew.lovelyletter.service.GameService.PRIEST;
+import static hu.xaddew.lovelyletter.service.GameService.PRINCE;
+import static hu.xaddew.lovelyletter.service.GameService.PRINCESS;
+import static hu.xaddew.lovelyletter.service.GameService.SPY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -66,7 +66,6 @@ import hu.xaddew.lovelyletter.model.NewReleaseCard;
 import hu.xaddew.lovelyletter.model.OriginalCard;
 import hu.xaddew.lovelyletter.model.Player;
 import hu.xaddew.lovelyletter.repository.GameRepository;
-import hu.xaddew.lovelyletter.service.impl.GameServiceImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -84,7 +83,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
 @ExtendWith(MockitoExtension.class)
-class GameServiceImplUnitTest {
+class GameServiceUnitTest {
 
   @Spy
   private final ModelMapper modelMapper = new ModelMapper();
@@ -114,7 +113,7 @@ class GameServiceImplUnitTest {
   private GameRepository gameRepository;
 
   @InjectMocks
-  private GameServiceImpl gameService;
+  private GameService gameService;
 
   private List<Game> games;
   private List<Player> players;
