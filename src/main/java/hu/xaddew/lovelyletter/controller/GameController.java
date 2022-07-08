@@ -35,6 +35,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class GameController {
 
+/*  TODO refactor:
+      ? GameServiceImpl 1000 sor...
+      ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
+
+  TODO feature:
+      ! kártyák rendszerét refactorálni? (kártya típusa legyen enum)
+      ! CustomCard.class: CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.)
+      ~ "Furcsa alakok" és logikájuk
+        + Kili (kész, tesztet írni)
+        ! Vándorszínész
+        ! Dalnok
+        ! Orvosdoktor
+      ! "A káosz egy létra" és logikájuk
+        ! Paplovag stb...
+
+  TODO frontend:
+      ? Angularban (azzal párhuzamosan Slf4j logolás (FE teszteléshez))*/
+
   private final GameService gameService;
 
   @PostMapping("/create")
