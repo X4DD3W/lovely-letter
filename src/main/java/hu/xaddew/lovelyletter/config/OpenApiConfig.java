@@ -30,7 +30,8 @@ public class OpenApiConfig implements WebMvcConfigurer {
 
   private Info getInfo() {
     return new Info()
-        .title("Lovely Letter API");
+        .title("Lovely Letter API")
+        .version("0.0.1");
   }
 
 }
