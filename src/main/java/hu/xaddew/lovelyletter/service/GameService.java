@@ -45,16 +45,16 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class GameService {
 
-  public static final String PRINCESS = "Hercegnő";
-  public static final String COUNTESS = "Grófnő";
-  public static final String KING = "Király";
-  public static final String CHANCELLOR = "Kancellár";
-  public static final String PRINCE = "Herceg";
-  public static final String HANDMAID = "Szobalány";
-  public static final String BARON = "Báró";
-  public static final String PRIEST = "Pap";
-  public static final String GUARD = "Őr";
-  public static final String SPY = "Kém";
+  public static final String PRINCESS = "Princess";
+  public static final String COUNTESS = "Countess";
+  public static final String KING = "King";
+  public static final String CHANCELLOR = "Chancellor";
+  public static final String PRINCE = "Prince";
+  public static final String HANDMAID = "Handmaid";
+  public static final String BARON = "Baron";
+  public static final String PRIEST = "Priest";
+  public static final String GUARD = "Guard";
+  public static final String SPY = "Spy";
   public static final String KILI = "Kili";
 
   public static final List<String> reservedNames = List.of(PRINCESS, COUNTESS, KING, CHANCELLOR,
@@ -427,6 +427,7 @@ public class GameService {
           .value(newReleaseCard.getCardValue())
           .quantity(newReleaseCard.getQuantity())
           .description(newReleaseCard.getDescription())
+          .descriptionEnglish(newReleaseCard.getDescriptionEnglish())
           .isPutAside(newReleaseCard.getIsPutAside())
           .is2PlayerPublic(newReleaseCard.getIs2PlayerPublic())
           .isAtAPlayer(newReleaseCard.getIsAtAPlayer())
@@ -445,6 +446,7 @@ public class GameService {
           .value(originalCard.getCardValue())
           .quantity(originalCard.getQuantity())
           .description(originalCard.getDescription())
+          .descriptionEnglish(originalCard.getDescriptionEnglish())
           .isPutAside(originalCard.getIsPutAside())
           .is2PlayerPublic(originalCard.getIs2PlayerPublic())
           .isAtAPlayer(originalCard.getIsAtAPlayer())
@@ -772,14 +774,14 @@ public class GameService {
     }
 
     game.addHiddenLog(actualPlayer.getName() + " (" + cardNameOfActualPlayerToHiddenLog + ")"
-        + " és " + targetPlayer.getName() + " (" + cardNameOfTargetPlayerToHiddenLog + ")" +
-        " összehasonlították a lapjaikat.");
+        + " and " + targetPlayer.getName() + " (" + cardNameOfTargetPlayerToHiddenLog + ")" +
+        " has compared their hands.");
   }
 
   private void processCardNamedPriest(Player actualPlayer, Player targetPlayer, Game game,
       PlayCardResponseDto responseDto) {
-    responseDto.setHiddenMessage(
-        targetPlayer.getName() + " kezében " + cardNameInHandOf(targetPlayer) + " van.");
+    responseDto.setHiddenMessage("There is a " + cardNameInHandOf(targetPlayer) + " in "
+        + targetPlayer.getName() + "'s hand.");
     responseDto.setLastLog(logService.addLogWhenAPlayerUsePriest(actualPlayer, targetPlayer, game));
   }
 
@@ -844,7 +846,7 @@ public class GameService {
 
     if (activePlayers.size() == 1) {
       Player winner = activePlayers.get(0);
-      game.addLog(GameLog.ROUND_IS_OVER_ONLY_ONE_PLAYER_LEFT.toString());
+      game.addLog(GameLog.ROUND_IS_OVER_ONLY_ONE_PLAYER_HAS_LEFT.toString());
       game.addLog(winner.getName() + GameLog.WON_THE_ROUND);
       winner.addOneLetter();
 
@@ -877,7 +879,7 @@ public class GameService {
       game.addLog(GameLog.ROUND_IS_OVER_DRAW_DECK_IS_EMPTY.toString());
       game.addLog(winners.stream()
           .map(Player::getName)
-          .collect(Collectors.joining(" és ")) + GameLog.WON_THE_ROUND);
+          .collect(Collectors.joining(" and ")) + GameLog.WON_THE_ROUND);
 
       winners.forEach(Player::addOneLetter);
 
@@ -970,7 +972,7 @@ public class GameService {
     if (!winners.isEmpty()) {
       game.addLog(GameLog.GAME_IS_OVER_STATUS_MESSAGE + " " + GameLog.CONGRATULATE + winners.stream()
           .map(Player::getName)
-          .collect(Collectors.joining(" és ")) + "!");
+          .collect(Collectors.joining(" and ")) + "!");
       isGameOver = true;
     }
     return isGameOver;

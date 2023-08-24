@@ -44,8 +44,11 @@ public class Card {
   @Column(name = "quantity")
   private Integer quantity;
 
-  @Column(name = "description")
+  @Column(name = "description_hu")
   private String description;
+
+  @Column(name = "description_en")
+  private String descriptionEnglish;
 
   @JsonIgnore
   @Column(name = "is_put_aside")

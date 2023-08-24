@@ -36,15 +36,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class GameController {
 
 /*
-TODO language: add english descriptions to log messages and cards (see: ErrorMessage, GameLog, GameLogService,
- GameService and data.sql
-
 TODO dependencies: check vulnerabilities
-
+TODO frontend: React?
+TODO language: add language select option (in application.properties?)
 TODO refactor: (only hungarian)
    ? GameServiceImpl 1000 sor...
    ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
-
 TODO feature: (only hungarian)
    ! kártyák rendszerét refactorálni? (kártya típusa legyen enum)
    ! CustomCard.class: CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.)
@@ -55,9 +52,6 @@ TODO feature: (only hungarian)
        ! Orvosdoktor
      ! "A káosz egy létra" és logikájuk
        ! Paplovag stb...
-
-  TODO frontend:
-      ? React?
 */
 
   private final GameService gameService;

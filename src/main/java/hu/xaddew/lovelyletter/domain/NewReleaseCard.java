@@ -31,7 +31,12 @@ public class NewReleaseCard {
   private String cardNameEnglish;
   private Integer cardValue;
   private Integer quantity;
+
+  @Column(name = "description_hu")
   private String description;
+
+  @Column(name = "description_en")
+  private String descriptionEnglish;
 
   @JsonIgnore
   private Boolean isPutAside;

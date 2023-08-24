@@ -575,6 +575,7 @@ class GameServiceUnitTest {
 
     playCardResponseDto = gameService.playCard(playCardRequestDto);
 
+    // TODO update test logs from hu to en
     generatedLog = "1. " + player.getName() + " kijátszott lapja egy " + cardName + " volt,"
         + " de megcélozható játékos híján nem történt semmi.";
 
