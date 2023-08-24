@@ -31,73 +31,80 @@ import org.springframework.web.bind.annotation.RestController;
 @AllowCrossOriginPort4200
 @DefaultApiErrorResponses
 @RequestMapping("/game")
-@Tag(name = "Játékok")
+@Tag(name = "Games")
 @RequiredArgsConstructor
 public class GameController {
 
-/*  TODO refactor:
-      ? GameServiceImpl 1000 sor...
-      ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
+/*
+TODO language: add english descriptions to log messages and cards (see: ErrorMessage, GameLog, GameLogService,
+ GameService and data.sql
 
-  TODO feature:
-      ! kártyák rendszerét refactorálni? (kártya típusa legyen enum)
-      ! CustomCard.class: CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.)
-      ~ "Furcsa alakok" és logikájuk
-        + Kili (kész, tesztet írni)
-        ! Vándorszínész
-        ! Dalnok
-        ! Orvosdoktor
-      ! "A káosz egy létra" és logikájuk
-        ! Paplovag stb...
+TODO dependencies: check vulnerabilities
+
+TODO refactor: (only hungarian)
+   ? GameServiceImpl 1000 sor...
+   ? 2019-es verzió: Kancellár miatt a "drawDeck" LinkedList kell, hogy legyen! (Hibernate tudja?)
+
+TODO feature: (only hungarian)
+   ! kártyák rendszerét refactorálni? (kártya típusa legyen enum)
+   ! CustomCard.class: CardPack enum ("Furcsa alakok", "A káosz egy létra" stb.)
+     ~ "Furcsa alakok" és logikájuk
+       + Kili (kész, tesztet írni)
+       ! Vándorszínész
+       ! Dalnok
+       ! Orvosdoktor
+     ! "A káosz egy létra" és logikájuk
+       ! Paplovag stb...
 
   TODO frontend:
-      ? Angularban (azzal párhuzamosan Slf4j logolás (FE teszteléshez))*/
+      ? React?
+*/
 
   private final GameService gameService;
 
   @PostMapping("/create")
-  @Operation(summary = "Új játék létrehozása")
-  @ApiResponse(responseCode = "200", description = "Létrehozott játék uuid-ja és a játékosok adatai.",
+  @Operation(summary = "Create new game")
+  @ApiResponse(responseCode = "200", description = "Created games info: uuid and players",
       content = @Content(schema = @Schema(implementation = CreatedGameResponseDto.class)))
   public CreatedGameResponseDto createGame(
-      @Parameter(description = "Játék létrehozása adatmodell", required = true)
+      @Parameter(description = "Game creation", required = true)
       @RequestBody CreateGameRequestDto createGameDto) {
     return gameService.createGame(createGameDto);
   }
 
   @GetMapping("/god-mode")
-  @Operation(summary = "Minden játékadat lekérdezése (rejtett információkkal együtt)")
-  @ApiResponse(responseCode = "200", description = "Játékadatok listája",
+  @Operation(summary = "All existing game data (with hidden information)")
+  @ApiResponse(responseCode = "200", description = "List of all the games with hidden information",
       content = @Content(array = @ArraySchema(schema = @Schema(implementation = GodModeDto.class))))
   public List<GodModeDto> getAllGames() {
     return gameService.getAllGamesWithSecretInfos();
   }
 
   @GetMapping("/get-status/{gameUuid}")
-  @Operation(summary = "Játék státuszának lekérdezése gameUuid alapján")
-  @ApiResponse(responseCode = "200", description = "Játék státusza",
+  @Operation(summary = "Get game status by gameUuid")
+  @ApiResponse(responseCode = "200", description = "Status of the game",
       content = @Content(schema = @Schema(implementation = GameStatusDto.class)))
   public GameStatusDto getGameStatus(
-      @Parameter(description = "Játék uuid", required = true) @PathVariable String gameUuid) {
+      @Parameter(description = "Game uuid", required = true) @PathVariable String gameUuid) {
     return gameService.getGameStatus(gameUuid);
   }
 
   @PostMapping("/play-card")
-  @Operation(summary = "Kártya kijátszása kézből")
-  @ApiResponse(responseCode = "200", description = "Kártyakijátszást követő log",
+  @Operation(summary = "Playing card form hand")
+  @ApiResponse(responseCode = "200", description = "Log after playing card from hand",
       content = @Content(schema = @Schema(implementation = PlayCardResponseDto.class)))
   public PlayCardResponseDto playCard(
-      @Parameter(description = "Kártya kijátszása adatmodell", required = true)
+      @Parameter(description = "Playing card", required = true)
       @RequestBody PlayCardRequestDto requestDto) {
     return gameService.playCard(requestDto);
   }
 
   @PostMapping("/put-back-cards")
-  @Operation(summary = "Kártya visszatétele a húzópakliba")
-  @ApiResponse(responseCode = "200", description = "Kártyavisszatételt követő log",
+  @Operation(summary = "Put card back to the draw deck")
+  @ApiResponse(responseCode = "200", description = "Log after putting card back to the draw deck",
       content = @Content(schema = @Schema(implementation = ReturnCardResponseDto.class)))
   public ReturnCardResponseDto returnCardsToDrawDeckWithChancellor(
-      @Parameter(description = "Kártya visszatétele a húzópakliba adatmodell", required = true)
+      @Parameter(description = "Putting card back to the draw deck", required = true)
       @RequestBody ReturnCardsRequestDto requestDto) {
     return gameService.returnCardsToDrawDeck(requestDto);
   }

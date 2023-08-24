@@ -13,15 +13,15 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @ApiResponses(value = {
-    @ApiResponse(responseCode = "401", description = "Azonosítatlan!",
+    @ApiResponse(responseCode = "401", description = "Unauthorized",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-    @ApiResponse(responseCode = "403", description = "Tiltott!",
+    @ApiResponse(responseCode = "403", description = "Forbidden",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-    @ApiResponse(responseCode = "404", description = "Nem található!",
+    @ApiResponse(responseCode = "404", description = "Not found",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-    @ApiResponse(responseCode = "412", description = "Előfeltétel nem teljesül!",
+    @ApiResponse(responseCode = "412", description = "Precondition failed",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-    @ApiResponse(responseCode = "500", description = "Belső szerver hiba!",
+    @ApiResponse(responseCode = "500", description = "Internal server error",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
 })
 public @interface DefaultApiErrorResponses {

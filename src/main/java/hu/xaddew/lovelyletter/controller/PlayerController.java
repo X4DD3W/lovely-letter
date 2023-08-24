@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllowCrossOriginPort4200
 @DefaultApiErrorResponses
 @RequestMapping("/player")
-@Tag(name = "Játékosok")
+@Tag(name = "Players")
 @RequiredArgsConstructor
 public class PlayerController {
 
@@ -30,11 +30,11 @@ public class PlayerController {
   private final GameService gameService;
 
   @GetMapping("/known-infos-by-player/{playerUuid}")
-  @Operation(summary = "Játékos rendelkezésére álló nyilvános információk lekérdezése playerUuid alapján")
-  @ApiResponse(responseCode = "200", description = "Játékos rendelkezésére álló nyilvános információk",
+  @Operation(summary = "Get all public information for a player by playerUuid")
+  @ApiResponse(responseCode = "200", description = "Public information for that player",
       content = @Content(schema = @Schema(implementation = PlayerKnownInfosDto.class)))
   public PlayerKnownInfosDto getCardsByPlayerUuid(
-      @Parameter(description = "Játékos uuid", required = true) @PathVariable String playerUuid) {
+      @Parameter(description = "Player uuid", required = true) @PathVariable String playerUuid) {
     Game game = gameService.findGameByPlayerUuid(playerUuid);
     return playerService.getAllInfosByPlayerUuidAndRelatedGame(playerUuid, game);
   }

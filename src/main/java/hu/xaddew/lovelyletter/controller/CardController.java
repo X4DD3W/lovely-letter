@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllowCrossOriginPort4200
 @DefaultApiErrorResponses
 @RequestMapping("/card")
-@Tag(name = "Kártyák")
+@Tag(name = "Cards")
 @RequiredArgsConstructor
 public class CardController {
 
@@ -31,24 +31,24 @@ public class CardController {
   private final CustomCardService customCardService;
 
   @GetMapping("/original-cards")
-  @Operation(summary = "Eredeti kártyák lekérdezése")
-  @ApiResponse(responseCode = "200", description = "Eredeti kártyák listája",
+  @Operation(summary = "Lists all the cards from the original version.")
+  @ApiResponse(responseCode = "200", description = "List of the original cards",
       content = @Content(array = @ArraySchema(schema = @Schema(implementation = CardResponseDto.class))))
   public List<CardResponseDto> getOriginalCards() {
     return originalCardService.getAllCards();
   }
 
   @GetMapping("/2019-cards")
-  @Operation(summary = "Új kiadású kártyák lekérdezése")
-  @ApiResponse(responseCode = "200", description = "Új kiadású kártyák listája",
+  @Operation(summary = "Lists all the cards from the 2019 edition of the game.")
+  @ApiResponse(responseCode = "200", description = "List of the new edition cards",
       content = @Content(array = @ArraySchema(schema = @Schema(implementation = CardResponseDto.class))))
   public List<CardResponseDto> getNewReleaseCards() {
     return newReleaseCardService.getAllCards();
   }
 
   @GetMapping("/custom-cards")
-  @Operation(summary = "Egyedi kártyák lekérdezése")
-  @ApiResponse(responseCode = "200", description = "Egyedi kártyák listája",
+  @Operation(summary = "Lists all the custom cards.")
+  @ApiResponse(responseCode = "200", description = "List of the custom cards",
       content = @Content(array = @ArraySchema(schema = @Schema(implementation = CardResponseDto.class))))
   public List<CardResponseDto> getCustomCards() {
     return customCardService.getAllCards();

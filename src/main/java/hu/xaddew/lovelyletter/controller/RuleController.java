@@ -20,19 +20,30 @@ import org.springframework.web.bind.annotation.RestController;
 @AllowCrossOriginPort4200
 @DefaultApiErrorResponses
 @RequestMapping("/rules")
-@Tag(name = "Szabályok")
+@Tag(name = "Rules")
 @RequiredArgsConstructor
 public class RuleController {
 
-  @Value("${lovely-letter-rules-url}")
-  private String rulesUrl;
+  @Value("${lovely-letter-hu-rules-url}")
+  private String huRulesUrl;
 
-  @GetMapping("/pdf")
-  @Operation(summary = "Szabályfüzet (pdf) lekérdezése")
-  @ApiResponse(responseCode = "200", description = "Szabályfüzet pdf formátumban",
+  @Value("${lovely-letter-en-rules-url}")
+  private String enRulesUrl;
+
+  @GetMapping("/pdf/hu")
+  @Operation(summary = "Get hungarian rulebook (pdf)")
+  @ApiResponse(responseCode = "200", description = "Hungarian rulebook in PDF format",
       content = @Content(schema = @Schema(implementation = ResponseEntity.class)))
-  public ResponseEntity<Object> getRules() {
-    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(rulesUrl)).build();
+  public ResponseEntity<Object> getHungarianRules() {
+    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(huRulesUrl)).build();
+  }
+
+  @GetMapping("/pdf/en")
+  @Operation(summary = "Get english rulebook (pdf)")
+  @ApiResponse(responseCode = "200", description = "English rulebook in PDF format",
+          content = @Content(schema = @Schema(implementation = ResponseEntity.class)))
+  public ResponseEntity<Object> getEnglishRules() {
+    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(enRulesUrl)).build();
   }
 
 }

@@ -1,12 +1,10 @@
 DROP TABLE IF EXISTS game_hidden_logs;
 DROP TABLE IF EXISTS game_logs;
-DROP TABLE IF EXISTS game_draw_deck; -- ez majd törölhető?
-
+DROP TABLE IF EXISTS game_draw_deck; -- removable?
 DROP TABLE IF EXISTS player_cards_in_hand;
 DROP TABLE IF EXISTS player_played_cards;
-
 DROP TABLE IF EXISTS card;
-DROP TABLE IF EXISTS original_card; -- ez a három is törölhető majd a lenti sémákkal?
+DROP TABLE IF EXISTS original_card; -- removable these three with the bottom schemas?
 DROP TABLE IF EXISTS new_release_card;
 DROP TABLE IF EXISTS custom_card;
 DROP TABLE IF EXISTS player;
@@ -52,9 +50,6 @@ CREATE TABLE player
     KEY `game_id` (`game_id`),
     CONSTRAINT fk_player_game FOREIGN KEY (game_id) REFERENCES game (game_id)
 );
-
-
-
 
 CREATE TABLE original_card
 (

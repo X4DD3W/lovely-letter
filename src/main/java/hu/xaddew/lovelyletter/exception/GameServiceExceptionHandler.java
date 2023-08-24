@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GameServiceExceptionHandler {
 
   protected static final String INTERNAL_SERVER_ERROR_USER_MESSAGE =
-      "Váratlan hiba történt a kérés kiszolgálása közben.";
+      "Unexpected exception during the process.";
 
   @ExceptionHandler({GameException.class})
   public ResponseEntity<ErrorResponse> handleException(BaseServiceException exception) {
-    String userTitle = "Hiba a művelet közben!";
+    String userTitle = "Error during operation!";
     String userMessage;
 
     switch (exception.getErrorType()) {
